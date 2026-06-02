@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <menuitem id="oscu_menu" name="KRA eTIMS" groups="account.group_account_manager" parent="account.menu_finance_configuration">
+            <menuitem action="ke_etims_code_action" id="menuitem_ke_etims_codes_tree" name="KE OSCU Codes" sequence="1"/>
+            <menuitem action="ke_etims_notice_action" id="menuitem_ke_etims_notice_tree" name="KE OSCU Notices" sequence="2"/>
+        </menuitem>
+    </data>
+</odoo>

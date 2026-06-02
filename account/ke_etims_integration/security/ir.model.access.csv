@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+ke_etims_code_readonly,ke_etims_integration.code readonly,model_ke_etims_integration_code,account.group_account_readonly,1,0,0,0
+ke_etims_code_invoice,ke_etims_integration.code invoice,model_ke_etims_integration_code,account.group_account_invoice,1,0,0,0
+ke_etims_notice_invoice,ke_etims_integration.notice invoice,model_ke_etims_integration_notice,account.group_account_invoice,1,0,0,0
+ke_etims_notice_readonly,ke_etims_integration.notice readonly,model_ke_etims_integration_notice,account.group_account_readonly,1,0,0,0
+access_product_unspsc_code,product.unspsc.code all users,model_product_unspsc_code,base.group_user,1,0,0,0
