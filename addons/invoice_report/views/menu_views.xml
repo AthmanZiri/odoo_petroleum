@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_invoice_analysis_root"
+              name="Invoice Analysis"
+              parent="account.menu_finance_entries"
+              sequence="60"/>
+
+    <menuitem id="menu_invoice_analysis"
+              name="Invoice and Bill Analysis"
+              parent="menu_invoice_analysis_root"
+              action="action_invoice_analysis"
+              sequence="10"/>
+</odoo>

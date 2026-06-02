@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- List View -->
+    <record id="view_invoice_analysis_list" model="ir.ui.view">
+        <field name="name">invoice.analysis.list</field>
+        <field name="model">invoice.analysis</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="date"/>
+                <field name="partner_id"/>
+                <field name="product_id"/>
+                <field name="move_type"/>
+                <field name="quantity"/>
+                <field name="price_unit"/>
+                <field name="price_subtotal"/>
+                <field name="currency_id"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Pivot View -->
+    <record id="view_invoice_analysis_pivot" model="ir.ui.view">
+        <field name="name">invoice.analysis.pivot</field>
+        <field name="model">invoice.analysis</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="partner_id" type="row"/>
+                <field name="product_id" type="row"/>
+                <field name="move_type" type="col"/>
+                <field name="quantity" type="measure"/>
+                <field name="price_subtotal" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Graph View -->
+    <record id="view_invoice_analysis_graph" model="ir.ui.view">
+        <field name="name">invoice.analysis.graph</field>
+        <field name="model">invoice.analysis</field>
+        <field name="arch" type="xml">
+            <graph>
+                <field name="partner_id"/>
+                <field name="price_subtotal" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_invoice_analysis_search" model="ir.ui.view">
+        <field name="name">invoice.analysis.search</field>
+        <field name="model">invoice.analysis</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="partner_id"/>
+                <field name="product_id"/>
+                <field name="move_type"/>
+                <filter name="invoices" string="Customer Invoices" domain="[('move_type', '=', 'out_invoice')]"/>
+                <filter name="bills" string="Vendor Bills" domain="[('move_type', '=', 'in_invoice')]"/>
+                <group>
+                    <filter name="group_partner" string="Partner" context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_product" string="Product" context="{'group_by': 'product_id'}"/>
+                    <filter name="group_type" string="Type" context="{'group_by': 'move_type'}"/>
+                    <filter name="group_date" string="Date" context="{'group_by': 'date'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_invoice_analysis" model="ir.actions.act_window">
+        <field name="name">Invoice and Bill Analysis</field>
+        <field name="res_model">invoice.analysis</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="search_view_id" ref="view_invoice_analysis_search"/>
+    </record>
+</odoo>
