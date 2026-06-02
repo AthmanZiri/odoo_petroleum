@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_trading_desk_root"
+              name="Trading Desk"
+              sequence="5"/>
+
+    <menuitem id="menu_trading_desk_overview"
+              name="Overview"
+              parent="menu_trading_desk_root"
+              action="action_desk_dashboard_client"
+              sequence="5"/>
+
+    <menuitem id="menu_trading_desk_deals"
+              name="Deals"
+              parent="menu_trading_desk_root"
+              action="action_deal"
+              sequence="10"/>
+
+    <menuitem id="menu_trading_desk_prices"
+              name="Daily Prices"
+              parent="menu_trading_desk_root"
+              action="action_daily_price"
+              sequence="20"/>
+
+    <menuitem id="menu_trading_desk_statements"
+              name="Send Statements"
+              parent="menu_trading_desk_root"
+              action="petroleum_statement_mailer.action_statement_send_wizard"
+              sequence="30"/>
+
+    <menuitem id="menu_trading_desk_config"
+              name="Configuration"
+              parent="menu_trading_desk_root"
+              sequence="90"/>
+
+    <menuitem id="menu_trading_desk_depots"
+              name="Depots / Loading Points"
+              parent="menu_trading_desk_config"
+              action="petroleum_operations.action_petroleum_depot"
+              sequence="10"/>
+
+    <menuitem id="menu_trading_desk_reconcile"
+              name="Reconcile Imported Ledgers"
+              parent="menu_trading_desk_config"
+              action="petroleum_data_import.action_ledger_reconcile"
+              sequence="20"/>
+
+    <menuitem id="menu_trading_desk_loadings_import"
+              name="Import Loadings"
+              parent="menu_trading_desk_config"
+              action="action_loadings_import"
+              sequence="15"/>
+
+    <menuitem id="menu_trading_desk_ledger_link"
+              name="Link Deals to Ledger"
+              parent="menu_trading_desk_config"
+              action="action_deal_ledger_link"
+              sequence="18"/>
+</odoo>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_deal_bulk_confirm" model="ir.actions.server">
+        <field name="name">Confirm Deals</field>
+        <field name="model_id" ref="model_petroleum_deal"/>
+        <field name="binding_model_id" ref="model_petroleum_deal"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_bulk_confirm()</field>
+    </record>
+
+    <record id="action_deal_bulk_load" model="ir.actions.server">
+        <field name="name">Load &amp; Invoice</field>
+        <field name="model_id" ref="model_petroleum_deal"/>
+        <field name="binding_model_id" ref="model_petroleum_deal"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_bulk_load()</field>
+    </record>
+
+    <record id="action_deal_bulk_done" model="ir.actions.server">
+        <field name="name">Mark Settled</field>
+        <field name="model_id" ref="model_petroleum_deal"/>
+        <field name="binding_model_id" ref="model_petroleum_deal"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_bulk_done()</field>
+    </record>
+
+    <record id="action_deal_bulk_ledger_link" model="ir.actions.server">
+        <field name="name">Link to Ledger</field>
+        <field name="model_id" ref="model_petroleum_deal"/>
+        <field name="binding_model_id" ref="model_petroleum_deal"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">
+action = {
+    'type': 'ir.actions.act_window',
+    'name': 'Link Deals to Ledger',
+    'res_model': 'petroleum.deal.ledger.link',
+    'view_mode': 'form',
+    'target': 'new',
+    'context': {
+        'default_deal_ids': [(6, 0, records.ids)],
+        'default_company_id': records[:1].company_id.id if records else False,
+    },
+}
+        </field>
+    </record>
+</odoo>

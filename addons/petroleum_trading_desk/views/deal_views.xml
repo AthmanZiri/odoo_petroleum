@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- FORM -->
+    <record id="view_deal_form" model="ir.ui.view">
+        <field name="name">petroleum.deal.form</field>
+        <field name="model">petroleum.deal</field>
+        <field name="arch" type="xml">
+            <form string="Deal">
+                <header>
+                    <button name="action_send_proforma" type="object" string="Send Proforma"
+                            class="btn-primary" invisible="state not in ('draft','proforma')"/>
+                    <button name="action_confirm" type="object" string="Confirm"
+                            class="btn-primary" invisible="state not in ('draft','proforma')"/>
+                    <button name="action_register_payment" type="object" string="Register Payment"
+                            class="btn-secondary" invisible="state in ('draft','cancel')"/>
+                    <button name="action_load" type="object" string="Load &amp; Invoice"
+                            class="btn-primary" invisible="state != 'confirmed'"/>
+                    <button name="action_open_ledger_link_wizard" type="object"
+                            string="Link to Ledger"
+                            class="btn-secondary"
+                            invisible="state not in ('confirmed','loaded','done') or ledger_link_state == 'full'"/>
+                    <button name="action_unlink_ledger_moves" type="object"
+                            string="Unlink Ledger"
+                            class="btn-secondary"
+                            invisible="ledger_link_state == 'none'"/>
+                    <button name="action_done" type="object" string="Mark Settled"
+                            class="btn-primary" invisible="state != 'loaded'"/>
+                    <button name="action_cancel" type="object" string="Cancel"
+                            invisible="state in ('done','cancel')"/>
+                    <button name="action_draft" type="object" string="Reset to Draft"
+                            invisible="state != 'cancel'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,proforma,confirmed,loaded,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_invoices" type="object" class="oe_stat_button"
+                                icon="fa-pencil-square-o" invisible="invoice_count == 0">
+                            <field name="invoice_count" widget="statinfo" string="Invoices"/>
+                        </button>
+                        <button name="action_view_bills" type="object" class="oe_stat_button"
+                                icon="fa-money" invisible="bill_count == 0">
+                            <field name="bill_count" widget="statinfo" string="Bills"/>
+                        </button>
+                        <button name="action_view_payments" type="object" class="oe_stat_button"
+                                icon="fa-credit-card" invisible="payment_count == 0">
+                            <field name="payment_count" widget="statinfo" string="Payments"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="Deal">
+                            <field name="partner_id"/>
+                            <field name="date"/>
+                            <field name="depot_id"/>
+                            <field name="ledger_link_state" widget="badge"
+                                   decoration-success="ledger_link_state == 'full'"
+                                   decoration-warning="ledger_link_state == 'partial'"
+                                   decoration-muted="ledger_link_state == 'none'"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group string="Loading Details">
+                            <field name="truck_id"/>
+                            <field name="driver_id"/>
+                            <field name="driver_id_no"/>
+                            <field name="epra_no"/>
+                            <field name="compartment_plan" placeholder="2:3:2:3"/>
+                        </group>
+                    </group>
+                    <field name="line_ids">
+                        <list editable="bottom">
+                            <field name="product_id"/>
+                            <field name="quantity" sum="Litres"/>
+                            <field name="supplier_id"/>
+                            <field name="buy_price"/>
+                            <field name="sell_price"/>
+                            <field name="cost_subtotal" sum="Buy"/>
+                            <field name="price_subtotal" sum="Sell"/>
+                            <field name="margin" sum="Margin"
+                                   decoration-success="margin &gt; 0" decoration-danger="margin &lt; 0"/>
+                            <field name="currency_id" column_invisible="1"/>
+                        </list>
+                    </field>
+                    <group class="oe_subtotal_footer" colspan="2">
+                        <field name="total_qty"/>
+                        <field name="amount_buy"/>
+                        <field name="amount_sell"/>
+                        <field name="margin_total" class="oe_subtotal_footer_separator"
+                               decoration-success="margin_total &gt; 0"/>
+                        <field name="amount_paid"/>
+                        <field name="balance"/>
+                        <field name="currency_id" invisible="1"/>
+                    </group>
+                    <notebook>
+                        <page string="Notes">
+                            <field name="notes" placeholder="Internal notes..."/>
+                        </page>
+                        <page string="References">
+                            <group>
+                                <field name="sale_order_id"/>
+                                <field name="trip_id"/>
+                                <field name="purchase_order_ids" widget="many2many_tags"/>
+                            </group>
+                            <group string="Imported ledger (linked)">
+                                <field name="ledger_move_ids" nolabel="1" readonly="1">
+                                    <list>
+                                        <field name="name"/>
+                                        <field name="move_type"/>
+                                        <field name="partner_id"/>
+                                        <field name="invoice_date"/>
+                                        <field name="amount_total" sum="Total"/>
+                                        <field name="state"/>
+                                        <field name="petro_import_batch"/>
+                                    </list>
+                                </field>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- LIST -->
+    <record id="view_deal_list" model="ir.ui.view">
+        <field name="name">petroleum.deal.list</field>
+        <field name="model">petroleum.deal</field>
+        <field name="arch" type="xml">
+            <list string="Deals" default_order="date desc">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="partner_id"/>
+                <field name="total_qty" sum="Litres"/>
+                <field name="amount_sell" sum="Sell"/>
+                <field name="margin_total" sum="Margin"
+                       decoration-success="margin_total &gt; 0" decoration-danger="margin_total &lt; 0"/>
+                <field name="balance" sum="Balance"/>
+                <field name="ledger_link_state" widget="badge" optional="show"
+                       decoration-success="ledger_link_state == 'full'"
+                       decoration-warning="ledger_link_state == 'partial'"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'done'"
+                       decoration-info="state in ('confirmed','loaded')"
+                       decoration-warning="state == 'proforma'"/>
+                <field name="currency_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- KANBAN (the trading desk pipeline) -->
+    <record id="view_deal_kanban" model="ir.ui.view">
+        <field name="name">petroleum.deal.kanban</field>
+        <field name="model">petroleum.deal</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" class="o_kanban_small_column">
+                <field name="state"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="oe_kanban_global_click">
+                            <div class="o_kanban_record_title">
+                                <strong><field name="partner_id"/></strong>
+                            </div>
+                            <div class="text-muted">
+                                <field name="name"/> &#8226; <field name="date"/>
+                            </div>
+                            <div>
+                                <field name="total_qty"/> L &#8226;
+                                Margin <field name="margin_total" widget="monetary"/>
+                            </div>
+                            <div>
+                                Balance <field name="balance" widget="monetary"/>
+                            </div>
+                            <field name="currency_id" invisible="1"/>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- SEARCH -->
+    <record id="view_deal_search" model="ir.ui.view">
+        <field name="name">petroleum.deal.search</field>
+        <field name="model">petroleum.deal</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="truck_id"/>
+                <filter name="open" string="Open" domain="[('state','not in',('done','cancel'))]"/>
+                <filter name="unpaid" string="Has Balance" domain="[('balance','&gt;',0)]"/>
+                <separator/>
+                <filter name="today" string="Today" domain="[('date','=',context_today().strftime('%Y-%m-%d'))]"/>
+                <group name="group_by">
+                    <filter name="g_state" string="Status" context="{'group_by':'state'}"/>
+                    <filter name="g_partner" string="Client" context="{'group_by':'partner_id'}"/>
+                    <filter name="g_date" string="Date" context="{'group_by':'date'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_deal" model="ir.actions.act_window">
+        <field name="name">Deals</field>
+        <field name="res_model">petroleum.deal</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="search_view_id" ref="view_deal_search"/>
+        <field name="context">{'search_default_open': 1}</field>
+    </record>
+</odoo>

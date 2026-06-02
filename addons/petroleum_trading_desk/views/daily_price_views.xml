@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_daily_price_list" model="ir.ui.view">
+        <field name="name">petroleum.daily.price.list</field>
+        <field name="model">petroleum.daily.price</field>
+        <field name="arch" type="xml">
+            <list string="Daily Prices" editable="top" default_order="date desc">
+                <header>
+                    <button name="action_carry_forward" type="object"
+                            string="Carry Prices to Today" class="btn-primary"/>
+                </header>
+                <field name="date"/>
+                <field name="product_id"/>
+                <field name="supplier_id" optional="show"/>
+                <field name="depot_id" optional="hide"/>
+                <field name="buy_price"/>
+                <field name="sell_price"/>
+                <field name="margin" decoration-success="margin &gt; 0" decoration-danger="margin &lt; 0"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="note" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_daily_price_search" model="ir.ui.view">
+        <field name="name">petroleum.daily.price.search</field>
+        <field name="model">petroleum.daily.price</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="product_id"/>
+                <field name="supplier_id"/>
+                <filter name="today" string="Today" domain="[('date','=',context_today().strftime('%Y-%m-%d'))]"/>
+                <group name="group_by">
+                    <filter name="g_date" string="Date" context="{'group_by':'date'}"/>
+                    <filter name="g_product" string="Product" context="{'group_by':'product_id'}"/>
+                    <filter name="g_supplier" string="Supplier" context="{'group_by':'supplier_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_daily_price" model="ir.actions.act_window">
+        <field name="name">Daily Prices</field>
+        <field name="res_model">petroleum.daily.price</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'search_default_today': 1}</field>
+    </record>
+</odoo>

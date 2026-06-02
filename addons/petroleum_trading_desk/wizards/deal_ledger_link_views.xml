@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_deal_ledger_link_form" model="ir.ui.view">
+        <field name="name">petroleum.deal.ledger.link.form</field>
+        <field name="model">petroleum.deal.ledger.link</field>
+        <field name="arch" type="xml">
+            <form string="Link Deals to Ledger">
+                <sheet>
+                    <div class="oe_title" invisible="state != 'draft'">
+                        <h1>Link Deals to Imported Ledger</h1>
+                        <p class="text-muted">
+                            Matches posted customer invoices and vendor bills from the
+                            Petroleum Data Import (by date, partner, truck plate in
+                            reference/narration, and amount) to Trading Desk deals —
+                            without creating duplicate accounting entries.
+                        </p>
+                    </div>
+                    <group invisible="state != 'draft'">
+                        <group string="Scope">
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="date_from"/>
+                            <field name="date_to"/>
+                            <field name="deal_ids" widget="many2many_tags"
+                                   domain="[('company_id', '=', company_id), ('state', '!=', 'cancel')]"/>
+                        </group>
+                        <group string="Matching">
+                            <field name="only_imported"/>
+                            <field name="require_truck"/>
+                            <field name="mark_as_loaded"/>
+                            <field name="dry_run"/>
+                        </group>
+                    </group>
+                    <field name="state" invisible="1"/>
+                    <field name="result_html" invisible="state == 'draft'"
+                           readonly="1" nolabel="1"/>
+                </sheet>
+                <footer invisible="state != 'draft'">
+                    <button name="action_link" type="object" string="Link"
+                            class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+                <footer invisible="state != 'done'">
+                    <button string="Close" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_deal_ledger_link" model="ir.actions.act_window">
+        <field name="name">Link Deals to Ledger</field>
+        <field name="res_model">petroleum.deal.ledger.link</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

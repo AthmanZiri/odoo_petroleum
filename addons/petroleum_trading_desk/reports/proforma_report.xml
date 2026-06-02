@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_deal_proforma" model="ir.actions.report">
+        <field name="name">Proforma Invoice</field>
+        <field name="model">petroleum.deal</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">petroleum_trading_desk.report_deal_proforma</field>
+        <field name="report_file">petroleum_trading_desk.report_deal_proforma</field>
+        <field name="binding_model_id" ref="model_petroleum_deal"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_deal_proforma">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2 class="text-center">PROFORMA INVOICE</h2>
+                        <p class="text-center text-muted">
+                            This is a proforma invoice and not a tax invoice.
+                        </p>
+                        <div class="row mt-4">
+                            <div class="col-6">
+                                <strong>Bill To:</strong><br/>
+                                <span t-field="doc.partner_id"/><br/>
+                                <span t-field="doc.partner_id.vat"/>
+                            </div>
+                            <div class="col-6 text-end">
+                                <strong>Proforma No:</strong> <span t-field="doc.name"/><br/>
+                                <strong>Date:</strong> <span t-field="doc.date"/><br/>
+                                <strong>Depot:</strong> <span t-field="doc.depot_id.name"/>
+                            </div>
+                        </div>
+                        <table class="table table-sm mt-4">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th class="text-end">Litres</th>
+                                    <th class="text-end">Unit Price</th>
+                                    <th class="text-end">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="doc.line_ids" t-as="line">
+                                    <td><span t-field="line.product_id"/></td>
+                                    <td class="text-end"><span t-field="line.quantity"/></td>
+                                    <td class="text-end"><span t-field="line.sell_price"/></td>
+                                    <td class="text-end">
+                                        <span t-field="line.price_subtotal"
+                                              t-options="{'widget': 'monetary', 'display_currency': doc.currency_id}"/>
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3" class="text-end"><strong>Total</strong></td>
+                                    <td class="text-end">
+                                        <strong><span t-field="doc.amount_sell"
+                                              t-options="{'widget': 'monetary', 'display_currency': doc.currency_id}"/></strong>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <p t-if="doc.truck_id"><strong>Truck:</strong> <span t-field="doc.truck_id.name"/>
+                                   <t t-if="doc.compartment_plan"> &#8226; <strong>Loading Plan:</strong> <span t-field="doc.compartment_plan"/></t>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="row mt-4" t-if="doc.company_id.partner_id.bank_ids">
+                            <div class="col-12">
+                                <strong>Payment Details</strong>
+                                <table class="table table-sm table-borderless mt-1" style="width:auto">
+                                    <tr t-foreach="doc.company_id.partner_id.bank_ids" t-as="bank">
+                                        <td class="ps-0"><span t-field="bank.bank_id.name"/></td>
+                                        <td>A/C: <span t-field="bank.acc_number"/></td>
+                                        <td t-if="bank.acc_holder_name"><span t-field="bank.acc_holder_name"/></td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <p class="text-muted"><em>Confirm this order by payment to any of the accounts above.
+                                   Prices are valid for the date shown.</em></p>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

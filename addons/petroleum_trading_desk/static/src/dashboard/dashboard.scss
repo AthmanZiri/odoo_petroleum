@@ -1,0 +1,63 @@
+.o_petro_dashboard {
+    background-color: #f7f8fa;
+    min-height: 100%;
+    overflow: auto;
+
+    .o_petro_kpi_label {
+        font-size: 0.8rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .o_petro_kpi_value {
+        font-size: 1.6rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .o_petro_badge {
+        color: #fff;
+        font-size: 1.25rem;
+        font-weight: 700;
+        border-radius: 0.5rem;
+        padding: 0.15rem 0.7rem;
+        min-width: 2.4rem;
+        text-align: center;
+    }
+
+    .o_petro_clickable {
+        cursor: pointer;
+        transition: transform 0.08s ease, box-shadow 0.08s ease;
+
+        &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0.4rem 1rem rgba(0, 0, 0, 0.12) !important;
+        }
+    }
+
+    .o_petro_chart {
+        position: relative;
+        height: 260px;
+    }
+
+    .o_petro_filters {
+        .form-label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+    }
+
+    .o_petro_grade_pms {
+        border-left: 4px solid #e8a33d !important;
+    }
+
+    .o_petro_grade_ago {
+        border-left: 4px solid #017e84 !important;
+    }
+
+    .o_petro_grade_ik {
+        border-left: 4px solid #a24689 !important;
+    }
+}

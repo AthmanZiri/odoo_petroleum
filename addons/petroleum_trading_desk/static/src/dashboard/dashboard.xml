@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="petroleum_trading_desk.Dashboard">
+        <div class="o_petro_dashboard o_action_manager p-3">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <h2 class="m-0 fw-bold">Trading Desk Overview</h2>
+                <div>
+                    <button class="btn btn-light border me-2" t-on-click="() => this.load()">
+                        <i class="fa fa-refresh me-1"/>Refresh
+                    </button>
+                    <button class="btn btn-primary" t-on-click="sendStatements">
+                        <i class="fa fa-envelope me-1"/>Send Statements…
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="card border-0 shadow-sm mb-3 o_petro_filters" t-if="state.filterOptions">
+                <div class="card-body py-3">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-6 col-md-2">
+                            <label class="form-label small text-muted mb-1">Date From</label>
+                            <input type="date" class="form-control form-control-sm"
+                                   t-att-value="state.filters.date_from"
+                                   t-on-change="(ev) => this.onFilterChange('date_from', ev)"/>
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label small text-muted mb-1">Date To</label>
+                            <input type="date" class="form-control form-control-sm"
+                                   t-att-value="state.filters.date_to"
+                                   t-on-change="(ev) => this.onFilterChange('date_to', ev)"/>
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label small text-muted mb-1">Product</label>
+                            <select class="form-select form-select-sm"
+                                    t-att-value="state.filters.product_id"
+                                    t-on-change="(ev) => this.onFilterChange('product_id', ev)">
+                                <option value="">All products</option>
+                                <t t-foreach="state.filterOptions.products" t-as="p" t-key="p.id">
+                                    <option t-att-value="p.id" t-esc="p.name"/>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label small text-muted mb-1">Customer</label>
+                            <select class="form-select form-select-sm"
+                                    t-att-value="state.filters.partner_id"
+                                    t-on-change="(ev) => this.onFilterChange('partner_id', ev)">
+                                <option value="">All customers</option>
+                                <t t-foreach="state.filterOptions.customers" t-as="c" t-key="c.id">
+                                    <option t-att-value="c.id" t-esc="c.name"/>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label small text-muted mb-1">Vendor</label>
+                            <select class="form-select form-select-sm"
+                                    t-att-value="state.filters.supplier_id"
+                                    t-on-change="(ev) => this.onFilterChange('supplier_id', ev)">
+                                <option value="">All vendors</option>
+                                <t t-foreach="state.filterOptions.suppliers" t-as="s" t-key="s.id">
+                                    <option t-att-value="s.id" t-esc="s.name"/>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-2 d-flex gap-2">
+                            <button class="btn btn-primary btn-sm flex-grow-1" t-on-click="() => this.load()">
+                                Apply
+                            </button>
+                            <button class="btn btn-light border btn-sm" t-on-click="resetFilters">
+                                Reset
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <t t-if="state.loading">
+                <div class="text-center text-muted p-5">
+                    <i class="fa fa-spinner fa-spin fa-2x"/>
+                </div>
+            </t>
+            <t t-else="">
+                <div class="text-muted small mb-2">
+                    Period: <strong t-esc="state.data.period_label"/>
+                    · <span t-esc="state.data.kpis.deals_count"/> deal(s)
+                    · margin = sum of deal margins
+                </div>
+
+                <!-- KPI cards -->
+                <div class="row g-3 mb-1">
+                    <div class="col-6 col-md-3">
+                        <div class="o_petro_kpi card h-100 border-0 shadow-sm o_petro_clickable"
+                             t-on-click="openFilteredDeals">
+                            <div class="card-body">
+                                <div class="o_petro_kpi_label">Margin</div>
+                                <div class="o_petro_kpi_value text-success" t-esc="state.data.kpis.margin_total"/>
+                                <div class="text-muted small" t-esc="state.data.kpis.margin_pct + ' of sell'"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="o_petro_kpi card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="o_petro_kpi_label">Margin / Litre</div>
+                                <div class="o_petro_kpi_value" t-esc="state.data.kpis.margin_per_litre"/>
+                                <div class="text-muted small">filtered period</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="o_petro_kpi card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="o_petro_kpi_label">Sell Total</div>
+                                <div class="o_petro_kpi_value" t-esc="state.data.kpis.sell_total"/>
+                                <div class="text-muted small">customer side</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="o_petro_kpi card h-100 border-0 shadow-sm o_petro_clickable"
+                             t-on-click="openDebtors">
+                            <div class="card-body">
+                                <div class="o_petro_kpi_label">Total Owed To Us</div>
+                                <div class="o_petro_kpi_value text-danger" t-esc="state.data.total_debtors"/>
+                                <div class="text-muted small">click to view debtors</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Litres by product -->
+                <div class="row g-3 mb-1">
+                    <div class="col-12 col-md-4">
+                        <div class="o_petro_kpi o_petro_grade_pms card h-100 border-0 shadow-sm o_petro_clickable"
+                             t-on-click="() => this.openDealsByGrade('PMS')">
+                            <div class="card-body">
+                                <div class="o_petro_kpi_label">PMS Litres</div>
+                                <div class="o_petro_kpi_value" t-esc="state.data.kpis.litres.PMS"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <div class="o_petro_kpi o_petro_grade_ago card h-100 border-0 shadow-sm o_petro_clickable"
+                             t-on-click="() => this.openDealsByGrade('AGO')">
+                            <div class="card-body">
+                                <div class="o_petro_kpi_label">AGO Litres</div>
+                                <div class="o_petro_kpi_value" t-esc="state.data.kpis.litres.AGO"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <div class="o_petro_kpi o_petro_grade_ik card h-100 border-0 shadow-sm o_petro_clickable"
+                             t-on-click="() => this.openDealsByGrade('IK')">
+                            <div class="card-body">
+                                <div class="o_petro_kpi_label">IK Litres</div>
+                                <div class="o_petro_kpi_value" t-esc="state.data.kpis.litres.IK"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Work queues -->
+                <h5 class="mt-4 mb-2 text-muted">Today's Work</h5>
+                <div class="row g-3 mb-1">
+                    <div class="col-12 col-md-4">
+                        <div class="o_petro_queue card border-0 shadow-sm o_petro_clickable"
+                             t-on-click="() => this.openDeals([['state','=','proforma']], 'Proformas Awaiting Payment')">
+                            <div class="card-body d-flex justify-content-between align-items-center">
+                                <div><div class="fw-bold">Proformas awaiting payment</div>
+                                    <div class="text-muted small">chase confirmation</div></div>
+                                <span class="o_petro_badge bg-warning" t-esc="state.data.queues.proforma"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <div class="o_petro_queue card border-0 shadow-sm o_petro_clickable"
+                             t-on-click="() => this.openDeals([['state','=','confirmed']], 'Ready To Load')">
+                            <div class="card-body d-flex justify-content-between align-items-center">
+                                <div><div class="fw-bold">Ready to load</div>
+                                    <div class="text-muted small">send loading details</div></div>
+                                <span class="o_petro_badge bg-info" t-esc="state.data.queues.confirmed"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <div class="o_petro_queue card border-0 shadow-sm o_petro_clickable"
+                             t-on-click="() => this.openDeals([['state','=','loaded']], 'To Settle')">
+                            <div class="card-body d-flex justify-content-between align-items-center">
+                                <div><div class="fw-bold">Loaded &#8211; to settle</div>
+                                    <div class="text-muted small">collect balance</div></div>
+                                <span class="o_petro_badge bg-secondary" t-esc="state.data.queues.loaded"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="row g-3 mt-1">
+                    <div class="col-12 col-lg-8">
+                        <div class="card border-0 shadow-sm h-100"><div class="card-body">
+                            <h6 class="text-muted">Margin trend (filtered period)</h6>
+                            <div class="o_petro_chart"><canvas t-ref="marginChart"/></div>
+                        </div></div>
+                    </div>
+                    <div class="col-12 col-lg-4">
+                        <div class="card border-0 shadow-sm h-100"><div class="card-body">
+                            <h6 class="text-muted">Volume by product (PMS / AGO / IK)</h6>
+                            <div class="o_petro_chart"><canvas t-ref="volumeChart"/></div>
+                        </div></div>
+                    </div>
+                </div>
+
+                <!-- Aging + top debtors -->
+                <div class="row g-3 mt-1 mb-4">
+                    <div class="col-12 col-lg-5">
+                        <div class="card border-0 shadow-sm h-100"><div class="card-body">
+                            <h6 class="text-muted">Receivables aging</h6>
+                            <table class="table table-sm mb-0">
+                                <tbody>
+                                    <tr t-foreach="state.data.aging" t-as="bucket" t-key="bucket.label">
+                                        <td t-esc="bucket.label"/>
+                                        <td class="text-end fw-bold"
+                                            t-att-class="bucket.danger ? 'text-end fw-bold text-danger' : 'text-end fw-bold'"
+                                            t-esc="bucket.amount"/>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div></div>
+                    </div>
+                    <div class="col-12 col-lg-7">
+                        <div class="card border-0 shadow-sm h-100"><div class="card-body">
+                            <h6 class="text-muted">Top debtors to chase</h6>
+                            <table class="table table-sm table-hover mb-0">
+                                <tbody>
+                                    <tr t-foreach="state.data.debtors" t-as="d" t-key="d.id"
+                                        class="o_petro_clickable" t-on-click="() => this.openPartner(d.id)">
+                                        <td t-esc="d.name"/>
+                                        <td class="text-end fw-bold text-danger" t-esc="d.amount"/>
+                                    </tr>
+                                    <tr t-if="!state.data.debtors.length">
+                                        <td colspan="2" class="text-muted">No outstanding balances.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div></div>
+                    </div>
+                </div>
+            </t>
+        </div>
+    </t>
+</templates>
