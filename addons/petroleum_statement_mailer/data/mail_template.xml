@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="mail_template_customer_statement" model="mail.template">
+        <field name="name">Customer Statement</field>
+        <field name="model_id" ref="base.model_res_partner"/>
+        <field name="subject">Statement of Account - {{ user.company_id.name }}</field>
+        <field name="email_from">{{ (user.company_id.email_formatted or user.email_formatted) }}</field>
+        <field name="email_to">{{ object.email }}</field>
+        <field name="lang">{{ object.lang or user.lang }}</field>
+        <field name="body_html" type="html">
+            <div style="margin:0px;padding:0px;font-size:13px;">
+                <p>Dear <t t-out="object.name or ''">Customer</t>,</p>
+                <p>Please find attached your statement of account as at today, showing your
+                   invoices, payments received and current balance.</p>
+                <p>Your outstanding balance is
+                   <strong t-out="format_amount(object.credit, user.company_id.currency_id) or ''">KSh 0.00</strong>.
+                </p>
+                <p>Kindly arrange settlement of any outstanding amounts. If payment has already
+                   been made, please share the confirmation so we can update your account.</p>
+                <p>Thank you for your continued business.</p>
+                <p>Regards,<br/>
+                   <t t-out="user.company_id.name or ''">Company</t></p>
+            </div>
+        </field>
+    </record>
+</odoo>

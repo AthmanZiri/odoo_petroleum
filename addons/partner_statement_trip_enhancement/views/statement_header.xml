@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2024 Your Company
+     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <template id="statement_header_enhanced" inherit_id="partner_statement.activity_statement_document">
+        <!-- Style customer name to match Statement of Account heading -->
+        <xpath expr="//address[@t-out='get_inv_addr(o)']" position="after">
+            <style>
+                address {
+                    font-size: 24px !important;
+                    font-weight: bold !important;
+                    font-family: inherit !important;
+                    margin-bottom: 10px !important;
+                }
+            </style>
+        </xpath>
+    </template>
+</odoo>

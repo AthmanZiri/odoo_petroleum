@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_statement_send_form" model="ir.ui.view">
+        <field name="name">petroleum.statement.send.form</field>
+        <field name="model">petroleum.statement.send</field>
+        <field name="arch" type="xml">
+            <form string="Customer Statements">
+                <group invisible="state != 'draft'">
+                    <group string="Statement Period">
+                        <field name="company_id" groups="base.group_multi_company"/>
+                        <field name="date_start"/>
+                        <field name="date_end"/>
+                    </group>
+                    <group string="Filters">
+                        <field name="only_with_balance"/>
+                        <field name="only_with_email"/>
+                        <label for="ready_count" string="Ready to send"/>
+                        <div>
+                            <field name="ready_count" class="oe_inline"/> /
+                            <field name="recipient_count" class="oe_inline"/> selected
+                            <span invisible="skipped_no_email == 0"
+                                  class="text-muted ms-2">
+                                (<field name="skipped_no_email" class="oe_inline"/> without email)
+                            </span>
+                        </div>
+                    </group>
+                </group>
+                <group invisible="state != 'draft'">
+                    <field name="partner_ids" nolabel="1">
+                        <list>
+                            <field name="name" string="Customer"/>
+                            <field name="email"/>
+                            <field name="credit" string="Balance"/>
+                        </list>
+                    </field>
+                </group>
+                <field name="result_html" invisible="state == 'draft'"/>
+                <field name="state" invisible="1"/>
+                <footer invisible="state != 'draft'">
+                    <button name="action_send" type="object" string="Send Statements"
+                            class="btn-primary"
+                            confirm="Email the statement to the selected customers who have an email address?"/>
+                    <button name="action_download_pdf" type="object" string="Download PDF"
+                            class="btn-secondary"/>
+                    <button name="action_refresh_recipients" type="object"
+                            string="Refresh List" class="btn-secondary"/>
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+                <footer invisible="state != 'done'">
+                    <button string="Close" special="cancel" class="btn-primary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_statement_send_wizard" model="ir.actions.act_window">
+        <field name="name">Customer Statements</field>
+        <field name="res_model">petroleum.statement.send</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>
