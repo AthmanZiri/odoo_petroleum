@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extend Partner Form View -->
+    <record id="view_partner_form_inherit_trip" model="ir.ui.view">
+        <field name="name">res.partner.form.inherit.trip</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <notebook position="inside">
+
+                <page string="Truck History" invisible="not is_driver">
+                    <field name="truck_history_ids" readonly="1">
+                        <list>
+                            <field name="truck_id"/>
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                            <field name="active"/>
+                        </list>
+                    </field>
+                </page>
+                <page string="Trucks" invisible="not is_owner">
+                    <field name="truck_ids" readonly="1">
+                        <list>
+                            <field name="name"/>
+                            <field name="driver_id"/>
+                            <field name="capacity"/>
+                            <field name="is_assigned"/>
+                        </list>
+                    </field>
+                </page>
+            </notebook>
+            <field name="category_id" position="after">
+                <field name="is_driver"/>
+                <field name="is_owner"/>
+                <field name="id_no" invisible="not is_driver" required="is_driver"/>
+            </field>
+        </field>
+    </record>
+
+    <!-- Fields are defined in the partner.py model -->
+
+    <!-- Drivers Action -->
+    <record id="action_drivers_trip_management" model="ir.actions.act_window">
+        <field name="name">Drivers</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('is_driver', '=', True)]</field>
+        <field name="context">{'default_is_driver': True}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first driver!
+            </p>
+        </field>
+    </record>
+
+    <!-- Drivers Menu Item -->
+    <menuitem id="menu_trip_management_drivers"
+              name="Drivers"
+              parent="menu_trip_management_trucks"
+              action="action_drivers_trip_management"
+              sequence="10"/>
+</odoo>

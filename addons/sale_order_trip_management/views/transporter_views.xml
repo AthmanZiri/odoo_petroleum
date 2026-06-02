@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Transporters Action -->
+    <record id="action_transporters_trip_management" model="ir.actions.act_window">
+        <field name="name">Transporters</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('is_owner', '=', True)]</field>
+        <field name="context">{'default_is_owner': True, 'default_is_company': True}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first transporter!
+            </p>
+        </field>
+    </record>
+
+    <!-- Transporters Menu Item -->
+    <menuitem id="menu_trip_management_transporters"
+              name="Transporters"
+              parent="menu_trip_management_trucks"
+              action="action_transporters_trip_management"
+              sequence="5"/>
+</odoo>

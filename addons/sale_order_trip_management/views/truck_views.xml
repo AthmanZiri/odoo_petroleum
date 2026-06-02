@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Truck Form View -->
+    <record id="view_truck_management_form" model="ir.ui.view">
+        <field name="name">truck.management.form</field>
+        <field name="model">truck.management</field>
+        <field name="arch" type="xml">
+            <form string="Truck">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="toggle_active" type="object" class="oe_stat_button" icon="fa-archive">
+                            <field name="active" widget="boolean_button" options="{'terminology': 'archive'}"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="License Number"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="company_id"/>
+                            <field name="driver_id"/>
+                        </group>
+                        <group>
+                            <field name="capacity"/>
+                            <field name="loading_plan"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Trips">
+                            <field name="trip_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="date"/>
+                                    <field name="state"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Driver History">
+                            <field name="driver_history_ids" readonly="1">
+                                <list>
+                                    <field name="driver_id"/>
+                                    <field name="date_start"/>
+                                    <field name="date_end"/>
+                                    <field name="active"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Truck List View -->
+    <record id="view_truck_management_list" model="ir.ui.view">
+        <field name="name">truck.management.list</field>
+        <field name="model">truck.management</field>
+        <field name="arch" type="xml">
+            <list string="Trucks">
+                <field name="name"/>
+                <field name="company_id"/>
+                <field name="driver_id"/>
+                <field name="capacity"/>
+                <field name="is_assigned"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Truck Search View -->
+    <record id="view_truck_management_search" model="ir.ui.view">
+        <field name="name">truck.management.search</field>
+        <field name="model">truck.management</field>
+        <field name="arch" type="xml">
+            <search string="Search Trucks">
+                <field name="name"/>
+                <field name="company_id"/>
+                <field name="driver_id"/>
+                <filter string="Assigned" name="assigned" domain="[('is_assigned','=',True)]"/>
+                <filter string="Available" name="available" domain="[('is_assigned','=',False)]"/>
+                <filter string="Archived" name="inactive" domain="[('active','=',False)]"/>
+                <group>
+                    <filter string="Transporter Company" name="company" context="{'group_by':'company_id'}"/>
+                    <filter string="Driver" name="driver" context="{'group_by':'driver_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Truck Action -->
+    <record id="action_truck_management" model="ir.actions.act_window">
+        <field name="name">Trucks</field>
+        <field name="res_model">truck.management</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="search_view_id" ref="view_truck_management_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first truck!
+            </p>
+        </field>
+    </record>
+
+    <!-- Truck Menu Item -->
+    <menuitem id="menu_trip_management_truck_list"
+              name="Vehicles"
+              parent="menu_trip_management_trucks"
+              action="action_truck_management"
+              sequence="20"/>
+</odoo>

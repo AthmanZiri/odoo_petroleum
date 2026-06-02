@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extend Vendor Bill Form View -->
+    <record id="view_move_form_inherit_truck" model="ir.ui.view">
+        <field name="name">account.move.form.inherit.truck</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <field name="ref" position="after">
+                <field name="truck_id" invisible="move_type != 'in_invoice'" readonly="1"/>
+                <field name="driver_id" invisible="move_type != 'in_invoice'" readonly="1"/>
+                <field name="driver_name" invisible="move_type != 'in_invoice'" readonly="1"/>
+                <field name="driver_id_no" invisible="move_type != 'in_invoice'" readonly="1"/>
+                <field name="transporter_name" invisible="move_type != 'in_invoice'" readonly="1"/>
+            </field>
+        </field>
+    </record>
+
+    <!-- Extend Vendor Bill List View -->
+    <record id="view_move_list_inherit_truck" model="ir.ui.view">
+        <field name="name">account.move.list.inherit.truck</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_tree"/>
+        <field name="arch" type="xml">
+            <field name="ref" position="after">
+                <field name="truck_id" optional="hide"/>
+                <field name="driver_name" optional="hide"/>
+                <field name="transporter_name" optional="hide"/>
+            </field>
+        </field>
+    </record>
+</odoo>

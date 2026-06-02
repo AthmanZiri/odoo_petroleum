@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_order_form_inherit" model="ir.ui.view">
+        <field name="name">sale.order.form.inherit</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <field name="allow_backdate" groups="sale_order_back_date.group_sale_order_back_date" readonly="state == 'sale'"/>
+                <field name="date_order" groups="sale_order_back_date.group_sale_order_back_date" readonly="state == 'sale'" invisible="not allow_backdate"/>
+            </xpath>
+        </field>
+    </record>
+    
+    <record id="view_quotation_tree_inherit" model="ir.ui.view">
+        <field name="name">sale.order.tree.inherit</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_quotation_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="date_order" groups="sale_order_back_date.group_sale_order_back_date"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

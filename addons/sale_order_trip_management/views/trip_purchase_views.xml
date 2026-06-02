@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Trip Purchase Form View -->
+    <record id="view_trip_purchase_form" model="ir.ui.view">
+        <field name="name">trip.purchase.form</field>
+        <field name="model">trip.purchase</field>
+        <field name="arch" type="xml">
+            <form string="Trip Purchase">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="trip_id"/>
+                            <field name="purchase_id"/>
+                        </group>
+                        <group>
+                            <field name="supplier_id"/>
+                            <field name="notes"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Purchase Lines">
+                            <field name="purchase_line_ids" readonly="1">
+                                <list>
+                                    <field name="product_id"/>
+                                    <field name="product_qty"/>
+                                    <field name="price_unit"/>
+                                    <field name="price_subtotal" sum="Total"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Trip Purchase Tree View -->
+    <record id="view_trip_purchase_tree" model="ir.ui.view">
+        <field name="name">trip.purchase.tree</field>
+        <field name="model">trip.purchase</field>
+        <field name="arch" type="xml">
+            <list string="Trip Purchases">
+                <field name="trip_id"/>
+                <field name="purchase_id"/>
+                <field name="supplier_id"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Trip Purchase Search View -->
+    <record id="view_trip_purchase_search" model="ir.ui.view">
+        <field name="name">trip.purchase.search</field>
+        <field name="model">trip.purchase</field>
+        <field name="arch" type="xml">
+            <search string="Search Trip Purchases">
+                <field name="trip_id"/>
+                <field name="purchase_id"/>
+                <field name="supplier_id"/>
+                <group>
+                    <filter string="Trip" name="group_by_trip" domain="[]" context="{'group_by':'trip_id'}"/>
+                    <filter string="Supplier" name="group_by_supplier" domain="[]" context="{'group_by':'supplier_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Sequence for Trip Management -->
+        <record id="seq_trip_management" model="ir.sequence">
+            <field name="name">Trip Management Sequence</field>
+            <field name="code">trip.management</field>
+            <field name="prefix">TRIP/</field>
+            <field name="padding">5</field>
+            <field name="number_increment">1</field>
+            <field name="number_next">1</field>
+            <field name="implementation">standard</field>
+        </record>
+    </data>
+</odoo>

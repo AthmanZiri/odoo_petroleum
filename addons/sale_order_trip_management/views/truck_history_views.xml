@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Truck History Form View -->
+    <record id="view_truck_history_form" model="ir.ui.view">
+        <field name="name">truck.history.form</field>
+        <field name="model">truck.history</field>
+        <field name="arch" type="xml">
+            <form string="Truck History">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="truck_id"/>
+                            <field name="driver_id"/>
+                        </group>
+                        <group>
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Truck History List View -->
+    <record id="view_truck_history_list" model="ir.ui.view">
+        <field name="name">truck.history.list</field>
+        <field name="model">truck.history</field>
+        <field name="arch" type="xml">
+            <list string="Truck History">
+                <field name="truck_id"/>
+                <field name="driver_id"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Truck History Action -->
+    <record id="action_truck_history" model="ir.actions.act_window">
+        <field name="name">Truck History</field>
+        <field name="res_model">truck.history</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No truck history records found
+            </p>
+        </field>
+    </record>
+</odoo>

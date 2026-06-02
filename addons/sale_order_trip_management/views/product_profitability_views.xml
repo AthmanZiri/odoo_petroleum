@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Product Profitability List View -->
+    <record id="view_product_profitability_list" model="ir.ui.view">
+        <field name="name">product.profitability.list</field>
+        <field name="model">product.profitability</field>
+        <field name="arch" type="xml">
+            <list string="Product Profitability" create="false" edit="false" delete="false" default_order="order_date desc">
+                <field name="order_date"/>
+                <field name="sale_order_id"/>
+                <field name="customer_name"/>
+                <field name="trip_name"/>
+                <field name="default_code"/>
+                <field name="truck_id"/>
+                <field name="sale_price"/>
+                <field name="purchase_price"/>
+                <field name="qty_sold" sum="Total Qty Sold"/>
+                <field name="qty_bought" sum="Total Qty Bought"/>
+                <field name="sale_amount" sum="Total Sale Amount"/>
+                <field name="purchase_amount" sum="Total Purchase Amount"/>
+                <field name="gross_profit" sum="Total Gross Profit"/>
+                <field name="expense_amount" sum="Total Expenses"/>
+                <field name="net_profit" sum="Total Net Profit"/>
+                <field name="currency_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Product Profitability Search View -->
+    <record id="view_product_profitability_search" model="ir.ui.view">
+        <field name="name">product.profitability.search</field>
+        <field name="model">product.profitability</field>
+        <field name="arch" type="xml">
+            <search string="Search Product Profitability">
+                <field name="order_date"/>
+                <field name="invoice_date"/>
+                <field name="sale_order_id"/>
+                <field name="customer_name"/>
+                <field name="trip_name"/>
+                <field name="default_code"/>
+                <field name="truck_id"/>
+                <filter string="Today" name="today" domain="[('order_date', '=', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter string="This Week" name="this_week" domain="[('order_date', '&gt;=', (context_today() - datetime.timedelta(days=context_today().weekday())).strftime('%Y-%m-%d'))]"/>
+                <filter string="This Month" name="this_month" domain="[('order_date', '&gt;=', context_today().strftime('%Y-%m-01'))]"/>
+                <separator/>
+                <filter string="Invoiced Today" name="invoiced_today" domain="[('invoice_date', '=', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter string="Invoiced This Week" name="invoiced_this_week" domain="[('invoice_date', '&gt;=', (context_today() - datetime.timedelta(days=context_today().weekday())).strftime('%Y-%m-%d'))]"/>
+                <filter string="Invoiced This Month" name="invoiced_this_month" domain="[('invoice_date', '&gt;=', context_today().strftime('%Y-%m-01'))]"/>
+                <separator/>
+                <group>
+                    <filter string="Product" name="product" context="{'group_by':'product_id'}"/>
+                    <filter string="Trip" name="trip" context="{'group_by':'trip_id'}"/>
+                    <filter string="Truck" name="truck" context="{'group_by':'truck_id'}"/>
+                    <filter string="Sale Order" name="sale_order" context="{'group_by':'sale_order_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Product Profitability Action -->
+    <record id="action_product_profitability" model="ir.actions.act_window">
+        <field name="name">Product Profitability</field>
+        <field name="res_model">product.profitability</field>
+        <field name="view_mode">list</field>
+        <field name="search_view_id" ref="view_product_profitability_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No product profitability data found
+            </p>
+        </field>
+    </record>
+
+    <!-- Product Profitability Menu Item -->
+    <menuitem id="menu_product_profitability"
+              name="Product Profitability"
+              parent="menu_trip_management_reporting"
+              action="action_product_profitability"
+              sequence="20"/>
+</odoo>

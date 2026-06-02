@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Trip Form View -->
+    <record id="view_trip_management_form" model="ir.ui.view">
+        <field name="name">trip.management.form</field>
+        <field name="model">trip.management</field>
+        <field name="arch" type="xml">
+            <form string="Trip">
+                <header>
+                    <button name="action_confirm" type="object" string="Confirm" class="oe_highlight" invisible="state != 'draft'"/>
+                    <button name="action_start" type="object" string="Start Trip" class="oe_highlight" invisible="state != 'confirmed'"/>
+                    <button name="action_done" type="object" string="Mark Done" class="oe_highlight" invisible="state != 'in_progress'"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state not in ('draft', 'confirmed', 'in_progress')"/>
+                    <button name="action_draft" type="object" string="Reset to Draft" invisible="state != 'cancelled'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="date"/>
+                            <field name="purchase_order_id"/>
+                            <field name="total_quantity"/>
+                        </group>
+                        <group>
+                            <label for="truck_id"/>
+                            <div>
+                                <field name="truck_id" options="{'no_create': True}"/>
+                                <button name="action_view_available_trucks" string="View Available Trucks" type="object" class="oe_link" invisible="state != 'draft'"/>
+                            </div>
+                            <field name="invoice_status" widget="badge" decoration-success="invoice_status == 'invoiced'" decoration-warning="invoice_status == 'to invoice'" decoration-muted="invoice_status == 'no'"/>
+                            <field name="payment_status" widget="badge" decoration-success="payment_status == 'paid'" decoration-warning="payment_status == 'in_payment'" decoration-danger="payment_status == 'not_paid'"/>
+                            <field name="driver_name"/>
+                            <field name="driver_id_no"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="loading_plan" colspan="2"/>
+                    </group>
+                    <notebook>
+                        <page string="Sale Orders">
+                            <field name="sale_order_ids">
+                                <list>
+                                    <field name="sale_order_id"/>
+                                    <field name="customer_name"/>
+                                    <field name="tag_ids" widget="many2many_tags"/>
+                                    <field name="total_qty"/>
+                                    <field name="amount_total"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                                <form>
+                                    <group>
+                                        <field name="sale_order_id" domain="[('id', 'not in', parent.assigned_sale_order_ids)]" context="{'show_partner': True}"/>
+                                        <field name="customer_name"/>
+                                        <field name="amount_total"/>
+                                        <field name="currency_id" column_invisible="1"/>
+                                    </group>
+                                    <notebook>
+                                        <page string="Order Lines">
+                                            <field name="order_line_ids">
+                                                <list>
+                                                    <field name="product_id"/>
+                                                    <field name="product_uom_qty"/>
+                                                    <field name="price_unit"/>
+                                                    <field name="price_subtotal"/>
+                                                </list>
+                                            </field>
+                                        </page>
+                                    </notebook>
+                                </form>
+                            </field>
+                        </page>
+                        <page string="Expenses">
+                            <field name="sale_order_expense_ids">
+                                <list>
+                                    <field name="sale_order_id"/>
+                                    <field name="expense_id"/>
+                                    <field name="description"/>
+                                    <field name="amount"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                                <form>
+                                    <group>
+                                        <field name="sale_order_id" domain="[('id', 'in', parent.trip_sale_order_ids)]"/>
+                                        <field name="expense_id" domain="[('trip_id', '=', parent.id)]"/>
+                                        <field name="amount"/>
+                                        <field name="currency_id"/>
+                                    </group>
+                                </form>
+                            </field>
+                        </page>
+                        <page string="Invoices">
+                            <field name="invoice_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="partner_id"/>
+                                    <field name="invoice_date"/>
+                                    <field name="amount_total"/>
+                                    <field name="payment_state" widget="badge"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Vendor Bills">
+                            <field name="bill_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="partner_id"/>
+                                    <field name="invoice_date"/>
+                                    <field name="amount_total"/>
+                                    <field name="payment_state" widget="badge"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Trip List View -->
+    <record id="view_trip_management_list" model="ir.ui.view">
+        <field name="name">trip.management.list</field>
+        <field name="model">trip.management</field>
+        <field name="arch" type="xml">
+            <list string="Trips" decoration-info="state == 'draft'" decoration-success="state == 'done'" decoration-warning="state == 'in_progress'" default_order="date desc">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="truck_id"/>
+                <field name="state"/>
+                <field name="invoice_status" widget="badge" decoration-success="invoice_status == 'invoiced'" decoration-warning="invoice_status == 'to invoice'" decoration-muted="invoice_status == 'no'"/>
+                <field name="payment_status" widget="badge" decoration-success="payment_status == 'paid'" decoration-warning="payment_status == 'in_payment'" decoration-danger="payment_status == 'not_paid'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Trip Search View -->
+    <record id="view_trip_management_search" model="ir.ui.view">
+        <field name="name">trip.management.search</field>
+        <field name="model">trip.management</field>
+        <field name="arch" type="xml">
+            <search string="Search Trips">
+                <field name="name"/>
+
+                <field name="truck_id"/>
+                <filter string="Draft" name="draft" domain="[('state','=','draft')]"/>
+                <filter string="Confirmed" name="confirmed" domain="[('state','=','confirmed')]"/>
+                <filter string="In Progress" name="in_progress" domain="[('state','=','in_progress')]"/>
+                <filter string="Done" name="done" domain="[('state','=','done')]"/>
+                <group>
+                    <filter string="Truck" name="truck" context="{'group_by':'truck_id'}"/>
+                    <filter string="Status" name="status" context="{'group_by':'state'}"/>
+                    <filter string="Date" name="date" context="{'group_by':'date'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Trip Action -->
+    <record id="action_trip_management" model="ir.actions.act_window">
+        <field name="name">Trips</field>
+        <field name="res_model">trip.management</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_trip_management_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first trip!
+            </p>
+        </field>
+    </record>
+
+    <!-- Trip Menu Item -->
+    <menuitem id="menu_trip_management_trip_list"
+              name="Trips"
+              parent="menu_trip_management_trips"
+              action="action_trip_management"
+              sequence="10"/>
+
+    <!-- Trip Sequence -->
+    <record id="seq_trip_management" model="ir.sequence">
+        <field name="name">Trip Sequence</field>
+        <field name="code">trip.management</field>
+        <field name="prefix">TRIP/</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>

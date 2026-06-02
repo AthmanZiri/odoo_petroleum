@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extend Purchase Order Form View -->
+    <record id="view_purchase_order_form_inherit_truck" model="ir.ui.view">
+        <field name="name">purchase.order.form.inherit.truck</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <div class="oe_button_box" name="button_box" position="inside">
+
+            </div>
+            <field name="partner_id" position="after">
+                <field name="available_truck_ids" invisible="1"/>
+                <field name="truck_id" domain="[('id', 'in', available_truck_ids)]" options="{'no_create': True}"/>
+                <field name="driver_id" options="{'no_create': True}"/>
+                <field name="driver_name"/>
+                <field name="driver_id_no"/>
+                <field name="transporter_name"/>
+                <field name="trip_id" readonly="1"/>
+            </field>
+            <div name="button_box" position="inside">
+                <button name="action_create_trip" type="object" class="oe_stat_button" icon="fa-truck" 
+                        invisible="state != 'purchase' or not truck_id or trip_id">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_text">Create</span>
+                        <span class="o_stat_text">Trip</span>
+                    </div>
+                </button>
+            </div>
+        </field>
+    </record>
+</odoo>

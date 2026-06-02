@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Trip Analysis Report -->
+    <record id="view_trip_report_pivot" model="ir.ui.view">
+        <field name="name">trip.management.pivot</field>
+        <field name="model">trip.management</field>
+        <field name="arch" type="xml">
+            <pivot string="Trip Analysis" display_quantity="true">
+                <field name="date" interval="month" type="row"/>
+                <field name="truck_id" type="col"/>
+                <field name="state" type="col"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_trip_report_graph" model="ir.ui.view">
+        <field name="name">trip.management.graph</field>
+        <field name="model">trip.management</field>
+        <field name="arch" type="xml">
+            <graph string="Trip Analysis">
+                <field name="date" interval="month"/>
+                <field name="truck_id"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- Trip Report Action -->
+    <record id="action_trip_report" model="ir.actions.act_window">
+        <field name="name">Trip Analysis</field>
+        <field name="res_model">trip.management</field>
+        <field name="view_mode">pivot,graph</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No data available for analysis
+            </p>
+        </field>
+    </record>
+
+
+
+    <!-- Report Menu Items -->
+    <menuitem id="menu_trip_management_trip_report"
+              name="Trip Analysis"
+              parent="menu_trip_management_reporting"
+              action="action_trip_report"
+              sequence="10"/>
+</odoo>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Add Trip button to Sale Order form -->
+    <record id="view_order_form_inherit_trip" model="ir.ui.view">
+        <field name="name">sale.order.form.inherit.trip</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button name="action_view_purchase" type="object" class="oe_stat_button" icon="fa-shopping-cart" invisible="purchase_count == 0">
+                    <field name="purchase_count" widget="statinfo" string="Purchases"/>
+                </button>
+            </div>
+            <field name="payment_term_id" position="after">
+                <field name="tag_ids" widget="many2many_tags" options="{'color_field': 'color'}"/>
+            </field>
+            <xpath expr="//page[@name='other_information']//field[@name='tag_ids']" position="replace"/>
+
+        </field>
+    </record>
+
+    <!-- Sale Order Action -->
+    <record id="action_orders_trip_management" model="ir.actions.act_window">
+        <field name="name">Sale Orders</field>
+        <field name="res_model">sale.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', 'not in', ['draft', 'sent', 'cancel'])]</field>
+        <field name="context">{'create': False}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No confirmed orders found
+            </p>
+        </field>
+    </record>
+
+    <!-- Sale Order Menu Item -->
+    <!-- <menuitem id="menu_trip_management_order_list"
+              name="Sale Orders"
+              parent="menu_trip_management_orders"
+              action="action_orders_trip_management"
+              sequence="10"/> -->
+</odoo>

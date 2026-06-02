@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Trip Profitability List View -->
+    <record id="view_trip_profitability_list" model="ir.ui.view">
+        <field name="name">trip.profitability.list</field>
+        <field name="model">trip.profitability</field>
+        <field name="arch" type="xml">
+            <list string="Trip Profitability" create="false" edit="false" delete="false">
+                <field name="trip_name"/>
+                <field name="sale_order_id"/>
+                <field name="customer_name"/>
+                <field name="default_code"/>
+                <field name="invoice_amount"/>
+                <field name="billed_amount"/>
+                <field name="expense_amount"/>
+                <field name="profit"/>
+                <field name="currency_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Trip Profitability Pivot View -->
+    <record id="view_trip_profitability_pivot" model="ir.ui.view">
+        <field name="name">trip.profitability.pivot</field>
+        <field name="model">trip.profitability</field>
+        <field name="arch" type="xml">
+            <pivot string="Trip Profitability Analysis">
+                <field name="trip_name" type="row"/>
+                <field name="default_code" type="row"/>
+                <field name="invoice_amount" type="measure"/>
+                <field name="billed_amount" type="measure"/>
+                <field name="expense_amount" type="measure"/>
+                <field name="profit" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Trip Profitability Graph View -->
+    <record id="view_trip_profitability_graph" model="ir.ui.view">
+        <field name="name">trip.profitability.graph</field>
+        <field name="model">trip.profitability</field>
+        <field name="arch" type="xml">
+            <graph string="Trip Profitability">
+                <field name="trip_name"/>
+                <field name="profit" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- Trip Profitability Action -->
+    <record id="action_trip_profitability" model="ir.actions.act_window">
+        <field name="name">Trip Profitability</field>
+        <field name="res_model">trip.profitability</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No profitability data available
+            </p>
+        </field>
+    </record>
+
+    <!-- Trip Profitability Menu Item -->
+    <menuitem id="menu_trip_profitability"
+              name="Trip Profitability"
+              parent="menu_trip_management_reporting"
+              action="action_trip_profitability"
+              sequence="20"/>
+</odoo>

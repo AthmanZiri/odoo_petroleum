@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Main Menu -->
+    <menuitem id="menu_trip_management_root"
+              name="Trip Management"
+              web_icon="sale_order_trip_management,static/description/icon.png"
+              sequence="10"/>
+    
+    <!-- Orders Menu -->
+    <menuitem id="menu_trip_management_orders"
+              name="Orders"
+              parent="menu_trip_management_root"
+              sequence="10"/>
+              
+    <!-- Sale Orders Menu -->
+    <menuitem id="menu_trip_management_sale_orders"
+              name="Sale Orders"
+              parent="menu_trip_management_orders"
+              action="sale.action_quotations"
+              sequence="10"/>
+    
+    <!-- Purchases Menu -->
+    <menuitem id="menu_trip_management_purchases"
+              name="Purchases"
+              parent="menu_trip_management_root"
+              sequence="20"
+              action="purchase.purchase_form_action"/>
+              
+    <!-- Trips Menu -->
+    <menuitem id="menu_trip_management_trips"
+              name="Trips"
+              parent="menu_trip_management_root"
+              sequence="30"/>
+    
+    <!-- Customers Menu -->
+    <menuitem id="menu_trip_management_customers"
+              name="Customers"
+              parent="menu_trip_management_root"
+              sequence="40"
+              action="base.action_partner_form"/>
+    
+    <!-- Trucks Menu -->
+    <menuitem id="menu_trip_management_trucks"
+              name="Trucks"
+              parent="menu_trip_management_root"
+              sequence="50"/>
+    
+    <!-- Reporting Menu -->
+    <menuitem id="menu_trip_management_reporting"
+              name="Reporting"
+              parent="menu_trip_management_root"
+              sequence="60"/>
+</odoo>

@@ -1,0 +1,16 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_trip_management_user,trip.management.user,model_trip_management,sales_team.group_sale_salesman,1,1,1,0
+access_trip_management_manager,trip.management.manager,model_trip_management,sales_team.group_sale_manager,1,1,1,1
+access_truck_management_user,truck.management.user,model_truck_management,sales_team.group_sale_salesman,1,1,1,0
+access_truck_management_manager,truck.management.manager,model_truck_management,sales_team.group_sale_manager,1,1,1,1
+
+access_truck_history_user,truck.history.user,model_truck_history,sales_team.group_sale_salesman,1,1,1,0
+access_truck_history_manager,truck.history.manager,model_truck_history,sales_team.group_sale_manager,1,1,1,1
+access_trip_sale_user,trip.sale.user,model_trip_sale,sales_team.group_sale_salesman,1,1,1,0
+access_trip_sale_manager,trip.sale.manager,model_trip_sale,sales_team.group_sale_manager,1,1,1,1
+
+access_trip_sale_expense_user,trip.sale.expense.user,model_trip_sale_expense,sales_team.group_sale_salesman,1,1,1,1
+access_trip_sale_expense_manager,trip.sale.expense.manager,model_trip_sale_expense,sales_team.group_sale_manager,1,1,1,1
+access_product_profitability_user,product.profitability.user,model_product_profitability,sales_team.group_sale_salesman,1,0,0,0
+access_product_profitability_manager,product.profitability.manager,model_product_profitability,sales_team.group_sale_manager,1,0,0,0
+
