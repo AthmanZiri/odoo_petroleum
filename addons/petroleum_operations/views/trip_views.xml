@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_trip_management_form_petroleum" model="ir.ui.view">
+        <field name="name">trip.management.form.petroleum</field>
+        <field name="model">trip.management</field>
+        <field name="inherit_id" ref="sale_order_trip_management.view_trip_management_form"/>
+        <field name="arch" type="xml">
+            <field name="driver_id_no" position="after">
+                <field name="depot_id"/>
+                <field name="epra_no"/>
+                <field name="compartment_plan" placeholder="e.g. 2:3:2:3"/>
+            </field>
+        </field>
+    </record>
+</odoo>

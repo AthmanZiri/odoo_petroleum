@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_order_form_petroleum" model="ir.ui.view">
+        <field name="name">sale.order.form.petroleum</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <field name="partner_id" position="after">
+                <field name="depot_id"/>
+            </field>
+
+            <xpath expr="//field[@name='order_line']//field[@name='product_uom_qty']"
+                   position="after">
+                <field name="petro_supplier_id" optional="show"
+                       domain="[('supplier_rank','>',0)]"/>
+                <field name="petro_buy_price" optional="show"/>
+            </xpath>
+
+            <xpath expr="//field[@name='order_line']//field[@name='price_subtotal']"
+                   position="before">
+                <field name="petro_margin" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_order_form_petroleum_margin" model="ir.ui.view">
+        <field name="name">sale.order.form.petroleum.margin</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='tax_totals']" position="before">
+                <field name="petro_margin_total"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
