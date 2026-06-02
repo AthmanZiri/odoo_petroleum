@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_petroleum_data_import_wizard,petroleum.data.import.wizard,model_petroleum_data_import,account.group_account_manager,1,1,1,1
+access_data_import_job,petroleum.data.import.job,model_petroleum_data_import_job,account.group_account_manager,1,1,1,1
+access_ledger_reconcile_user,ledger.reconcile.user,model_petroleum_ledger_reconcile,account.group_account_invoice,1,1,1,1
+access_ledger_reconcile_manager,ledger.reconcile.manager,model_petroleum_ledger_reconcile,account.group_account_manager,1,1,1,1
