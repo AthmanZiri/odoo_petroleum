@@ -9,10 +9,9 @@
                     <div class="oe_title" invisible="state != 'draft'">
                         <h1>Link Deals to Imported Ledger</h1>
                         <p class="text-muted">
-                            Matches posted customer invoices and vendor bills from the
-                            Petroleum Data Import (by date, partner, truck plate in
-                            reference/narration, and amount) to Trading Desk deals —
-                            without creating duplicate accounting entries.
+                            Use automatic matching (filters below) or pick invoices and
+                            bills per deal on the <b>Manual linking</b> tab. Empty rows
+                            still use automatic rules when you click Link.
                         </p>
                     </div>
                     <group invisible="state != 'draft'">
@@ -23,13 +22,43 @@
                             <field name="deal_ids" widget="many2many_tags"
                                    domain="[('company_id', '=', company_id), ('state', '!=', 'cancel')]"/>
                         </group>
-                        <group string="Matching">
+                        <group string="Automatic matching">
                             <field name="only_imported"/>
                             <field name="require_truck"/>
+                            <field name="use_partner_aliases"/>
                             <field name="mark_as_loaded"/>
                             <field name="dry_run"/>
                         </group>
                     </group>
+                    <div invisible="state != 'draft'" class="mb-2">
+                        <button name="action_sync_lines" type="object"
+                                string="Refresh deal list" class="btn-secondary me-1"/>
+                        <button name="action_suggest_matches" type="object"
+                                string="Suggest automatic matches" class="btn-secondary"/>
+                    </div>
+                    <notebook invisible="state != 'draft'">
+                        <page string="Manual linking" name="manual_lines">
+                            <field name="line_ids" nolabel="1">
+                                <list editable="bottom" create="1" delete="1">
+                                    <field name="company_id" column_invisible="True"/>
+                                    <field name="use_manual" column_invisible="True"/>
+                                    <field name="deal_id"
+                                           domain="[('company_id', '=', company_id), ('state', '!=', 'cancel')]"/>
+                                    <field name="deal_date" readonly="1" optional="show"/>
+                                    <field name="partner_name" readonly="1"/>
+                                    <field name="truck_name" readonly="1" optional="show"/>
+                                    <field name="amount_sell" readonly="1" optional="hide"/>
+                                    <field name="amount_buy" readonly="1" optional="hide"/>
+                                    <field name="currency_id" column_invisible="True"/>
+                                    <field name="customer_invoice_id"
+                                           options="{'no_create': True}"
+                                           context="{'default_move_type': 'out_invoice'}"/>
+                                    <field name="vendor_bill_ids" widget="many2many_tags"
+                                           options="{'no_create': True}"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
                     <field name="state" invisible="1"/>
                     <field name="result_html" invisible="state == 'draft'"
                            readonly="1" nolabel="1"/>
@@ -40,6 +69,8 @@
                     <button string="Cancel" class="btn-secondary" special="cancel"/>
                 </footer>
                 <footer invisible="state != 'done'">
+                    <button name="action_back_to_draft" type="object"
+                            string="Edit selections" class="btn-secondary me-1"/>
                     <button string="Close" class="btn-secondary" special="cancel"/>
                 </footer>
             </form>
