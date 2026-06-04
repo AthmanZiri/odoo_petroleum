@@ -23,7 +23,7 @@ Send customer statements on demand via a wizard.
         'data/mail_template.xml',
         'wizards/statement_send_views.xml',
     ],
-    'post_init_hook': 'hooks.post_init_hook',
+    'post_init_hook': 'post_init_hook',
     'installable': True,
     'application': False,
 }
