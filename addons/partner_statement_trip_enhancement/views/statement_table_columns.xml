@@ -4,7 +4,6 @@
         <tr>
             <th>Date</th>
             <th>Description</th>
-            <th>Loading Point</th>
             <th>Trucks</th>
             <th class="amount">PMS</th>
             <th class="amount">Price</th>
@@ -77,7 +76,6 @@
                     <span t-out="line['ref']"/>
                 </t>
             </td>
-            <td><span t-out="line.get('loading_point', '')"/></td>
             <td><span t-out="line.get('truck_number', '')"/></td>
             <t t-call="partner_statement_trip_enhancement.statement_fuel_grade_cells"/>
             <t t-call="partner_statement_trip_enhancement.statement_fuel_amount_cells"/>

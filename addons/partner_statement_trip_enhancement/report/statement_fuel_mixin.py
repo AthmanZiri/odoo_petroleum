@@ -354,13 +354,11 @@ class StatementFuelMixin(models.AbstractModel):
         line['ref'] = _('Payment - %s', bank) if bank else _('Payment')
         line['name'] = '/'
         line['truck_number'] = ''
-        line['loading_point'] = 'PAYMENT'
         line.update(self._empty_grade_columns())
         return line
 
     def _enrich_statement_line(self, line, move_cache):
         line.update(self._empty_grade_columns())
-        line['loading_point'] = ''
 
         if self._is_payment_line(line, move_cache):
             return self._enrich_payment_line(line, move_cache)
