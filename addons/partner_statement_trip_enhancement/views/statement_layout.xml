@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Reserve space for repeated company header on page 2+ (wkhtmltopdf). -->
+    <template id="activity_statement_pdf_margins"
+              inherit_id="partner_statement.activity_statement_document">
+        <xpath expr="//t[@t-call='web.external_layout']" position="before">
+            <t t-set="data_report_margin_top" t-value="42"/>
+            <t t-set="data_report_header_spacing" t-value="34"/>
+        </xpath>
+        <xpath expr="//t[@t-call='partner_statement.aging_buckets']" position="replace">
+            <div class="statement-aging-section">
+                <t
+                    t-call="partner_statement.aging_buckets"
+                    t-if="currency['buckets']"
+                />
+            </div>
+        </xpath>
+    </template>
+
+    <template id="outstanding_statement_pdf_margins"
+              inherit_id="partner_statement.outstanding_statement_document">
+        <xpath expr="//t[@t-call='web.external_layout']" position="before">
+            <t t-set="data_report_margin_top" t-value="42"/>
+            <t t-set="data_report_header_spacing" t-value="34"/>
+        </xpath>
+    </template>
+
+    <template id="detailed_activity_statement_pdf_margins"
+              inherit_id="partner_statement.detailed_activity_statement_document">
+        <xpath expr="//t[@t-call='web.external_layout']" position="before">
+            <t t-set="data_report_margin_top" t-value="42"/>
+            <t t-set="data_report_header_spacing" t-value="34"/>
+        </xpath>
+        <xpath expr="//t[@t-call='partner_statement.aging_buckets']" position="replace">
+            <div class="statement-aging-section">
+                <t
+                    t-call="partner_statement.aging_buckets"
+                    t-if="currency['buckets']"
+                />
+            </div>
+        </xpath>
+    </template>
+</odoo>

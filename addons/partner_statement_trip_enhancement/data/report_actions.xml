@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="partner_statement.action_print_activity_statement" model="ir.actions.report">
+        <field name="paperformat_id" ref="paperformat_partner_statement_landscape"/>
+    </record>
+    <record id="partner_statement.action_print_activity_statement_html" model="ir.actions.report">
+        <field name="paperformat_id" ref="paperformat_partner_statement_landscape"/>
+    </record>
+    <record id="partner_statement.action_print_detailed_activity_statement" model="ir.actions.report">
+        <field name="paperformat_id" ref="paperformat_partner_statement_landscape"/>
+    </record>
+    <record id="partner_statement.action_print_detailed_activity_statement_html" model="ir.actions.report">
+        <field name="paperformat_id" ref="paperformat_partner_statement_landscape"/>
+    </record>
+    <record id="partner_statement.action_print_outstanding_statement" model="ir.actions.report">
+        <field name="paperformat_id" ref="paperformat_partner_statement_landscape"/>
+    </record>
+    <record id="partner_statement.action_print_outstanding_statement_html" model="ir.actions.report">
+        <field name="paperformat_id" ref="paperformat_partner_statement_landscape"/>
+    </record>
+</odoo>

@@ -7,7 +7,7 @@ from odoo import _, models
 class ActivityStatement(models.AbstractModel):
     """Enhanced Activity Statement with Trip Information"""
 
-    _inherit = "report.partner_statement.activity_statement"
+    _inherit = 'report.partner_statement.activity_statement'
 
     def _initial_balance_sql_q1(self, partners, date_start, account_type):
         return str(
@@ -63,11 +63,15 @@ class ActivityStatement(models.AbstractModel):
         self, partners, date_start, date_end, account_type
     ):
         payment_ref = _("Payment")
+        truck_sql = self._fuel_truck_sql()
+        trip_sql = self._fuel_trip_reference_sql()
+        debit_sql = self._statement_move_debit_sql()
+        credit_sql = self._statement_move_credit_sql()
         return str(
             self.env.cr.mogrify(
-                """
+                f"""
             SELECT m.name AS move_id, l.partner_id, l.date,
-                array_agg(l.id ORDER BY l.id) as ids,
+                array_agg(DISTINCT l.id ORDER BY l.id) as ids,
                 CASE WHEN (aj.type IN ('sale', 'purchase'))
                     THEN l.name
                     ELSE '/'
@@ -80,64 +84,54 @@ class ActivityStatement(models.AbstractModel):
                     ELSE m.ref
                 END as case_ref,
                 l.currency_id, l.company_id,
-                sum(CASE WHEN (l.currency_id is not null AND l.amount_currency > 0.0)
-                    THEN l.amount_currency
-                    ELSE l.debit
-                END) as debit,
-                sum(CASE WHEN (l.currency_id is not null AND l.amount_currency < 0.0)
-                    THEN l.amount_currency * (-1)
-                    ELSE l.credit
-                END) as credit,
+                {debit_sql} as debit,
+                {credit_sql} as credit,
                 CASE WHEN l.date_maturity is null
                     THEN l.date
                     ELSE l.date_maturity
                 END as date_maturity,
-                COALESCE(tm.name, '') as trip_reference,
-                COALESCE(truck.name, '') as truck_number,
-                CASE WHEN %(account_type)s = 'asset_receivable'
-                    THEN COALESCE(string_agg(DISTINCT COALESCE(pt_sale.default_code, ''), ', '), '')
-                    ELSE COALESCE(string_agg(DISTINCT COALESCE(pt_purchase.default_code, ''), ', '), '')
-                END as product_names,
-                CASE WHEN %(account_type)s = 'asset_receivable'
-                    THEN COALESCE(string_agg(DISTINCT sol.product_uom_qty::text, ', '), '')
-                    ELSE COALESCE(string_agg(DISTINCT pol.product_qty::text, ', '), '')
-                END as quantity,
-                CASE WHEN %(account_type)s = 'asset_receivable'
-                    THEN COALESCE(string_agg(DISTINCT sol.price_unit::text, ', '), '')
-                    ELSE COALESCE(string_agg(DISTINCT pol.price_unit::text, ', '), '')
-                END as sale_price
+                MAX({trip_sql}) as trip_reference,
+                MAX({truck_sql}) as truck_number,
+                '' as product_names,
+                '' as quantity,
+                '' as sale_price
             FROM account_move_line l
             JOIN account_account aa ON (aa.id = l.account_id)
             JOIN account_move m ON (l.move_id = m.id)
             JOIN account_journal aj ON (l.journal_id = aj.id)
-            -- Receivables (Customer) joins
-            LEFT JOIN sale_order so ON (%(account_type)s = 'asset_receivable' AND m.invoice_origin = so.name)
-            LEFT JOIN trip_sale ts ON (%(account_type)s = 'asset_receivable' AND ts.sale_order_id = so.id)
-            LEFT JOIN sale_order_line sol ON (%(account_type)s = 'asset_receivable' AND sol.order_id = so.id)
-            LEFT JOIN product_product pp_sale ON (%(account_type)s = 'asset_receivable' AND pp_sale.id = sol.product_id)
-            LEFT JOIN product_template pt_sale ON (%(account_type)s = 'asset_receivable' AND pt_sale.id = pp_sale.product_tmpl_id)
-            -- Payables (Vendor) joins
-            LEFT JOIN purchase_order po ON (%(account_type)s = 'liability_payable' AND m.invoice_origin = po.name)
-            LEFT JOIN purchase_order_line pol ON (%(account_type)s = 'liability_payable' AND pol.order_id = po.id)
-            LEFT JOIN product_product pp_purchase ON (%(account_type)s = 'liability_payable' AND pp_purchase.id = pol.product_id)
-            LEFT JOIN product_template pt_purchase ON (%(account_type)s = 'liability_payable' AND pt_purchase.id = pp_purchase.product_tmpl_id)
-            -- Common trip joins (works for both receivables and payables)
+            LEFT JOIN sale_order so ON (
+                %(account_type)s = 'asset_receivable' AND m.invoice_origin = so.name)
+            LEFT JOIN trip_sale ts ON (
+                %(account_type)s = 'asset_receivable' AND ts.sale_order_id = so.id)
+            LEFT JOIN sale_order_line sol ON (
+                %(account_type)s = 'asset_receivable' AND sol.order_id = so.id)
+            LEFT JOIN product_product pp_sale ON (
+                %(account_type)s = 'asset_receivable' AND pp_sale.id = sol.product_id)
+            LEFT JOIN product_template pt_sale ON (
+                %(account_type)s = 'asset_receivable' AND pt_sale.id = pp_sale.product_tmpl_id)
+            LEFT JOIN purchase_order po ON (
+                %(account_type)s = 'liability_payable' AND m.invoice_origin = po.name)
+            LEFT JOIN purchase_order_line pol ON (
+                %(account_type)s = 'liability_payable' AND pol.order_id = po.id)
+            LEFT JOIN product_product pp_purchase ON (
+                %(account_type)s = 'liability_payable' AND pp_purchase.id = pol.product_id)
+            LEFT JOIN product_template pt_purchase ON (
+                %(account_type)s = 'liability_payable'
+                AND pt_purchase.id = pp_purchase.product_tmpl_id)
             LEFT JOIN trip_management tm ON (
                 (%(account_type)s = 'asset_receivable' AND tm.id = ts.trip_id) OR
-                (%(account_type)s = 'liability_payable' AND tm.purchase_order_id = po.id)
-            )
+                (%(account_type)s = 'liability_payable' AND tm.purchase_order_id = po.id))
             LEFT JOIN truck_management truck ON (truck.id = tm.truck_id)
             WHERE l.partner_id IN %(partners)s
                 AND %(date_start)s <= l.date
                 AND l.date <= %(date_end)s
                 AND m.state IN ('posted')
                 AND aa.account_type = %(account_type)s
-            GROUP BY l.partner_id, m.name, l.date, l.date_maturity,
+            GROUP BY l.partner_id, m.id, m.name, l.date, l.date_maturity,
                 CASE WHEN (aj.type IN ('sale', 'purchase'))
                     THEN l.name
                     ELSE '/'
-                END, case_ref, l.currency_id, l.company_id,
-                tm.name, truck.name
+                END, case_ref, l.currency_id, l.company_id, aj.type
         """,
                 locals(),
             ),
@@ -187,7 +181,7 @@ class ActivityStatement(models.AbstractModel):
         )
         for row in self.env.cr.dictfetchall():
             res[row.pop("partner_id")].append(row)
-        return res
+        return self._enrich_partner_display_lines(res)
 
     def _display_activity_reconciled_lines_sql_q2(self, sub, date_end):
         return str(

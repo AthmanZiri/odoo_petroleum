@@ -1,13 +1,37 @@
 # Copyright 2024 Your Company
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl.html).
 
-from odoo import models
+from odoo import api, models
 
 
 class ReportStatementCommon(models.AbstractModel):
     """Enhanced Report Statement Common for Odoo 18 compatibility"""
 
     _inherit = "statement.common"
+
+    def _apply_customer_ledger_display(self, partner_data, is_activity):
+        """Match Excel ledger: positive balance, loadings add, payments subtract."""
+        for currency_data in partner_data.get("currencies", {}).values():
+            bf = currency_data.get("balance_forward") or 0.0
+            running = abs(bf)
+            currency_data["balance_forward"] = running
+            for line in currency_data.get("lines", []):
+                if line.get("reconciled_line"):
+                    continue
+                running += (line.get("debit") or 0.0) - (line.get("credit") or 0.0)
+                line["open_amount"] = running
+            if is_activity:
+                currency_data["amount_due"] = running
+            else:
+                currency_data["amount_due"] = running
+
+    @api.model
+    def _get_report_values(self, docids, data=None):
+        result = super()._get_report_values(docids, data=data)
+        is_activity = (data or {}).get("is_activity")
+        for partner_data in result.get("data", {}).values():
+            self._apply_customer_ledger_display(partner_data, is_activity)
+        return result
 
     def _show_buckets_sql_q1(self, partners, date_end, account_type):
         return str(

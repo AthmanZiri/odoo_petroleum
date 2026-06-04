@@ -1,0 +1,30 @@
+.table-statement {
+    font-size: 9px;
+
+    .amount {
+        width: 6% !important;
+    }
+
+    thead {
+        display: table-header-group;
+    }
+
+    thead tr th {
+        white-space: nowrap;
+        font-size: 8px;
+        padding: 2px 3px !important;
+    }
+
+    tbody td {
+        padding: 2px 3px !important;
+    }
+
+    tbody tr {
+        page-break-inside: avoid;
+    }
+}
+
+.statement-aging-section {
+    page-break-before: always;
+    margin-top: 8mm;
+}

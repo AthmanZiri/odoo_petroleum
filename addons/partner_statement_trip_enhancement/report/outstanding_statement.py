@@ -7,13 +7,15 @@ from odoo import models
 class OutstandingStatement(models.AbstractModel):
     """Enhanced Outstanding Statement for Odoo 18 compatibility"""
 
-    _inherit = "report.partner_statement.outstanding_statement"
+    _inherit = 'report.partner_statement.outstanding_statement'
 
     def _display_outstanding_lines_sql_q1(self, partners, date_end, account_type):
         partners = tuple(partners)
+        truck_sql = self._fuel_truck_sql()
+        trip_sql = self._fuel_trip_reference_sql()
         return str(
             self.env.cr.mogrify(
-                """
+                f"""
             SELECT l.id, m.name AS move_id, l.partner_id, l.date, l.name,
                 l.currency_id, l.company_id,
             CASE WHEN l.ref IS NOT NULL
@@ -40,39 +42,36 @@ class OutstandingStatement(models.AbstractModel):
                 THEN l.date
                 ELSE l.date_maturity
             END as date_maturity,
-            COALESCE(tm.name, '') as trip_reference,
-            COALESCE(truck.name, '') as truck_number,
-            CASE WHEN %(account_type)s = 'asset_receivable'
-                THEN COALESCE(string_agg(DISTINCT COALESCE(pt_sale.default_code, ''), ', '), '')
-                ELSE COALESCE(string_agg(DISTINCT COALESCE(pt_purchase.default_code, ''), ', '), '')
-            END as product_references,
-            CASE WHEN %(account_type)s = 'asset_receivable'
-                THEN COALESCE(string_agg(DISTINCT sol.product_uom_qty::text, ', '), '')
-                ELSE COALESCE(string_agg(DISTINCT pol.product_qty::text, ', '), '')
-            END as quantity,
-            CASE WHEN %(account_type)s = 'asset_receivable'
-                THEN COALESCE(string_agg(DISTINCT sol.price_unit::text, ', '), '')
-                ELSE COALESCE(string_agg(DISTINCT pol.price_unit::text, ', '), '')
-            END as sale_price
+            MAX({trip_sql}) as trip_reference,
+            MAX({truck_sql}) as truck_number,
+            '' as product_references,
+            '' as quantity,
+            '' as sale_price
             FROM account_move_line l
             JOIN account_account aa ON (aa.id = l.account_id)
             JOIN account_move m ON (l.move_id = m.id)
-            -- Receivables (Customer) joins
-            LEFT JOIN sale_order so ON (%(account_type)s = 'asset_receivable' AND m.invoice_origin = so.name)
-            LEFT JOIN trip_sale ts ON (%(account_type)s = 'asset_receivable' AND ts.sale_order_id = so.id)
-            LEFT JOIN sale_order_line sol ON (%(account_type)s = 'asset_receivable' AND sol.order_id = so.id)
-            LEFT JOIN product_product pp_sale ON (%(account_type)s = 'asset_receivable' AND pp_sale.id = sol.product_id)
-            LEFT JOIN product_template pt_sale ON (%(account_type)s = 'asset_receivable' AND pt_sale.id = pp_sale.product_tmpl_id)
-            -- Payables (Vendor) joins
-            LEFT JOIN purchase_order po ON (%(account_type)s = 'liability_payable' AND m.invoice_origin = po.name)
-            LEFT JOIN purchase_order_line pol ON (%(account_type)s = 'liability_payable' AND pol.order_id = po.id)
-            LEFT JOIN product_product pp_purchase ON (%(account_type)s = 'liability_payable' AND pp_purchase.id = pol.product_id)
-            LEFT JOIN product_template pt_purchase ON (%(account_type)s = 'liability_payable' AND pt_purchase.id = pp_purchase.product_tmpl_id)
-            -- Common trip joins (works for both receivables and payables)
+            LEFT JOIN sale_order so ON (
+                %(account_type)s = 'asset_receivable' AND m.invoice_origin = so.name)
+            LEFT JOIN trip_sale ts ON (
+                %(account_type)s = 'asset_receivable' AND ts.sale_order_id = so.id)
+            LEFT JOIN sale_order_line sol ON (
+                %(account_type)s = 'asset_receivable' AND sol.order_id = so.id)
+            LEFT JOIN product_product pp_sale ON (
+                %(account_type)s = 'asset_receivable' AND pp_sale.id = sol.product_id)
+            LEFT JOIN product_template pt_sale ON (
+                %(account_type)s = 'asset_receivable' AND pt_sale.id = pp_sale.product_tmpl_id)
+            LEFT JOIN purchase_order po ON (
+                %(account_type)s = 'liability_payable' AND m.invoice_origin = po.name)
+            LEFT JOIN purchase_order_line pol ON (
+                %(account_type)s = 'liability_payable' AND pol.order_id = po.id)
+            LEFT JOIN product_product pp_purchase ON (
+                %(account_type)s = 'liability_payable' AND pp_purchase.id = pol.product_id)
+            LEFT JOIN product_template pt_purchase ON (
+                %(account_type)s = 'liability_payable'
+                AND pt_purchase.id = pp_purchase.product_tmpl_id)
             LEFT JOIN trip_management tm ON (
                 (%(account_type)s = 'asset_receivable' AND tm.id = ts.trip_id) OR
-                (%(account_type)s = 'liability_payable' AND tm.purchase_order_id = po.id)
-            )
+                (%(account_type)s = 'liability_payable' AND tm.purchase_order_id = po.id))
             LEFT JOIN truck_management truck ON (truck.id = tm.truck_id)
             LEFT JOIN (SELECT pr.*
                 FROM account_partial_reconcile pr
@@ -95,13 +94,12 @@ class OutstandingStatement(models.AbstractModel):
                     (pd.id IS NULL AND pc.id IS NULL)
                 ) AND l.date <= %(date_end)s AND m.state IN ('posted')
                 AND aa.account_type = %(account_type)s
-            GROUP BY l.id, l.partner_id, m.name, l.date, l.date_maturity, l.name,
+            GROUP BY l.id, l.partner_id, m.id, m.name, l.date, l.date_maturity, l.name,
                 CASE WHEN l.ref IS NOT NULL
                     THEN l.ref
                     ELSE m.ref
                 END,
-                l.currency_id, l.balance, l.amount_currency, l.company_id,
-                tm.name, truck.name
+                l.currency_id, l.balance, l.amount_currency, l.company_id
             """,
                 locals(),
             ),
@@ -172,4 +170,4 @@ class OutstandingStatement(models.AbstractModel):
         )
         for row in self.env.cr.dictfetchall():
             res[row.pop("partner_id")].append(row)
-        return res
+        return self._enrich_partner_display_lines(res)

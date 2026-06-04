@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="statement_fuel_table_header">
+        <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Loading Point</th>
+            <th>Trucks</th>
+            <th class="amount">PMS</th>
+            <th class="amount">Price</th>
+            <th class="amount">AGO</th>
+            <th class="amount">Price</th>
+            <th class="amount">IK</th>
+            <th class="amount">Price</th>
+            <th class="amount">Debit</th>
+            <th class="amount">Credit</th>
+            <th class="amount">Open Amount</th>
+        </tr>
+    </template>
+
+    <template id="statement_fuel_grade_cells">
+        <td class="amount"><span t-out="line.get('pms_qty', '')"/></td>
+        <td class="amount"><span t-out="line.get('pms_price', '')"/></td>
+        <td class="amount"><span t-out="line.get('ago_qty', '')"/></td>
+        <td class="amount"><span t-out="line.get('ago_price', '')"/></td>
+        <td class="amount"><span t-out="line.get('ik_qty', '')"/></td>
+        <td class="amount"><span t-out="line.get('ik_price', '')"/></td>
+    </template>
+
+    <template id="statement_fuel_amount_cells">
+        <td class="amount">
+            <span
+                t-out="line.get('debit', 0.0)"
+                t-options="{'widget': 'monetary', 'display_currency': display_currency}"
+                t-if="not line.get('reconciled_line') and (line.get('debit') or 0) > 0"
+            />
+        </td>
+        <td class="amount">
+            <span
+                t-out="line.get('credit', 0.0)"
+                t-options="{'widget': 'monetary', 'display_currency': display_currency}"
+                t-if="not line.get('reconciled_line') and (line.get('credit') or 0) > 0"
+            />
+        </td>
+        <td class="amount">
+            <span
+                t-out="line.get('open_amount', 0.0)"
+                t-options="{'widget': 'monetary', 'display_currency': display_currency}"
+                t-if="not line.get('reconciled_line')"
+            />
+        </td>
+    </template>
+
+    <template id="statement_activity_line_row">
+        <tr
+            t-att-class="('statement-blocked ' if line.get('blocked', False) else '') + ('statement-reconciled ' if line.get('reconciled_line') else '') + ('statement-outside-date-rank' if line.get('outside-date-rank') else '')"
+        >
+            <td><span t-out="line['date']"/></td>
+            <td>
+                <t t-if="line['name'] != '/'">
+                    <t t-if="not line['ref'] and line['name']">
+                        <span t-out="line['name']"/>
+                    </t>
+                    <t t-if="line['ref'] and not line['name']">
+                        <span t-out="line['ref']"/>
+                    </t>
+                    <t t-if="line['ref'] and line['name']">
+                        <t t-if="line['name'] not in line['ref'] or line['name'] == line['ref']">
+                            <span t-out="line['name']"/>
+                        </t>
+                        <t t-if="line['ref'] not in line['name']">
+                            <span t-out="line['ref']"/>
+                        </t>
+                    </t>
+                </t>
+                <t t-if="line['name'] == '/'">
+                    <span t-out="line['ref']"/>
+                </t>
+            </td>
+            <td><span t-out="line.get('loading_point', '')"/></td>
+            <td><span t-out="line.get('truck_number', '')"/></td>
+            <t t-call="partner_statement_trip_enhancement.statement_fuel_grade_cells"/>
+            <t t-call="partner_statement_trip_enhancement.statement_fuel_amount_cells"/>
+        </tr>
+    </template>
+</odoo>

@@ -1,93 +1,22 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<!-- Copyright 2024 Your Company
-     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
 <odoo>
     <template id="outstanding_balance_trip_enhanced" inherit_id="partner_statement.outstanding_balance">
-        <!-- Replace the table header -->
         <xpath expr="//thead/tr" position="replace">
-            <tr>
-                <th>Date</th>
-                <th>Description</th>
-                <th>Truck Number</th>
-                <th>Product</th>
-                <th class="amount">Volume</th>
-                <th class="amount">Rate</th>
-                <th class="amount">Agreed Amount</th>
-                <th class="amount">Open Amount</th>
-            </tr>
+            <t t-call="partner_statement_trip_enhancement.statement_fuel_table_header"/>
         </xpath>
-        
-        <!-- Replace the data rows -->
-        <xpath expr="//tbody/tr[1]" position="replace">
-            <tr
-                t-foreach="currency['lines']"
-                t-as="line"
-                t-att-class="('statement-blocked ' if line.get('blocked', False) else '')"
-            >
-                <td>
-                    <span t-out="line['date']" />
-                </td>
-                <td>
-                    <t t-if="line['name'] != '/'">
-                        <t t-if="not line['ref'] and line['name']">
-                            <span t-out="line['name']" />
-                        </t>
-                        <t t-if="line['ref'] and not line['name']">
-                            <span t-out="line['ref']" />
-                        </t>
-                        <t t-if="line['ref'] and line['name']">
-                            <t
-                                t-if="line['name'] not in line['ref'] or line['name'] == line['ref']"
-                            >
-                                <span t-out="line['name']" />
-                            </t>
-                            <t t-if="line['ref'] not in line['name']">
-                                <span t-out="line['ref']" />
-                            </t>
-                        </t>
-                    </t>
-                    <t t-if="line['name'] == '/'">
-                        <span t-out="line['ref']" />
-                    </t>
-                </td>
 
-                <td>
-                    <span t-out="line.get('truck_number', '')" />
-                </td>
-                <td>
-                    <span t-out="line.get('product_references', '')" />
-                </td>
-                <td class="amount">
-                    <span t-out="line.get('quantity', 0.0)" />
-                </td>
-                <td class="amount">
-                    <span t-out="line.get('sale_price', '')" />
-                </td>
-                <td class="amount">
-                    <span
-                        t-out="line['amount']"
-                        t-options="{'widget': 'monetary', 'display_currency': display_currency}"
-                    />
-                </td>
-                <td class="amount">
-                    <span
-                        t-out="line['open_amount']"
-                        t-options="{'widget': 'monetary', 'display_currency': display_currency}"
-                    />
-                </td>
-            </tr>
+        <xpath expr="//tbody/tr[1]" position="replace">
+            <t t-foreach="currency['lines']" t-as="line">
+                <t t-call="partner_statement_trip_enhancement.statement_activity_line_row"/>
+            </t>
         </xpath>
-        
-        <!-- Replace the total row -->
+
         <xpath expr="//tbody/tr[last()]" position="replace">
             <tr>
-                <td />
+                <td/>
                 <td>Total</td>
-                <td />
-                <td />
-                <td />
-                <td />
-                <td />
+                <td/><td/><td/><td/><td/><td/><td/><td/>
+                <td/><td/>
                 <td class="amount">
                     <span
                         t-out="currency['amount_due']"
