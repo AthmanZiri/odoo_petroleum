@@ -83,15 +83,26 @@
             <t t-else="">
                 <div class="text-muted small mb-2">
                     Period: <strong t-esc="state.data.period_label"/>
-                    · <span t-esc="state.data.kpis.deals_count"/> deal(s)
-                    · margin = sum of deal margins
+                    · <span t-esc="state.data.kpis.invoices_count"/> posted invoice(s)
+                    (<span t-esc="state.data.kpis.import_invoices_count"/> ledger import,
+                    <span t-esc="state.data.kpis.deal_invoices_count"/> from deals)
+                    · <span t-esc="state.data.kpis.import_bills_count"/> imported bill(s)
+                    · <span t-esc="state.data.kpis.deals_count"/> deal(s) in pipeline
+                    · margin = customer sell − vendor buy (deals + imported bills)
+                </div>
+                <div class="alert alert-warning py-2 small mb-2"
+                     t-if="state.data.kpis.imports_outside_period">
+                    <i class="fa fa-info-circle me-1"/>
+                    <span t-esc="state.data.kpis.imports_outside_period"/>
+                    ledger-imported invoice(s) exist outside this date range — widen
+                    <strong>Date From / To</strong> (e.g. May 2026) to include them.
                 </div>
 
                 <!-- KPI cards -->
                 <div class="row g-3 mb-1">
                     <div class="col-6 col-md-3">
                         <div class="o_petro_kpi card h-100 border-0 shadow-sm o_petro_clickable"
-                             t-on-click="openFilteredDeals">
+                             t-on-click="openFilteredInvoices">
                             <div class="card-body">
                                 <div class="o_petro_kpi_label">Margin</div>
                                 <div class="o_petro_kpi_value text-success" t-esc="state.data.kpis.margin_total"/>
@@ -133,7 +144,7 @@
                 <div class="row g-3 mb-1">
                     <div class="col-12 col-md-4">
                         <div class="o_petro_kpi o_petro_grade_pms card h-100 border-0 shadow-sm o_petro_clickable"
-                             t-on-click="() => this.openDealsByGrade('PMS')">
+                             t-on-click="() => this.openInvoicesByGrade('PMS')">
                             <div class="card-body">
                                 <div class="o_petro_kpi_label">PMS Litres</div>
                                 <div class="o_petro_kpi_value" t-esc="state.data.kpis.litres.PMS"/>
@@ -142,7 +153,7 @@
                     </div>
                     <div class="col-12 col-md-4">
                         <div class="o_petro_kpi o_petro_grade_ago card h-100 border-0 shadow-sm o_petro_clickable"
-                             t-on-click="() => this.openDealsByGrade('AGO')">
+                             t-on-click="() => this.openInvoicesByGrade('AGO')">
                             <div class="card-body">
                                 <div class="o_petro_kpi_label">AGO Litres</div>
                                 <div class="o_petro_kpi_value" t-esc="state.data.kpis.litres.AGO"/>
@@ -151,7 +162,7 @@
                     </div>
                     <div class="col-12 col-md-4">
                         <div class="o_petro_kpi o_petro_grade_ik card h-100 border-0 shadow-sm o_petro_clickable"
-                             t-on-click="() => this.openDealsByGrade('IK')">
+                             t-on-click="() => this.openInvoicesByGrade('IK')">
                             <div class="card-body">
                                 <div class="o_petro_kpi_label">IK Litres</div>
                                 <div class="o_petro_kpi_value" t-esc="state.data.kpis.litres.IK"/>
@@ -199,14 +210,31 @@
                 <div class="row g-3 mt-1">
                     <div class="col-12 col-lg-8">
                         <div class="card border-0 shadow-sm h-100"><div class="card-body">
-                            <h6 class="text-muted">Margin trend (filtered period)</h6>
+                            <h6 class="text-muted">Margin trend — posted invoices (filtered period)</h6>
                             <div class="o_petro_chart"><canvas t-ref="marginChart"/></div>
                         </div></div>
                     </div>
                     <div class="col-12 col-lg-4">
                         <div class="card border-0 shadow-sm h-100"><div class="card-body">
-                            <h6 class="text-muted">Volume by product (PMS / AGO / IK)</h6>
+                            <h6 class="text-muted">Volume by product — invoiced (PMS / AGO / IK)</h6>
                             <div class="o_petro_chart"><canvas t-ref="volumeChart"/></div>
+                        </div></div>
+                    </div>
+                </div>
+
+                <!-- Deal pipeline -->
+                <div class="row g-3 mt-1">
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm h-100 o_petro_clickable"
+                             t-on-click="openFilteredDeals"><div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                                <h6 class="text-muted m-0">Deal pipeline (filtered period — click to open deals)</h6>
+                                <span class="text-muted small">
+                                    <span t-esc="state.data.kpis.deals_count"/> deal(s)
+                                    · pipeline margin from deal quotes (not yet final)
+                                </span>
+                            </div>
+                            <div class="o_petro_chart o_petro_chart_tall"><canvas t-ref="dealsChart"/></div>
                         </div></div>
                     </div>
                 </div>

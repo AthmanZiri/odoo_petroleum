@@ -1,9 +1,8 @@
 /** @odoo-module **/
 
-import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 import { loadBundle } from "@web/core/assets";
-import { Component, onWillStart, onMounted, onWillUnmount, useRef, useState } from "@odoo/owl";
+import { Component, onWillStart, useEffect, useRef, useState } from "@odoo/owl";
 
 const GRADE_LABELS = {
     PMS: "PMS (Petrol)",
@@ -12,6 +11,7 @@ const GRADE_LABELS = {
 };
 
 export class PetroleumDashboard extends Component {
+    static displayName = "Trading Desk Overview";
     static template = "petroleum_trading_desk.Dashboard";
     static props = ["*"];
 
@@ -33,13 +33,16 @@ export class PetroleumDashboard extends Component {
         });
         this.marginChartRef = useRef("marginChart");
         this.volumeChartRef = useRef("volumeChart");
+        this.dealsChartRef = useRef("dealsChart");
         this.charts = [];
+        this.chartJsReady = false;
 
         onWillStart(async () => {
             try {
                 await loadBundle("web.chartjs_lib");
+                this.chartJsReady = typeof Chart !== "undefined";
             } catch {
-                // charts are best-effort; the rest of the dashboard still works
+                this.chartJsReady = false;
             }
             this.state.filterOptions = await this.orm.call(
                 "petroleum.desk.dashboard",
@@ -51,8 +54,14 @@ export class PetroleumDashboard extends Component {
             this.state.filters.date_to = defaults.date_to;
             await this.load();
         });
-        onMounted(() => this.renderCharts());
-        onWillUnmount(() => this.destroyCharts());
+
+        // Run after OWL has painted canvases (refs are null if called from load() directly).
+        useEffect(() => {
+            if (!this.state.loading && this.state.data) {
+                this.renderCharts();
+            }
+            return () => this.destroyCharts();
+        });
     }
 
     _filtersPayload() {
@@ -97,7 +106,7 @@ export class PetroleumDashboard extends Component {
     }
 
     renderCharts() {
-        if (typeof Chart === "undefined" || !this.state.data) {
+        if (!this.chartJsReady || typeof Chart === "undefined" || !this.state.data) {
             return;
         }
         this.destroyCharts();
@@ -109,7 +118,7 @@ export class PetroleumDashboard extends Component {
                 data: {
                     labels: data.margin_trend.labels,
                     datasets: [{
-                        label: "Margin",
+                        label: "Margin (posted invoices)",
                         data: data.margin_trend.values,
                         borderColor: "#1f8a4c",
                         backgroundColor: "rgba(31,138,76,0.12)",
@@ -143,6 +152,51 @@ export class PetroleumDashboard extends Component {
                 },
             }));
         }
+        if (this.dealsChartRef.el && data.deals_pipeline) {
+            const pipeline = data.deals_pipeline;
+            this.charts.push(new Chart(this.dealsChartRef.el, {
+                type: "bar",
+                data: {
+                    labels: pipeline.labels,
+                    datasets: [
+                        {
+                            label: "Deals",
+                            data: pipeline.counts,
+                            backgroundColor: pipeline.colors,
+                            yAxisID: "y",
+                        },
+                        {
+                            label: "Pipeline margin",
+                            data: pipeline.margins,
+                            type: "line",
+                            borderColor: "#212529",
+                            backgroundColor: "transparent",
+                            yAxisID: "y1",
+                            tension: 0.2,
+                            pointRadius: 3,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: "bottom" } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            position: "left",
+                            title: { display: true, text: "Deals" },
+                        },
+                        y1: {
+                            beginAtZero: true,
+                            position: "right",
+                            grid: { drawOnChartArea: false },
+                            title: { display: true, text: "Margin" },
+                        },
+                    },
+                },
+            }));
+        }
     }
 
     dealFilterDomain(extra = []) {
@@ -165,6 +219,21 @@ export class PetroleumDashboard extends Component {
         return domain;
     }
 
+    invoiceFilterDomain(extra = []) {
+        const f = this.state.filters;
+        const domain = [
+            ["move_type", "=", "out_invoice"],
+            ["state", "=", "posted"],
+            ["invoice_date", ">=", f.date_from],
+            ["invoice_date", "<=", f.date_to],
+            ...extra,
+        ];
+        if (f.partner_id) {
+            domain.push(["partner_id", "=", parseInt(f.partner_id, 10)]);
+        }
+        return domain;
+    }
+
     openDeals(domain, name) {
         this.action.doAction({
             type: "ir.actions.act_window",
@@ -176,18 +245,38 @@ export class PetroleumDashboard extends Component {
         });
     }
 
+    openInvoices(domain, name) {
+        this.action.doAction({
+            type: "ir.actions.act_window",
+            name,
+            res_model: "account.move",
+            domain,
+            views: [[false, "list"], [false, "form"]],
+            target: "current",
+            context: { default_move_type: "out_invoice" },
+        });
+    }
+
+    openFilteredInvoices() {
+        const ids = this.state.data?.kpis?.invoice_ids || [];
+        const domain = ids.length
+            ? [["id", "in", ids]]
+            : this.invoiceFilterDomain();
+        this.openInvoices(domain, "Posted Invoices");
+    }
+
     openFilteredDeals() {
         this.openDeals(this.dealFilterDomain(), "Deals");
     }
 
-    openDealsByGrade(grade) {
+    openInvoicesByGrade(grade) {
         const opts = this.state.filterOptions.products || [];
         const product = opts.find((p) => p.name.includes(grade));
-        const domain = this.dealFilterDomain();
+        const domain = this.invoiceFilterDomain();
         if (product) {
-            domain.push(["line_ids.product_id", "=", product.id]);
+            domain.push(["invoice_line_ids.product_id", "=", product.id]);
         }
-        this.openDeals(domain, GRADE_LABELS[grade] + " Deals");
+        this.openInvoices(domain, GRADE_LABELS[grade] + " Invoices");
     }
 
     openDebtors() {
@@ -212,10 +301,15 @@ export class PetroleumDashboard extends Component {
     }
 
     async sendStatements() {
-        await this.action.doAction(
-            "petroleum_statement_mailer.action_statement_send_wizard"
-        );
+        try {
+            await this.action.doAction(
+                "petroleum_statement_mailer.action_statement_send_wizard"
+            );
+        } catch {
+            this.notification.add(
+                "Install the Petroleum Customer Statement Mailer module to send statements.",
+                { type: "warning" }
+            );
+        }
     }
 }
-
-registry.category("actions").add("petroleum_desk_dashboard", PetroleumDashboard);
