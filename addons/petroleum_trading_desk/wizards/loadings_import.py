@@ -122,14 +122,20 @@ class PetroleumLoadingsImport(models.TransientModel):
         return row[idx]
 
     def _parse_rows(self, ws):
-        """Single-pass parse — never call ws.cell() on a read-only sheet."""
-        sheet_rows = list(ws.iter_rows(min_row=1, max_col=17, values_only=True))
-        if len(sheet_rows) < 2:
-            raise UserError(_('Workbook sheet is empty.'))
-        self._validate_header_rows(sheet_rows[0], sheet_rows[1])
+        """Stream rows — read_only sheets must use iter_rows, not ws.cell()."""
+        row_iter = ws.iter_rows(min_row=1, max_col=17, values_only=True)
+        try:
+            header1 = next(row_iter)
+        except StopIteration:
+            raise UserError(_('Workbook sheet is empty.')) from None
+        try:
+            header2 = next(row_iter)
+        except StopIteration:
+            raise UserError(_('Workbook sheet is empty.')) from None
+        self._validate_header_rows(header1, header2)
 
         rows = []
-        for row_idx, row in enumerate(sheet_rows[2:], start=3):
+        for row_idx, row in enumerate(row_iter, start=3):
             date = _parse_date(self._row_val(row, 1))
             if not date:
                 continue
@@ -332,12 +338,17 @@ class PetroleumLoadingsImport(models.TransientModel):
         if not self.loadings_file:
             raise UserError(_('Upload a loadings workbook.'))
 
+        raw = base64.b64decode(self.loadings_file)
         wb = openpyxl.load_workbook(
-            io.BytesIO(base64.b64decode(self.loadings_file)),
-            data_only=True)
-        ws = wb.active
-        parsed = self._parse_rows(ws)
-        wb.close()
+            io.BytesIO(raw),
+            read_only=True,
+            data_only=True,
+        )
+        try:
+            parsed = self._parse_rows(wb.active)
+        finally:
+            wb.close()
+        del raw
 
         if not parsed:
             raise UserError(_('No loading rows found in the workbook.'))
