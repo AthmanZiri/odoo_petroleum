@@ -35,6 +35,33 @@ class PetroleumDailyPrice(models.Model):
         return self.search(domain, order='date desc, id desc', limit=1)
 
     @api.model
+    def upsert_from_deal_line(self, line):
+        """Create or update today's price board when a deal line price is entered."""
+        if not line.product_id or not line.buy_price:
+            return
+        deal = line.deal_id
+        domain = [
+            ('date', '=', deal.date),
+            ('product_id', '=', line.product_id.id),
+            ('supplier_id', '=', line.supplier_id.id if line.supplier_id else False),
+        ]
+        vals = {'buy_price': line.buy_price}
+        if line.sell_price:
+            vals['sell_price'] = line.sell_price
+        if deal.depot_id:
+            vals['depot_id'] = deal.depot_id.id
+        existing = self.search(domain, limit=1)
+        if existing:
+            existing.write(vals)
+        else:
+            self.create({
+                'date': deal.date,
+                'product_id': line.product_id.id,
+                'supplier_id': line.supplier_id.id if line.supplier_id else False,
+                **vals,
+            })
+
+    @api.model
     def action_carry_forward(self):
         """Roll yesterday's prices into today for every fuel product that
         doesn't yet have a price line for today. Lets the trader open the

@@ -189,6 +189,7 @@ class PetroleumDeal(models.Model):
             # customer invoice
             invoices = deal.sale_order_id._create_invoices()
             invoices.action_post()
+            invoices.write({'deal_id': deal.id})
             deal._reconcile_payments(invoices)
             # vendor bills
             for po in deal.purchase_order_ids:
@@ -197,7 +198,7 @@ class PetroleumDeal(models.Model):
             bills = deal.purchase_order_ids.invoice_ids.filtered(
                 lambda m: m.move_type == 'in_invoice' and m.state == 'draft')
             if bills:
-                bills.write({'invoice_date': deal.date})
+                bills.write({'invoice_date': deal.date, 'deal_id': deal.id})
                 bills.action_post()
             if deal.trip_id:
                 deal.trip_id.action_start()
@@ -331,6 +332,17 @@ class PetroleumDeal(models.Model):
                 if not line.supplier_id:
                     raise UserError(_('Choose a supplier for %s.') % line.product_id.display_name)
 
+    @api.model
+    def backfill_move_deal_links(self):
+        """Link legacy sale/purchase invoices to their deal (idempotent)."""
+        for deal in self.search([('sale_order_id', '!=', False)]):
+            moves = deal.sale_order_id.invoice_ids
+            if deal.purchase_order_ids:
+                moves |= deal.purchase_order_ids.invoice_ids
+            to_link = moves.filtered(lambda m: not m.deal_id)
+            if to_link:
+                to_link.write({'deal_id': deal.id})
+
     # ------------------------------------------------------------------
     # Smart-button actions
     # ------------------------------------------------------------------
@@ -403,3 +415,21 @@ class PetroleumDealLine(models.Model):
                     line.buy_price = dp.buy_price
                 if not line.supplier_id and dp.supplier_id:
                     line.supplier_id = dp.supplier_id
+
+    def _sync_daily_price(self):
+        DailyPrice = self.env['petroleum.daily.price']
+        for line in self:
+            if line.buy_price:
+                DailyPrice.upsert_from_deal_line(line)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        lines = super().create(vals_list)
+        lines._sync_daily_price()
+        return lines
+
+    def write(self, vals):
+        res = super().write(vals)
+        if any(k in vals for k in ('buy_price', 'sell_price', 'product_id', 'supplier_id')):
+            self._sync_daily_price()
+        return res
