@@ -57,6 +57,12 @@ class PetroleumDeal(models.Model):
         self.ensure_one()
         return re.sub(r'\s+', '', (self.truck_id.name or '').upper())
 
+    def _ledger_partner_match_ids(self, partner, role='customer', use_aliases=True):
+        """Strict Odoo partner tree + optional configured ledger aliases."""
+        self.ensure_one()
+        return self.env['petroleum.ledger.partner.alias'].ledger_partner_match_ids(
+            self.company_id, partner, role=role, use_aliases=use_aliases)
+
     @staticmethod
     def _ledger_move_text(move):
         parts = [
@@ -113,7 +119,13 @@ class PetroleumDeal(models.Model):
             totals[sid] = totals.get(sid, 0.0) + line.cost_subtotal
         return totals
 
-    def _ledger_find_customer_invoice(self, only_imported=True, require_truck=True):
+    def _ledger_filter_moves(self, moves, plate, expected_amount, require_truck):
+        return moves.filtered(
+            lambda m: (not require_truck or self._ledger_move_has_plate(m, plate))
+            and self._ledger_amount_ok(abs(m.amount_total_signed), expected_amount))
+
+    def _ledger_find_customer_invoice(
+            self, only_imported=True, require_truck=True, use_aliases=True):
         self.ensure_one()
         if self._ledger_skip_partner():
             return self.env['account.move']
@@ -121,15 +133,16 @@ class PetroleumDeal(models.Model):
         if require_truck and not plate:
             return self.env['account.move']
 
+        Move = self.env['account.move']
         domain = self._ledger_base_domain('out_invoice', only_imported)
-        domain.append(('partner_id', 'child_of', self.partner_id.commercial_partner_id.id))
-        candidates = self.env['account.move'].search(domain)
-        candidates = candidates.filtered(
-            lambda m: self._ledger_move_has_plate(m, plate)
-            and self._ledger_amount_ok(abs(m.amount_total_signed), self.amount_sell))
+        domain.append(('partner_id', 'in', self._ledger_partner_match_ids(
+            self.partner_id, role='customer', use_aliases=use_aliases)))
+        candidates = self._ledger_filter_moves(
+            Move.search(domain), plate, self.amount_sell, require_truck)
         return self._ledger_pick_best(candidates, self.amount_sell)
 
-    def _ledger_find_vendor_bills(self, only_imported=True, require_truck=True):
+    def _ledger_find_vendor_bills(
+            self, only_imported=True, require_truck=True, use_aliases=True):
         self.ensure_one()
         plate = self._ledger_plate()
         if require_truck and not plate:
@@ -140,13 +153,14 @@ class PetroleumDeal(models.Model):
             return self.env['account.move']
 
         found = self.env['account.move']
+        Move = self.env['account.move']
         for supplier_id, expected in supplier_amounts.items():
+            supplier = self.env['res.partner'].browse(supplier_id)
             domain = self._ledger_base_domain('in_invoice', only_imported)
-            domain.append(('partner_id', 'child_of', supplier_id))
-            candidates = self.env['account.move'].search(domain)
-            candidates = candidates.filtered(
-                lambda m, p=plate, e=expected: self._ledger_move_has_plate(m, p)
-                and self._ledger_amount_ok(abs(m.amount_total_signed), e))
+            domain.append(('partner_id', 'in', self._ledger_partner_match_ids(
+                supplier, role='vendor', use_aliases=use_aliases)))
+            candidates = self._ledger_filter_moves(
+                Move.search(domain), plate, expected, require_truck)
             bill = self._ledger_pick_best(candidates, expected)
             if bill:
                 found |= bill
@@ -179,7 +193,9 @@ class PetroleumDeal(models.Model):
         if mark_loaded and self.state == 'confirmed' and self._ledger_link_state_value() == 'full':
             self.state = 'loaded'
 
-    def action_link_ledger_moves(self, only_imported=True, require_truck=True, mark_loaded=False):
+    def action_link_ledger_moves(
+            self, only_imported=True, require_truck=True, mark_loaded=False,
+            use_aliases=True):
         """Link imported ledger invoice/bill(s) to this deal (no new accounting)."""
         results = []
         for deal in self:
@@ -189,7 +205,8 @@ class PetroleumDeal(models.Model):
             if deal._ledger_skip_partner():
                 results.append((deal, 'skipped', _('NOT SOLD placeholder — no ledger link.')))
                 continue
-            invoice, bills = deal._ledger_resolve_matches(only_imported, require_truck)
+            invoice, bills = deal._ledger_resolve_matches(
+                only_imported, require_truck, use_aliases=use_aliases)
             if not invoice and not bills:
                 results.append((deal, 'miss', _('No matching imported invoice/bill found.')))
                 continue
@@ -203,17 +220,95 @@ class PetroleumDeal(models.Model):
             results.append((deal, state, ', '.join(msg_parts) or _('Linked')))
         return results
 
-    def _ledger_resolve_matches(self, only_imported=True, require_truck=True):
+    def _ledger_link_hint(self, only_imported=True, require_truck=True, use_aliases=True):
+        """Human-readable reason when automatic matching fails."""
+        self.ensure_one()
+        if self._ledger_skip_partner():
+            return _('NOT SOLD placeholder.')
+        plate = self._ledger_plate()
+        if require_truck and not plate:
+            return _('Set a truck plate on the deal.')
+        Move = self.env['account.move']
+        inv_domain = self._ledger_base_domain('out_invoice', only_imported)
+        invs = Move.search(inv_domain)
+        invs_plate = invs.filtered(lambda m: self._ledger_move_has_plate(m, plate))
+        inv = self._ledger_find_customer_invoice(
+            only_imported, require_truck, use_aliases=use_aliases)[:1]
+        if not inv:
+            if not invs_plate:
+                return _(
+                    'No imported customer invoice on %(date)s with truck %(truck)s in '
+                    'reference/narration.',
+                    date=self.date,
+                    truck=self.truck_id.name or plate,
+                )
+            match_ids = self._ledger_partner_match_ids(
+                self.partner_id, role='customer', use_aliases=use_aliases)
+            invs_amt = invs_plate.filtered(
+                lambda m: self._ledger_amount_ok(
+                    abs(m.amount_total_signed), self.amount_sell))
+            if invs_amt and not invs_amt.filtered(
+                    lambda m: m.partner_id.id in match_ids):
+                other = invs_amt[0].partner_id.name
+                return _(
+                    'Customer invoice %(inv)s is under “%(other)s”, not deal client '
+                    '“%(deal)s”. Add a Ledger Partner Alias (Trading Desk → '
+                    'Configuration) or align the deal contact.',
+                    inv=invs_amt[0].name,
+                    other=other,
+                    deal=self.partner_id.name,
+                )
+            if invs_plate and not invs_amt:
+                return _(
+                    'Invoice(s) found for this truck/date but sell amount does not match '
+                    '(deal %(deal)s, tolerance applied).',
+                    deal=self.amount_sell,
+                )
+            return _('No matching customer invoice.')
+        hints = [_('Customer: %s') % inv.name]
+        for supplier, expected in self._ledger_supplier_amounts().items():
+            partner = self.env['res.partner'].browse(supplier)
+            bill_domain = self._ledger_base_domain('in_invoice', only_imported)
+            bills = Move.search(bill_domain).filtered(
+                lambda m, p=plate: self._ledger_move_has_plate(m, p))
+            bills_sup = bills.filtered(
+                lambda m, s=partner: m.partner_id.id in self._ledger_partner_match_ids(
+                    s, role='vendor', use_aliases=use_aliases))
+            if not bills_sup:
+                hints.append(
+                    _('No vendor bill for %(sup)s on %(date)s (truck %(truck)s).')
+                    % {
+                        'sup': partner.name,
+                        'date': self.date,
+                        'truck': self.truck_id.name or plate,
+                    }
+                )
+            else:
+                near = bills_sup.filtered(
+                    lambda m, e=expected: abs(abs(m.amount_total_signed) - e)
+                    <= self._ledger_amount_tolerance(e) * 4)
+                if not near:
+                    amt = abs(bills_sup[0].amount_total_signed)
+                    hints.append(
+                        _('Bill for %(sup)s: amount %(bill)s vs deal buy %(deal)s.')
+                        % {'sup': partner.name, 'bill': amt, 'deal': expected}
+                    )
+        return ' '.join(hints)
+
+    def _ledger_resolve_matches(
+            self, only_imported=True, require_truck=True, use_aliases=True):
         """Return (customer_invoice, vendor_bills) preserving existing links."""
         self.ensure_one()
         existing = self.ledger_move_ids
         invoice = existing.filtered(lambda m: m.move_type == 'out_invoice')[:1]
         if not invoice:
-            invoice = self._ledger_find_customer_invoice(only_imported, require_truck)[:1]
+            invoice = self._ledger_find_customer_invoice(
+                only_imported, require_truck, use_aliases=use_aliases)[:1]
         linked_bills = existing.filtered(lambda m: m.move_type == 'in_invoice')
         need = self._ledger_expected_bill_count()
         if len(linked_bills) < need:
-            found = self._ledger_find_vendor_bills(only_imported, require_truck)
+            found = self._ledger_find_vendor_bills(
+                only_imported, require_truck, use_aliases=use_aliases)
             bills = linked_bills | found.filtered(lambda m: m.id not in linked_bills.ids)
         else:
             bills = linked_bills

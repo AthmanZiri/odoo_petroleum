@@ -9,9 +9,13 @@ access_deal_payment_user,deal.payment.user,model_petroleum_deal_payment,sales_te
 access_deal_payment_manager,deal.payment.manager,model_petroleum_deal_payment,sales_team.group_sale_manager,1,1,1,1
 access_deal_ledger_link_user,deal.ledger.link.user,model_petroleum_deal_ledger_link,sales_team.group_sale_salesman,1,1,1,1
 access_deal_ledger_link_manager,deal.ledger.link.manager,model_petroleum_deal_ledger_link,sales_team.group_sale_manager,1,1,1,1
+access_deal_ledger_link_line_user,deal.ledger.link.line.user,model_petroleum_deal_ledger_link_line,sales_team.group_sale_salesman,1,1,1,1
+access_deal_ledger_link_line_manager,deal.ledger.link.line.manager,model_petroleum_deal_ledger_link_line,sales_team.group_sale_manager,1,1,1,1
 access_loadings_import_user,loadings.import.user,model_petroleum_loadings_import,sales_team.group_sale_salesman,1,1,1,1
 access_loadings_import_manager,loadings.import.manager,model_petroleum_loadings_import,sales_team.group_sale_manager,1,1,1,1
 access_loadings_import_job_user,loadings.import.job.user,model_petroleum_loadings_import_job,sales_team.group_sale_salesman,1,1,1,0
 access_loadings_import_job_manager,loadings.import.job.manager,model_petroleum_loadings_import_job,sales_team.group_sale_manager,1,1,1,1
 access_dashboard_user,dashboard.user,model_petroleum_desk_dashboard,sales_team.group_sale_salesman,1,1,1,1
 access_dashboard_manager,dashboard.manager,model_petroleum_desk_dashboard,sales_team.group_sale_manager,1,1,1,1
+access_ledger_partner_alias_user,ledger.partner.alias.user,model_petroleum_ledger_partner_alias,sales_team.group_sale_salesman,1,0,0,0
+access_ledger_partner_alias_manager,ledger.partner.alias.manager,model_petroleum_ledger_partner_alias,sales_team.group_sale_manager,1,1,1,1

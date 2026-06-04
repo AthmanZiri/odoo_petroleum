@@ -39,6 +39,12 @@
               action="petroleum_operations.action_petroleum_depot"
               sequence="10"/>
 
+    <menuitem id="menu_trading_desk_ledger_aliases"
+              name="Ledger Partner Aliases"
+              parent="menu_trading_desk_config"
+              action="action_ledger_partner_alias"
+              sequence="12"/>
+
     <menuitem id="menu_trading_desk_reconcile"
               name="Reconcile Imported Ledgers"
               parent="menu_trading_desk_config"

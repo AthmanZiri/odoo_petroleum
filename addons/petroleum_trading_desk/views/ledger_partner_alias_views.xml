@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_ledger_partner_alias_list" model="ir.ui.view">
+        <field name="name">petroleum.ledger.partner.alias.list</field>
+        <field name="model">petroleum.ledger.partner.alias</field>
+        <field name="arch" type="xml">
+            <list string="Ledger Partner Aliases">
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="role"/>
+                <field name="deal_partner_id"/>
+                <field name="ledger_partner_id"/>
+                <field name="notes" optional="show"/>
+                <field name="active" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_ledger_partner_alias_form" model="ir.ui.view">
+        <field name="name">petroleum.ledger.partner.alias.form</field>
+        <field name="model">petroleum.ledger.partner.alias</field>
+        <field name="arch" type="xml">
+            <form string="Ledger Partner Alias">
+                <sheet>
+                    <div class="oe_button_box" name="button_box"/>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger"
+                            invisible="active"/>
+                    <group>
+                        <group>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="role"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="deal_partner_id"
+                                   options="{'no_create': True}"/>
+                            <field name="ledger_partner_id"
+                                   options="{'no_create': True}"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="notes" placeholder="e.g. Import Excel uses INVEST. suffix"/>
+                    </group>
+                    <div class="alert alert-info" role="alert">
+                        <p class="mb-0">
+                            Link to Ledger still requires the deal to use
+                            <strong>Deal contact</strong> (or a contact under it in
+                            Odoo). Imported invoices/bills may use
+                            <strong>Ledger contact</strong> when names differ after
+                            data import.
+                        </p>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_ledger_partner_alias_search" model="ir.ui.view">
+        <field name="name">petroleum.ledger.partner.alias.search</field>
+        <field name="model">petroleum.ledger.partner.alias</field>
+        <field name="arch" type="xml">
+            <search string="Ledger Partner Aliases">
+                <field name="deal_partner_id"/>
+                <field name="ledger_partner_id"/>
+                <field name="notes"/>
+                <filter name="filter_customer" string="Customer"
+                        domain="[('role', 'in', ('customer', 'both'))]"/>
+                <filter name="filter_vendor" string="Vendor"
+                        domain="[('role', 'in', ('vendor', 'both'))]"/>
+                <separator/>
+                <filter name="filter_active" string="Active"
+                        domain="[('active', '=', True)]"/>
+                <filter name="filter_archived" string="Archived"
+                        domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_ledger_partner_alias" model="ir.actions.act_window">
+        <field name="name">Ledger Partner Aliases</field>
+        <field name="res_model">petroleum.ledger.partner.alias</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Map deal contacts to import ledger contacts
+            </p>
+            <p>
+                Example: deal client <b>WBP INV</b> → imported invoice customer
+                <b>WBP INVEST.</b>, or deal supplier <b>PETRO OIL</b> → bill vendor
+                <b>PETRO OIL KENYA LIMITED</b>.
+            </p>
+        </field>
+    </record>
+</odoo>
