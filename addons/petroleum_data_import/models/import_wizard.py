@@ -599,6 +599,8 @@ class PetroleumDataImport(models.TransientModel):
             "<p>Posting runs in the background (about <b>%d</b> cron cycle(s)). "
             "Invoices, bills and payments will appear over the next few minutes.</p>"
             "<p>Batch reference: <b>%s</b></p>"
+            "<p>Track progress under <b>Accounting → Configuration → "
+            "Ledger Import Jobs</b>.</p>"
             "<p>When finished, run <b>Trading Desk → Configuration → "
             "Reconcile Imported Ledgers</b>.</p></div>"
         ) % (len(queue), eta, self.batch_ref)

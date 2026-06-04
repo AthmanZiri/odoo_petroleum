@@ -36,10 +36,33 @@ class PetroleumDataImportJob(models.Model):
     queue_sections = fields.Json(default=list)
     total_sections = fields.Integer(default=0)
     processed_sections = fields.Integer(default=0)
+    progress_label = fields.Char(
+        string='Progress',
+        compute='_compute_progress',
+    )
+    progress_percent = fields.Float(
+        string='Progress %',
+        compute='_compute_progress',
+    )
     recon_data = fields.Json(default=list)
     counters = fields.Json(default=dict)
     result_html = fields.Html()
     error_log = fields.Text()
+
+    @api.depends('processed_sections', 'total_sections', 'state')
+    def _compute_progress(self):
+        for job in self:
+            total = job.total_sections or 0
+            done = job.processed_sections
+            if job.state == 'done':
+                job.progress_percent = 100.0
+                job.progress_label = _('%d / %d') % (total, total) if total else _('Done')
+            elif not total:
+                job.progress_percent = 0.0
+                job.progress_label = '—'
+            else:
+                job.progress_percent = min(100.0, 100.0 * done / total)
+                job.progress_label = _('%d / %d') % (done, total)
 
     def _kick(self):
         cron = self.env.ref(

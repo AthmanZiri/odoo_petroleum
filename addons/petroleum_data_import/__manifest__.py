@@ -33,6 +33,7 @@ REFUND rows and multi-section (payable + receivable) tabs.
         'security/ir.model.access.csv',
         'data/data_import_cron.xml',
         'views/import_wizard_views.xml',
+        'views/data_import_job_views.xml',
         'views/ledger_reconcile_views.xml',
     ],
     'installable': True,
