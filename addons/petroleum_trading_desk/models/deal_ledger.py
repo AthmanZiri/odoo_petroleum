@@ -172,13 +172,17 @@ class PetroleumDeal(models.Model):
 
     def _ledger_link_state_value(self):
         self.ensure_one()
-        if self._ledger_skip_partner():
-            return 'none'
         invoices = self.ledger_move_ids.filtered(lambda m: m.move_type == 'out_invoice')
         bills = self.ledger_move_ids.filtered(lambda m: m.move_type == 'in_invoice')
         need_bills = self._ledger_expected_bill_count()
-        has_inv = bool(invoices)
         has_bills = len(bills) >= need_bills if need_bills else True
+        if self._ledger_skip_partner():
+            if has_bills:
+                return 'full'
+            if bills:
+                return 'partial'
+            return 'none'
+        has_inv = bool(invoices)
         if has_inv and has_bills:
             return 'full'
         if has_inv or bills:
@@ -202,13 +206,15 @@ class PetroleumDeal(models.Model):
             if deal.state == 'cancel':
                 results.append((deal, 'skipped', _('Cancelled deal.')))
                 continue
-            if deal._ledger_skip_partner():
-                results.append((deal, 'skipped', _('NOT SOLD placeholder — no ledger link.')))
-                continue
             invoice, bills = deal._ledger_resolve_matches(
                 only_imported, require_truck, use_aliases=use_aliases)
+            if deal._ledger_skip_partner():
+                invoice = self.env['account.move']
             if not invoice and not bills:
-                results.append((deal, 'miss', _('No matching imported invoice/bill found.')))
+                hint = _('No matching vendor bill found.')
+                if not deal._ledger_skip_partner():
+                    hint = _('No matching imported invoice/bill found.')
+                results.append((deal, 'miss', hint))
                 continue
             deal._ledger_apply_links(invoice, bills, mark_loaded=mark_loaded)
             state = deal._ledger_link_state_value()
@@ -223,8 +229,7 @@ class PetroleumDeal(models.Model):
     def _ledger_link_hint(self, only_imported=True, require_truck=True, use_aliases=True):
         """Human-readable reason when automatic matching fails."""
         self.ensure_one()
-        if self._ledger_skip_partner():
-            return _('NOT SOLD placeholder.')
+        not_sold = self._ledger_skip_partner()
         plate = self._ledger_plate()
         if require_truck and not plate:
             return _('Set a truck plate on the deal.')
@@ -232,40 +237,44 @@ class PetroleumDeal(models.Model):
         inv_domain = self._ledger_base_domain('out_invoice', only_imported)
         invs = Move.search(inv_domain)
         invs_plate = invs.filtered(lambda m: self._ledger_move_has_plate(m, plate))
-        inv = self._ledger_find_customer_invoice(
-            only_imported, require_truck, use_aliases=use_aliases)[:1]
-        if not inv:
-            if not invs_plate:
-                return _(
-                    'No imported customer invoice on %(date)s with truck %(truck)s in '
-                    'reference/narration.',
-                    date=self.date,
-                    truck=self.truck_id.name or plate,
-                )
-            match_ids = self._ledger_partner_match_ids(
-                self.partner_id, role='customer', use_aliases=use_aliases)
-            invs_amt = invs_plate.filtered(
-                lambda m: self._ledger_amount_ok(
-                    abs(m.amount_total_signed), self.amount_sell))
-            if invs_amt and not invs_amt.filtered(
-                    lambda m: m.partner_id.id in match_ids):
-                other = invs_amt[0].partner_id.name
-                return _(
-                    'Customer invoice %(inv)s is under “%(other)s”, not deal client '
-                    '“%(deal)s”. Add a Ledger Partner Alias (Trading Desk → '
-                    'Configuration) or align the deal contact.',
-                    inv=invs_amt[0].name,
-                    other=other,
-                    deal=self.partner_id.name,
-                )
-            if invs_plate and not invs_amt:
-                return _(
-                    'Invoice(s) found for this truck/date but sell amount does not match '
-                    '(deal %(deal)s, tolerance applied).',
-                    deal=self.amount_sell,
-                )
-            return _('No matching customer invoice.')
-        hints = [_('Customer: %s') % inv.name]
+        inv = self.env['account.move']
+        if not not_sold:
+            inv = self._ledger_find_customer_invoice(
+                only_imported, require_truck, use_aliases=use_aliases)[:1]
+            if not inv:
+                if not invs_plate:
+                    return _(
+                        'No imported customer invoice on %(date)s with truck %(truck)s in '
+                        'reference/narration.',
+                        date=self.date,
+                        truck=self.truck_id.name or plate,
+                    )
+                match_ids = self._ledger_partner_match_ids(
+                    self.partner_id, role='customer', use_aliases=use_aliases)
+                invs_amt = invs_plate.filtered(
+                    lambda m: self._ledger_amount_ok(
+                        abs(m.amount_total_signed), self.amount_sell))
+                if invs_amt and not invs_amt.filtered(
+                        lambda m: m.partner_id.id in match_ids):
+                    other = invs_amt[0].partner_id.name
+                    return _(
+                        'Customer invoice %(inv)s is under “%(other)s”, not deal client '
+                        '“%(deal)s”. Add a Ledger Partner Alias (Trading Desk → '
+                        'Configuration) or align the deal contact.',
+                        inv=invs_amt[0].name,
+                        other=other,
+                        deal=self.partner_id.name,
+                    )
+                if invs_plate and not invs_amt:
+                    return _(
+                        'Invoice(s) found for this truck/date but sell amount does not match '
+                        '(deal %(deal)s, tolerance applied).',
+                        deal=self.amount_sell,
+                    )
+                return _('No matching customer invoice.')
+        hints = []
+        if inv:
+            hints.append(_('Customer: %s') % inv.name)
         for supplier, expected in self._ledger_supplier_amounts().items():
             partner = self.env['res.partner'].browse(supplier)
             bill_domain = self._ledger_base_domain('in_invoice', only_imported)
@@ -322,15 +331,18 @@ class PetroleumDeal(models.Model):
 
     def action_open_ledger_link_wizard(self):
         self.ensure_one()
+        ctx = {
+            'default_deal_ids': [(6, 0, self.ids)],
+            'default_date_from': self.date,
+            'default_date_to': self.date,
+        }
+        if self.is_not_sold:
+            ctx['default_only_imported'] = False
         return {
             'type': 'ir.actions.act_window',
-            'name': _('Link Ledger Documents'),
+            'name': _('Link Vendor Bill') if self.is_not_sold else _('Link Ledger Documents'),
             'res_model': 'petroleum.deal.ledger.link',
             'view_mode': 'form',
             'target': 'new',
-            'context': {
-                'default_deal_ids': [(6, 0, self.ids)],
-                'default_date_from': self.date,
-                'default_date_to': self.date,
-            },
+            'context': ctx,
         }

@@ -81,7 +81,10 @@ class PetroleumDealLedgerLinkLine(models.TransientModel):
     def _manual_invoice_and_bills(self):
         """Return (invoice, bills) from manual picks only."""
         self.ensure_one()
-        return self.customer_invoice_id, self.vendor_bill_ids
+        invoice = self.customer_invoice_id
+        if self.deal_id.is_not_sold:
+            invoice = self.env['account.move']
+        return invoice, self.vendor_bill_ids
 
 
 class PetroleumDealLedgerLink(models.TransientModel):
@@ -191,7 +194,7 @@ class PetroleumDealLedgerLink(models.TransientModel):
                 self.require_truck,
                 use_aliases=self.use_partner_aliases,
             )
-            if not line.customer_invoice_id and inv:
+            if not line.customer_invoice_id and inv and not line.deal_id.is_not_sold:
                 line.customer_invoice_id = inv
             if not line.vendor_bill_ids and bills:
                 line.vendor_bill_ids = bills
@@ -229,6 +232,12 @@ class PetroleumDealLedgerLink(models.TransientModel):
         need = deal._ledger_expected_bill_count()
         if not inv and not bills:
             return 'miss'
+        if deal._ledger_skip_partner():
+            if need and len(bills) >= need:
+                return 'full'
+            if bills:
+                return 'partial'
+            return 'miss'
         if inv and (not need or len(bills) >= need):
             return 'full'
         if inv or bills:
@@ -246,12 +255,9 @@ class PetroleumDealLedgerLink(models.TransientModel):
         rows = []
 
         for deal in deals:
-            if deal._ledger_skip_partner():
-                skipped += 1
-                rows.append((deal.name, 'skipped', _('NOT SOLD'), True))
-                continue
-
             inv, bill_set = self._resolve_for_deal(deal)
+            if deal._ledger_skip_partner():
+                inv = self.env['account.move']
             need = deal._ledger_expected_bill_count()
             line = self.line_ids.filtered(lambda l: l.deal_id == deal)[:1]
             manual = line.use_manual if line else False

@@ -12,6 +12,9 @@
                             Use automatic matching (filters below) or pick invoices and
                             bills per deal on the <b>Manual linking</b> tab. Empty rows
                             still use automatic rules when you click Link.
+                            <br/>
+                            <i>NOT SOLD</i> deals link vendor bills only — no customer
+                            invoice is required.
                         </p>
                     </div>
                     <group invisible="state != 'draft'">
