@@ -60,8 +60,16 @@ class PetroleumDeal(models.Model):
     payment_count = fields.Integer(compute='_compute_payment_count')
 
     notes = fields.Text()
+    is_not_sold = fields.Boolean(
+        string='Not Sold Yet', compute='_compute_is_not_sold', store=True)
 
     # ------------------------------------------------------------------
+    @api.depends('partner_id', 'partner_id.name')
+    def _compute_is_not_sold(self):
+        for deal in self:
+            name = (deal.partner_id.name or '').strip().upper()
+            deal.is_not_sold = name in {'NOT SOLD', 'NOTSOLD', 'UNSOLD'}
+
     @api.depends('line_ids.quantity', 'line_ids.price_subtotal',
                  'line_ids.cost_subtotal', 'line_ids.margin')
     def _compute_amounts(self):
@@ -186,11 +194,12 @@ class PetroleumDeal(models.Model):
         for deal in self:
             if not deal.sale_order_id:
                 raise UserError(_('Confirm the deal first.'))
-            # customer invoice
-            invoices = deal.sale_order_id._create_invoices()
-            invoices.action_post()
-            invoices.write({'deal_id': deal.id})
-            deal._reconcile_payments(invoices)
+            # customer invoice — skip until a real client is assigned
+            if not deal.is_not_sold:
+                invoices = deal.sale_order_id._create_invoices()
+                invoices.action_post()
+                invoices.write({'deal_id': deal.id})
+                deal._reconcile_payments(invoices)
             # vendor bills
             for po in deal.purchase_order_ids:
                 if po.invoice_status == 'to invoice':
@@ -226,16 +235,24 @@ class PetroleumDeal(models.Model):
                     pass
 
     def action_register_payment(self):
+        return self._action_open_bulk_payment('customer')
+
+    def action_pay_supplier_bills(self):
+        return self._action_open_bulk_payment('supplier')
+
+    def _action_open_bulk_payment(self, payment_side):
         self.ensure_one()
+        title = _('Register Payment') if payment_side == 'customer' else _('Pay Supplier Bills')
         return {
             'type': 'ir.actions.act_window',
-            'name': _('Register Payment'),
-            'res_model': 'petroleum.deal.payment',
+            'name': title,
+            'res_model': 'petroleum.desk.bulk.payment',
             'view_mode': 'form',
             'target': 'new',
             'context': {
-                'default_deal_id': self.id,
-                'default_amount': self.balance if self.balance > 0 else self.amount_sell,
+                'default_payment_side': payment_side,
+                'default_deal_ids': [(6, 0, self.ids)],
+                'default_company_id': self.company_id.id,
             },
         }
 

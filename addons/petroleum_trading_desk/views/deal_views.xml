@@ -11,14 +11,21 @@
                             class="btn-primary" invisible="state not in ('draft','proforma')"/>
                     <button name="action_confirm" type="object" string="Confirm"
                             class="btn-primary" invisible="state not in ('draft','proforma')"/>
-                    <button name="action_register_payment" type="object" string="Register Payment"
+                    <button name="action_register_payment" type="object" string="Receive Payment"
+                            class="btn-secondary"
+                            invisible="state in ('draft','cancel') or is_not_sold"/>
+                    <button name="action_pay_supplier_bills" type="object" string="Pay Suppliers"
                             class="btn-secondary" invisible="state in ('draft','cancel')"/>
                     <button name="action_load" type="object" string="Load &amp; Invoice"
-                            class="btn-primary" invisible="state != 'confirmed'"/>
+                            class="btn-primary"
+                            invisible="state != 'confirmed' or is_not_sold"/>
+                    <button name="action_load" type="object" string="Load Bill"
+                            class="btn-primary"
+                            invisible="state != 'confirmed' or not is_not_sold"/>
                     <button name="action_open_ledger_link_wizard" type="object"
-                            string="Link to Ledger"
+                            string="Link Vendor Bill"
                             class="btn-secondary"
-                            invisible="state not in ('confirmed','loaded','done') or ledger_link_state == 'full'"/>
+                            invisible="state in ('cancel','done') or ledger_link_state == 'full'"/>
                     <button name="action_unlink_ledger_moves" type="object"
                             string="Unlink Ledger"
                             class="btn-secondary"
@@ -53,6 +60,7 @@
                     <group>
                         <group string="Deal">
                             <field name="partner_id"/>
+                            <field name="is_not_sold" invisible="1"/>
                             <field name="date"/>
                             <field name="depot_id"/>
                             <field name="ledger_link_state" widget="badge"
