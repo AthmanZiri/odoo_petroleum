@@ -7,6 +7,10 @@ access_deal_line_user,deal.line.user,model_petroleum_deal_line,sales_team.group_
 access_deal_line_manager,deal.line.manager,model_petroleum_deal_line,sales_team.group_sale_manager,1,1,1,1
 access_deal_payment_user,deal.payment.user,model_petroleum_deal_payment,sales_team.group_sale_salesman,1,1,1,1
 access_deal_payment_manager,deal.payment.manager,model_petroleum_deal_payment,sales_team.group_sale_manager,1,1,1,1
+access_desk_bulk_payment_user,desk.bulk.payment.user,model_petroleum_desk_bulk_payment,sales_team.group_sale_salesman,1,1,1,1
+access_desk_bulk_payment_manager,desk.bulk.payment.manager,model_petroleum_desk_bulk_payment,sales_team.group_sale_manager,1,1,1,1
+access_desk_bulk_payment_line_user,desk.bulk.payment.line.user,model_petroleum_desk_bulk_payment_line,sales_team.group_sale_salesman,1,1,1,1
+access_desk_bulk_payment_line_manager,desk.bulk.payment.line.manager,model_petroleum_desk_bulk_payment_line,sales_team.group_sale_manager,1,1,1,1
 access_deal_ledger_link_user,deal.ledger.link.user,model_petroleum_deal_ledger_link,sales_team.group_sale_salesman,1,1,1,1
 access_deal_ledger_link_manager,deal.ledger.link.manager,model_petroleum_deal_ledger_link,sales_team.group_sale_manager,1,1,1,1
 access_deal_ledger_link_line_user,deal.ledger.link.line.user,model_petroleum_deal_ledger_link_line,sales_team.group_sale_salesman,1,1,1,1

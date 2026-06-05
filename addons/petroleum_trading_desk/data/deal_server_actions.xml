@@ -27,6 +27,50 @@
         <field name="code">action = records.action_bulk_done()</field>
     </record>
 
+    <record id="action_deal_bulk_pay_customer" model="ir.actions.server">
+        <field name="name">Receive Customer Payments</field>
+        <field name="model_id" ref="model_petroleum_deal"/>
+        <field name="binding_model_id" ref="model_petroleum_deal"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">
+action = {
+    'type': 'ir.actions.act_window',
+    'name': 'Receive Customer Payments',
+    'res_model': 'petroleum.desk.bulk.payment',
+    'view_mode': 'form',
+    'target': 'new',
+    'context': {
+        'default_payment_side': 'customer',
+        'default_deal_ids': [(6, 0, records.ids)],
+        'default_company_id': records[:1].company_id.id if records else False,
+    },
+}
+        </field>
+    </record>
+
+    <record id="action_deal_bulk_pay_supplier" model="ir.actions.server">
+        <field name="name">Pay Supplier Bills</field>
+        <field name="model_id" ref="model_petroleum_deal"/>
+        <field name="binding_model_id" ref="model_petroleum_deal"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">
+action = {
+    'type': 'ir.actions.act_window',
+    'name': 'Pay Supplier Bills',
+    'res_model': 'petroleum.desk.bulk.payment',
+    'view_mode': 'form',
+    'target': 'new',
+    'context': {
+        'default_payment_side': 'supplier',
+        'default_deal_ids': [(6, 0, records.ids)],
+        'default_company_id': records[:1].company_id.id if records else False,
+    },
+}
+        </field>
+    </record>
+
     <record id="action_deal_bulk_ledger_link" model="ir.actions.server">
         <field name="name">Link to Ledger</field>
         <field name="model_id" ref="model_petroleum_deal"/>
