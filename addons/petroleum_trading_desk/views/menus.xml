@@ -16,11 +16,46 @@
               action="action_deal"
               sequence="10"/>
 
+    <menuitem id="menu_trading_desk_accounting"
+              name="Accounting"
+              parent="menu_trading_desk_root"
+              sequence="15"/>
+
+    <menuitem id="menu_trading_desk_invoices"
+              name="Customer Invoices"
+              parent="menu_trading_desk_accounting"
+              action="action_trading_desk_customer_invoices"
+              sequence="10"/>
+
+    <menuitem id="menu_trading_desk_bills"
+              name="Vendor Bills"
+              parent="menu_trading_desk_accounting"
+              action="action_trading_desk_vendor_bills"
+              sequence="20"/>
+
+    <menuitem id="menu_trading_desk_customers"
+              name="Customers"
+              parent="menu_trading_desk_accounting"
+              action="action_trading_desk_customers"
+              sequence="30"/>
+
+    <menuitem id="menu_trading_desk_vendors"
+              name="Vendors"
+              parent="menu_trading_desk_accounting"
+              action="action_trading_desk_vendors"
+              sequence="40"/>
+
     <menuitem id="menu_trading_desk_prices"
               name="Daily Prices"
               parent="menu_trading_desk_root"
               action="action_daily_price"
               sequence="20"/>
+
+    <menuitem id="menu_trading_desk_payments"
+              name="Register Payments"
+              parent="menu_trading_desk_root"
+              action="action_desk_bulk_payment"
+              sequence="25"/>
 
     <menuitem id="menu_trading_desk_statements"
               name="Send Statements"
