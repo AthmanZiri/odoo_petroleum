@@ -2,6 +2,7 @@
 <odoo>
     <menuitem id="menu_trading_desk_root"
               name="Trading Desk"
+              web_icon="petroleum_trading_desk,static/description/icon.png"
               sequence="5"/>
 
     <menuitem id="menu_trading_desk_overview"

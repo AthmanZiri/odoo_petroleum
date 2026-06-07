@@ -141,11 +141,20 @@
                 <field name="name"/>
                 <field name="date"/>
                 <field name="partner_id"/>
+                <field name="truck_id"/>
+                <field name="driver_id" optional="show"/>
+                <field name="depot_id" optional="show"/>
+                <field name="grade_display" string="Product"/>
+                <field name="supplier_display" string="Supplier" optional="show"/>
                 <field name="total_qty" sum="Litres"/>
                 <field name="amount_sell" sum="Sell"/>
+                <field name="amount_buy" sum="Buy" optional="hide"/>
                 <field name="margin_total" sum="Margin"
                        decoration-success="margin_total &gt; 0" decoration-danger="margin_total &lt; 0"/>
                 <field name="balance" sum="Balance"/>
+                <field name="amount_paid" sum="Paid" optional="hide"/>
+                <field name="epra_no" optional="hide"/>
+                <field name="compartment_plan" optional="hide"/>
                 <field name="ledger_link_state" widget="badge" optional="show"
                        decoration-success="ledger_link_state == 'full'"
                        decoration-warning="ledger_link_state == 'partial'"/>
@@ -198,6 +207,11 @@
                 <field name="name"/>
                 <field name="partner_id"/>
                 <field name="truck_id"/>
+                <field name="driver_id"/>
+                <field name="depot_id"/>
+                <field name="grade_display"/>
+                <field name="supplier_display"/>
+                <field name="epra_no"/>
                 <filter name="open" string="Open" domain="[('state','not in',('done','cancel'))]"/>
                 <filter name="unpaid" string="Has Balance" domain="[('balance','&gt;',0)]"/>
                 <separator/>
@@ -205,6 +219,8 @@
                 <group name="group_by">
                     <filter name="g_state" string="Status" context="{'group_by':'state'}"/>
                     <filter name="g_partner" string="Client" context="{'group_by':'partner_id'}"/>
+                    <filter name="g_truck" string="Truck" context="{'group_by':'truck_id'}"/>
+                    <filter name="g_depot" string="Depot" context="{'group_by':'depot_id'}"/>
                     <filter name="g_date" string="Date" context="{'group_by':'date'}"/>
                 </group>
             </search>

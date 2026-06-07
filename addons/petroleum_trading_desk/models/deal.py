@@ -23,6 +23,11 @@ class PetroleumDeal(models.Model):
     epra_no = fields.Char(string='EPRA No.')
     compartment_plan = fields.Char(string='Compartment Plan', help='e.g. 2:3:2:3')
 
+    grade_display = fields.Char(
+        string='Product(s)', compute='_compute_line_summary', store=True)
+    supplier_display = fields.Char(
+        string='Supplier(s)', compute='_compute_line_summary', store=True)
+
     line_ids = fields.One2many('petroleum.deal.line', 'deal_id', string='Products', copy=True)
 
     company_id = fields.Many2one('res.company', default=lambda self: self.env.company, required=True)
@@ -69,6 +74,39 @@ class PetroleumDeal(models.Model):
         for deal in self:
             name = (deal.partner_id.name or '').strip().upper()
             deal.is_not_sold = name in {'NOT SOLD', 'NOTSOLD', 'UNSOLD'}
+
+    @staticmethod
+    def _line_product_label(product):
+        if not product:
+            return ''
+        code = (product.default_code or '').strip()
+        if code:
+            return code.upper()
+        name = (product.display_name or '').upper()
+        for grade in ('PMS', 'AGO', 'IK', 'DIESEL', 'PETROL'):
+            if grade in name:
+                return grade
+        return product.display_name or ''
+
+    @api.depends(
+        'line_ids.product_id', 'line_ids.product_id.default_code',
+        'line_ids.supplier_id', 'line_ids.supplier_id.name',
+    )
+    def _compute_line_summary(self):
+        for deal in self:
+            grades, suppliers = [], []
+            seen_grades, seen_suppliers = set(), set()
+            for line in deal.line_ids:
+                label = deal._line_product_label(line.product_id)
+                if label and label not in seen_grades:
+                    seen_grades.add(label)
+                    grades.append(label)
+                name = (line.supplier_id.name or '').strip()
+                if name and name not in seen_suppliers:
+                    seen_suppliers.add(name)
+                    suppliers.append(name)
+            deal.grade_display = ', '.join(grades)
+            deal.supplier_display = ', '.join(suppliers)
 
     @api.depends('line_ids.quantity', 'line_ids.price_subtotal',
                  'line_ids.cost_subtotal', 'line_ids.margin')
