@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_deal_form_whatsapp" model="ir.ui.view">
+        <field name="name">petroleum.deal.view.form.inherited.whatsapp.mail.messaging</field>
+        <field name="model">petroleum.deal</field>
+        <field name="inherit_id" ref="petroleum_trading_desk.view_deal_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='action_send_proforma']" position="after">
+                <button type="object" class="btn-secondary"
+                        name="action_send_whatsapp" icon="fa-whatsapp"
+                        string="Send by Whatsapp"
+                        invisible="state in ('cancel',) or is_not_sold"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_deal_list_whatsapp" model="ir.ui.view">
+        <field name="name">petroleum.deal.view.list.inherited.whatsapp.mail.messaging</field>
+        <field name="model">petroleum.deal</field>
+        <field name="inherit_id" ref="petroleum_trading_desk.view_deal_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <header>
+                    <button type="object" class="btn-primary ml4"
+                            name="action_whatsapp_multi" icon="fa-whatsapp"
+                            string="Send by Whatsapp"/>
+                </header>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="whatsapp_send_message_view_form_deal" model="ir.ui.view">
+        <field name="name">whatsapp.send.message.view.form.deal</field>
+        <field name="model">whatsapp.send.message</field>
+        <field name="inherit_id" ref="whatsapp_mail_messaging.whatsapp_send_message_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='message']" position="after">
+                <field name="attachment_ids" widget="many2many_binary" readonly="1"
+                       invisible="not attachment_ids"/>
+                <field name="res_model" invisible="1"/>
+                <field name="res_id" invisible="1"/>
+                <field name="deal_ids" invisible="1"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

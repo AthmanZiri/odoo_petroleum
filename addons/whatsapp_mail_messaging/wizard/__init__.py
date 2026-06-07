@@ -22,3 +22,4 @@
 from . import message_mail_composer
 from . import portal_share
 from . import whatsapp_send_message
+from . import whatsapp_send_message_deal

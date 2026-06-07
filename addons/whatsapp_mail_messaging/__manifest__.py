@@ -27,20 +27,23 @@
      Odoo Whatsapp, Whatsapp Connector, Whatsapp Integration, Odoo19, Whatsapp,
      Odoo Apps""",
     'description': """Added options for sending Whatsapp messages and emails in
-     the systray bar, sale order, invoices and ability to share access URLs for
-     documents through the share option available in each record using WhatsApp Web.""",
+     the systray bar, sale order, trading deals, invoices and ability to
+     share access URLs for documents through the share option available in each
+     record using WhatsApp Web.""",
     'author': 'Cybrosys Techno Solutions',
     'company': 'Cybrosys Techno Solutions',
     'maintainer': 'Cybrosys Techno Solutions',
     'website': 'https://www.cybrosys.com',
-    'depends': ['sale', 'account', 'sale_management'],
+    'depends': ['sale', 'account', 'sale_management', 'petroleum_trading_desk'],
     'data': [
         'security/ir.model.access.csv',
         'views/sale_order_views.xml',
+        'views/petroleum_deal_views.xml',
         'views/account_move_views.xml',
         'views/res_config_settings_views.xml',
         'wizard/message_mail_composer_form_views.xml',
         'wizard/whatsapp_send_message_views.xml',
+        'views/whatsapp_send_message_deal_views.xml',
         'wizard/portal_share_views.xml',
 
     ],

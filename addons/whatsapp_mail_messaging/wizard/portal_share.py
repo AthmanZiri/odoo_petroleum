@@ -51,6 +51,9 @@ class PortalShare(models.TransientModel):
             elif self.res_model == 'purchase.order':
                 common_message = ('You have been invited to access the '
                                   'following Purchase.')
+            elif self.res_model == 'petroleum.deal':
+                common_message = ('You have been invited to access the '
+                                  'following Trading Deal.')
             else:
                 common_message = ('You have been invited to access the '
                                   'following Document.')
