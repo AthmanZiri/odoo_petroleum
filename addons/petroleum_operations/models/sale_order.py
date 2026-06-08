@@ -91,3 +91,9 @@ class SaleOrderLine(models.Model):
     def _compute_petro_margin(self):
         for line in self:
             line.petro_margin = (line.price_unit - line.petro_buy_price) * line.product_uom_qty
+
+    def _prepare_invoice_line(self, **optional_values):
+        res = super()._prepare_invoice_line(**optional_values)
+        if self.petro_buy_price:
+            res['petro_buy_price'] = self.petro_buy_price
+        return res

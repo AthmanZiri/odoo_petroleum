@@ -3,3 +3,4 @@ from . import sale_order
 from . import purchase_order
 from . import trip
 from . import truck
+from . import account_move_line
