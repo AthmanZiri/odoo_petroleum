@@ -52,6 +52,12 @@
               action="action_daily_price"
               sequence="20"/>
 
+    <menuitem id="menu_trading_desk_position"
+              name="Daily Position"
+              parent="menu_trading_desk_root"
+              action="action_daily_position"
+              sequence="21"/>
+
     <menuitem id="menu_trading_desk_payments"
               name="Register Payments"
               parent="menu_trading_desk_root"

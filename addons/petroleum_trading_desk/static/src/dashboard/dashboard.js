@@ -29,6 +29,7 @@ export class PetroleumDashboard extends Component {
                 product_id: "",
                 partner_id: "",
                 supplier_id: "",
+                deal_state: "",
             },
         });
         this.marginChartRef = useRef("marginChart");
@@ -72,6 +73,7 @@ export class PetroleumDashboard extends Component {
             product_id: f.product_id ? parseInt(f.product_id, 10) : false,
             partner_id: f.partner_id ? parseInt(f.partner_id, 10) : false,
             supplier_id: f.supplier_id ? parseInt(f.supplier_id, 10) : false,
+            deal_state: f.deal_state || false,
         };
     }
 
@@ -97,6 +99,7 @@ export class PetroleumDashboard extends Component {
         this.state.filters.product_id = "";
         this.state.filters.partner_id = "";
         this.state.filters.supplier_id = "";
+        this.state.filters.deal_state = "";
         this.load();
     }
 
@@ -216,6 +219,9 @@ export class PetroleumDashboard extends Component {
         if (f.supplier_id) {
             domain.push(["line_ids.supplier_id", "=", parseInt(f.supplier_id, 10)]);
         }
+        if (f.deal_state) {
+            domain.push(["state", "=", f.deal_state]);
+        }
         return domain;
     }
 
@@ -285,6 +291,19 @@ export class PetroleumDashboard extends Component {
             name: "Customers with Balance",
             res_model: "res.partner",
             domain: [["customer_rank", ">", 0], ["credit", ">", 0]],
+            views: [[false, "list"], [false, "form"]],
+            target: "current",
+        });
+    }
+
+    openDailyPosition() {
+        const posDate = this.state.data?.position?.date;
+        const domain = posDate ? [["date", "=", posDate]] : [];
+        this.action.doAction({
+            type: "ir.actions.act_window",
+            name: "Daily Position",
+            res_model: "petroleum.daily.position.line",
+            domain,
             views: [[false, "list"], [false, "form"]],
             target: "current",
         });

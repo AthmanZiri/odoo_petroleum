@@ -28,6 +28,14 @@ DEAL_STATE_COLORS = {
     'loaded': '#6610f2',
     'done': '#198754',
 }
+DEAL_STATE_FILTER_OPTIONS = [
+    ('', 'All statuses'),
+    ('draft', 'Quotation'),
+    ('proforma', 'Proforma'),
+    ('confirmed', 'Confirmed'),
+    ('loaded', 'Loaded'),
+    ('done', 'Settled'),
+]
 _SKIP_LINE_DISPLAY = ('line_section', 'line_subsection', 'line_note')
 
 
@@ -66,6 +74,7 @@ class DeskDashboard(models.TransientModel):
             'product_id': int(filters['product_id']) if filters.get('product_id') else False,
             'partner_id': int(filters['partner_id']) if filters.get('partner_id') else False,
             'supplier_id': int(filters['supplier_id']) if filters.get('supplier_id') else False,
+            'deal_state': filters.get('deal_state') or '',
         }
 
     @api.model
@@ -75,6 +84,8 @@ class DeskDashboard(models.TransientModel):
             ('date', '>=', flt['date_from']),
             ('date', '<=', flt['date_to']),
         ]
+        if flt.get('deal_state'):
+            domain.append(('state', '=', flt['deal_state']))
         if flt['partner_id']:
             domain.append(('partner_id', '=', flt['partner_id']))
         if flt['product_id']:
@@ -344,19 +355,12 @@ class DeskDashboard(models.TransientModel):
     @api.model
     def _invoice_margin(self, invoices, flt):
         margin = 0.0
-        deals_seen = set()
         for invoice in invoices:
-            deal = self._invoice_deal(invoice)
-            if deal:
-                if deal.id in deals_seen:
-                    continue
-                deals_seen.add(deal.id)
-                if flt['product_id'] or flt['supplier_id']:
-                    margin += sum(self._filter_deal_lines(deal, flt).mapped('margin'))
-                else:
-                    margin += deal.margin_total
+            lines = self._filter_invoice_lines(invoice, flt)
+            line_margin = sum(lines.mapped('petro_margin'))
+            if line_margin:
+                margin += line_margin
             else:
-                lines = self._filter_invoice_lines(invoice, flt)
                 sell = sum(lines.mapped('price_subtotal'))
                 buy = self._import_invoice_matched_buy(invoice)
                 margin += sell - buy
@@ -446,6 +450,45 @@ class DeskDashboard(models.TransientModel):
             ],
             'customers': partner_opts(customers),
             'suppliers': partner_opts(suppliers),
+            'deal_states': [
+                {'value': value, 'label': label}
+                for value, label in DEAL_STATE_FILTER_OPTIONS
+            ],
+        }
+
+    @api.model
+    def _position_summary(self, flt):
+        """Bulk position totals for the reference day in the filter window."""
+        today = fields.Date.context_today(self)
+        if flt['date_from'] <= today <= flt['date_to']:
+            pos_date = today
+        else:
+            pos_date = flt['date_to']
+        domain = [('date', '=', pos_date)]
+        if flt['product_id']:
+            domain.append(('product_id', '=', flt['product_id']))
+        if flt['supplier_id']:
+            domain.append(('supplier_id', '=', flt['supplier_id']))
+        lines = self.env['petroleum.daily.position.line'].search(domain)
+        vol = {grade: {'total': 0.0, 'sold': 0.0, 'remaining': 0.0} for grade in GRADE_CODES}
+        totals = {'opening': 0.0, 'bought': 0.0, 'total': 0.0,
+                  'sold': 0.0, 'remaining': 0.0}
+        for line in lines:
+            totals['opening'] += line.qty_opening
+            totals['bought'] += line.qty_bought
+            totals['total'] += line.qty_total
+            totals['sold'] += line.qty_sold
+            totals['remaining'] += line.qty_remaining
+            grade = self._grade_code(line.product_id)
+            if grade:
+                vol[grade]['total'] += line.qty_total
+                vol[grade]['sold'] += line.qty_sold
+                vol[grade]['remaining'] += line.qty_remaining
+        return {
+            'date': pos_date.isoformat(),
+            'line_count': len(lines),
+            'totals': totals,
+            'by_grade': vol,
         }
 
     @api.model
@@ -489,10 +532,18 @@ class DeskDashboard(models.TransientModel):
             'litres_raw': vol,
         }
 
+        queue_flt = dict(flt, deal_state='')
+
+        def _queue_count(state):
+            extra = [('state', '=', state)]
+            if flt.get('deal_state') and flt['deal_state'] != state:
+                return 0
+            return Deal.search_count(self._deal_domain(queue_flt, extra))
+
         queues = {
-            'proforma': Deal.search_count([('state', '=', 'proforma')]),
-            'confirmed': Deal.search_count([('state', '=', 'confirmed')]),
-            'loaded': Deal.search_count([('state', '=', 'loaded')]),
+            'proforma': _queue_count('proforma'),
+            'confirmed': _queue_count('confirmed'),
+            'loaded': _queue_count('loaded'),
         }
 
         customers = self.env['res.partner'].search(
@@ -553,6 +604,9 @@ class DeskDashboard(models.TransientModel):
             trend_labels.append(day.strftime('%d %b'))
             trend_values.append(round(margin_day, 2))
 
+        position = self._position_summary(flt)
+        pos = position['totals']
+
         return {
             'currency': symbol,
             'filters': {
@@ -561,6 +615,7 @@ class DeskDashboard(models.TransientModel):
                 'product_id': flt['product_id'] or False,
                 'partner_id': flt['partner_id'] or False,
                 'supplier_id': flt['supplier_id'] or False,
+                'deal_state': flt.get('deal_state') or False,
             },
             'period_label': '%s – %s' % (
                 flt['date_from'].strftime('%d %b %Y'),
@@ -571,6 +626,23 @@ class DeskDashboard(models.TransientModel):
             'debtors': debtors,
             'total_debtors': money(total_debtors),
             'aging': aging,
+            'position': {
+                'date': position['date'],
+                'line_count': position['line_count'],
+                'opening': f"{pos['opening']:,.0f} L",
+                'bought': f"{pos['bought']:,.0f} L",
+                'total': f"{pos['total']:,.0f} L",
+                'sold': f"{pos['sold']:,.0f} L",
+                'remaining': f"{pos['remaining']:,.0f} L",
+                'remaining_raw': pos['remaining'],
+                'by_grade': {
+                    grade: {
+                        'total': f"{position['by_grade'][grade]['total']:,.0f} L",
+                        'remaining': f"{position['by_grade'][grade]['remaining']:,.0f} L",
+                    }
+                    for grade in GRADE_CODES
+                },
+            },
             'charts': {
                 'margin_trend': {'labels': trend_labels, 'values': trend_values},
                 'volume': {

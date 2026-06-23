@@ -62,27 +62,33 @@ class PetroleumDailyPrice(models.Model):
             })
 
     @api.model
-    def action_carry_forward(self):
-        """Roll yesterday's prices into today for every fuel product that
-        doesn't yet have a price line for today. Lets the trader open the
-        board each morning and just tweak the numbers that changed."""
-        today = fields.Date.context_today(self)
+    def _carry_forward_prices(self, today=None):
+        """Roll yesterday's prices into *today* for products missing a line."""
+        today = today or fields.Date.context_today(self)
         products = self.env['product.product'].search([('fuel_ok', '=', True)])
         for product in products:
-            if self.search_count([('product_id', '=', product.id),
-                                  ('date', '=', today)]):
+            if self.search_count([('product_id', '=', product.id), ('date', '=', today)]):
                 continue
-            latest = self.search([('product_id', '=', product.id),
-                                  ('date', '<', today)],
-                                 order='date desc, id desc', limit=1)
+            latest = self.search(
+                [('product_id', '=', product.id), ('date', '<', today)],
+                order='date desc, id desc', limit=1)
             if latest:
                 self.create({
+                    'date': today,
                     'product_id': product.id,
                     'depot_id': latest.depot_id.id,
                     'supplier_id': latest.supplier_id.id,
                     'buy_price': latest.buy_price,
                     'sell_price': latest.sell_price,
                 })
+
+    @api.model
+    def action_carry_forward(self):
+        """Roll yesterday's prices into today for every fuel product that
+        doesn't yet have a price line for today. Lets the trader open the
+        board each morning and just tweak the numbers that changed."""
+        today = fields.Date.context_today(self)
+        self._carry_forward_prices(today)
         return {
             'type': 'ir.actions.act_window',
             'name': _('Daily Prices'),

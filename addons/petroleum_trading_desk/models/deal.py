@@ -68,6 +68,56 @@ class PetroleumDeal(models.Model):
     is_not_sold = fields.Boolean(
         string='Not Sold Yet', compute='_compute_is_not_sold', store=True)
 
+    position_allocation_ids = fields.One2many(
+        'petroleum.daily.position.allocation', 'deal_id', string='Position Allocations',
+        copy=False)
+
+    def _allocate_daily_positions(self):
+        """Reserve volume from today's bulk position before confirming."""
+        PositionLine = self.env['petroleum.daily.position.line']
+        Allocation = self.env['petroleum.daily.position.allocation']
+        for deal in self:
+            if deal.position_allocation_ids.filtered(lambda a: a.state == 'active'):
+                continue
+            for line in deal.line_ids:
+                pos_line = PositionLine.find_for_deal_line(line)
+                if not pos_line:
+                    raise UserError(_(
+                        'No daily position for %(product)s from %(supplier)s on %(date)s. '
+                        'Open Daily Position and record the morning bulk buy first.',
+                        product=line.product_id.display_name,
+                        supplier=line.supplier_id.display_name,
+                        date=deal.date,
+                    ))
+                if pos_line.qty_remaining < line.quantity:
+                    raise UserError(_(
+                        'Not enough volume on daily position for %(product)s '
+                        '(%(supplier)s): %(need)s L needed, %(left)s L remaining.',
+                        product=line.product_id.display_name,
+                        supplier=line.supplier_id.display_name,
+                        need=line.quantity,
+                        left=pos_line.qty_remaining,
+                    ))
+                Allocation.create({
+                    'position_line_id': pos_line.id,
+                    'deal_id': deal.id,
+                    'deal_line_id': line.id,
+                    'quantity': line.quantity,
+                    'buy_price': pos_line.buy_price,
+                })
+                if not line.buy_price:
+                    line.buy_price = pos_line.buy_price
+
+    def _release_position_allocations(self):
+        self.env['petroleum.daily.position.allocation'].search([
+            ('deal_id', 'in', self.ids),
+            ('state', '=', 'active'),
+        ]).write({'state': 'released'})
+
+    def _daily_position_purchase_orders(self):
+        self.ensure_one()
+        return self.position_allocation_ids.mapped('position_line_id.purchase_order_id')
+
     # ------------------------------------------------------------------
     @api.depends('partner_id', 'partner_id.name')
     def _compute_is_not_sold(self):
@@ -130,13 +180,25 @@ class PetroleumDeal(models.Model):
         for deal in self:
             deal.payment_count = len(deal.payment_ids)
 
+    @api.onchange('depot_id', 'date')
+    def _onchange_deal_refresh_line_prices(self):
+        for line in self.line_ids:
+            line._apply_price_defaults_onchange()
+
     @api.onchange('truck_id')
     def _onchange_truck_id(self):
         if self.truck_id:
             if self.truck_id.driver_id:
                 self.driver_id = self.truck_id.driver_id
+                if self.driver_id.epra_no:
+                    self.epra_no = self.driver_id.epra_no
             if not self.compartment_plan and self.truck_id.loading_plan:
                 self.compartment_plan = self.truck_id.loading_plan
+
+    @api.onchange('driver_id')
+    def _onchange_driver_id(self):
+        if self.driver_id and self.driver_id.epra_no:
+            self.epra_no = self.driver_id.epra_no
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -144,6 +206,12 @@ class PetroleumDeal(models.Model):
             if vals.get('name', _('New')) == _('New'):
                 vals['name'] = self.env['ir.sequence'].next_by_code('petroleum.deal') or _('New')
         return super().create(vals_list)
+
+    def write(self, vals):
+        res = super().write(vals)
+        if any(k in vals for k in ('depot_id', 'date')):
+            self.line_ids._apply_price_defaults()
+        return res
 
     # ------------------------------------------------------------------
     # Orchestration
@@ -196,13 +264,15 @@ class PetroleumDeal(models.Model):
                 raise UserError(_('Assign a truck before confirming the deal.'))
             if deal.sale_order_id:
                 raise UserError(_('This deal already has a sale order.'))
+            deal._allocate_daily_positions()
             deal._prepare_products()
-            so = self.env['sale.order'].create(deal._prepare_sale_order())
-            so.action_confirm()
-            pos = self.env['purchase.order'].search([('origin', '=', so.name)])
-            for po in pos:
-                if po.state in ('draft', 'sent'):
-                    po.button_confirm()
+            so = self.env['sale.order'].with_context(
+                petro_skip_back_to_back_po=True).create(deal._prepare_sale_order())
+            so.with_context(petro_skip_back_to_back_po=True).action_confirm()
+            pos = deal._daily_position_purchase_orders()
+            if not pos:
+                raise UserError(_(
+                    'Sync purchase orders on the Daily Position board before confirming deals.'))
             trip = self.env['trip.management'].create({
                 'truck_id': deal.truck_id.id,
                 'purchase_order_id': pos[:1].id,
@@ -216,7 +286,7 @@ class PetroleumDeal(models.Model):
                 po.write({
                     'truck_id': deal.truck_id.id,
                     'trip_id': trip.id,
-                    'depot_id': deal.depot_id.id,
+                    'depot_id': deal.depot_id.id or po.depot_id.id,
                     'epra_no': deal.epra_no,
                     'compartment_plan': deal.compartment_plan,
                 })
@@ -238,11 +308,12 @@ class PetroleumDeal(models.Model):
                 invoices.action_post()
                 invoices.write({'deal_id': deal.id})
                 deal._reconcile_payments(invoices)
-            # vendor bills
-            for po in deal.purchase_order_ids:
+            # vendor bills — bulk position POs are billed once from the position board
+            for po in deal.purchase_order_ids.filtered(lambda p: not p.is_daily_position_po):
                 if po.invoice_status == 'to invoice':
                     po.action_create_invoice()
-            bills = deal.purchase_order_ids.invoice_ids.filtered(
+            bills = deal.purchase_order_ids.filtered(
+                lambda p: not p.is_daily_position_po).invoice_ids.filtered(
                 lambda m: m.move_type == 'in_invoice' and m.state == 'draft')
             if bills:
                 bills.write({'invoice_date': deal.date, 'deal_id': deal.id})
@@ -298,6 +369,8 @@ class PetroleumDeal(models.Model):
         self.write({'state': 'done'})
 
     def action_cancel(self):
+        cancellable = self.filtered(lambda d: d.state in ('confirmed', 'loaded', 'proforma'))
+        cancellable._release_position_allocations()
         self.write({'state': 'cancel'})
 
     def action_draft(self):
@@ -446,6 +519,21 @@ class PetroleumDealLine(models.Model):
     price_subtotal = fields.Monetary(compute='_compute_subtotals', store=True, string='Sell Subtotal')
     cost_subtotal = fields.Monetary(compute='_compute_subtotals', store=True, string='Buy Subtotal')
     margin = fields.Monetary(compute='_compute_subtotals', store=True, string='Margin')
+    position_qty_available = fields.Float(
+        string='Position Left', compute='_compute_position_qty_available', digits='Product Unit of Measure')
+
+    @api.depends(
+        'product_id', 'supplier_id', 'quantity', 'deal_id.date',
+        'deal_id.depot_id', 'deal_id.company_id',
+    )
+    def _compute_position_qty_available(self):
+        PositionLine = self.env['petroleum.daily.position.line']
+        for line in self:
+            if not line.product_id or not line.supplier_id or not line.deal_id.date:
+                line.position_qty_available = 0.0
+                continue
+            pos_line = PositionLine.find_for_deal_line(line)
+            line.position_qty_available = pos_line.qty_remaining if pos_line else 0.0
 
     @api.depends('quantity', 'sell_price', 'buy_price')
     def _compute_subtotals(self):
@@ -454,37 +542,87 @@ class PetroleumDealLine(models.Model):
             line.cost_subtotal = line.quantity * line.buy_price
             line.margin = line.quantity * (line.sell_price - line.buy_price)
 
-    @api.onchange('product_id', 'supplier_id')
+    def _get_price_defaults(self):
+        """Daily position buy price first; sell from position or daily price board."""
+        self.ensure_one()
+        if not self.product_id or not self.deal_id:
+            return {}
+        PositionLine = self.env['petroleum.daily.position.line']
+        pos_line = (
+            PositionLine.find_for_deal_line(self)
+            if self.supplier_id else False
+        )
+        result = {}
+        if pos_line:
+            result['buy_price'] = pos_line.buy_price
+            if pos_line.sell_price:
+                result['sell_price'] = pos_line.sell_price
+            if not self.supplier_id:
+                result['supplier_id'] = pos_line.supplier_id.id
+
+        dp = self.env['petroleum.daily.price'].get_latest(
+            self.product_id.id,
+            self.supplier_id.id if self.supplier_id else False,
+        )
+        if not dp and self.supplier_id:
+            dp = self.env['petroleum.daily.price'].get_latest(self.product_id.id)
+        if dp:
+            if 'buy_price' not in result and dp.buy_price:
+                result['buy_price'] = dp.buy_price
+            if 'sell_price' not in result and dp.sell_price:
+                result['sell_price'] = dp.sell_price
+            if not self.supplier_id and dp.supplier_id:
+                result['supplier_id'] = dp.supplier_id.id
+        return result
+
+    def _apply_price_defaults_onchange(self):
+        defaults = self._get_price_defaults()
+        if defaults.get('supplier_id') and not self.supplier_id:
+            self.supplier_id = self.env['res.partner'].browse(defaults['supplier_id'])
+        if 'buy_price' in defaults:
+            self.buy_price = defaults['buy_price']
+        if defaults.get('sell_price'):
+            self.sell_price = defaults['sell_price']
+
+    def _apply_price_defaults(self):
+        """Persisted records: always refresh buy from daily position when matched."""
+        for line in self:
+            defaults = line._get_price_defaults()
+            vals = {}
+            if 'buy_price' in defaults:
+                vals['buy_price'] = defaults['buy_price']
+            if defaults.get('sell_price'):
+                vals['sell_price'] = defaults['sell_price']
+            if vals:
+                line.write(vals)
+
+    @api.onchange('product_id', 'supplier_id', 'deal_id', 'deal_id.depot_id', 'deal_id.date')
     def _onchange_product_prices(self):
         for line in self:
-            if not line.product_id:
-                continue
-            dp = self.env['petroleum.daily.price'].get_latest(
-                line.product_id.id, line.supplier_id.id if line.supplier_id else False)
-            if not dp and line.supplier_id:
-                dp = self.env['petroleum.daily.price'].get_latest(line.product_id.id)
-            if dp:
-                if not line.sell_price:
-                    line.sell_price = dp.sell_price
-                if not line.buy_price:
-                    line.buy_price = dp.buy_price
-                if not line.supplier_id and dp.supplier_id:
-                    line.supplier_id = dp.supplier_id
+            if line.product_id:
+                line._apply_price_defaults_onchange()
 
     def _sync_daily_price(self):
+        """Update the daily price board from deal lines (not position-backed buys)."""
         DailyPrice = self.env['petroleum.daily.price']
+        PositionLine = self.env['petroleum.daily.position.line']
         for line in self:
+            if line.supplier_id and PositionLine.find_for_deal_line(line):
+                continue
             if line.buy_price:
                 DailyPrice.upsert_from_deal_line(line)
 
     @api.model_create_multi
     def create(self, vals_list):
         lines = super().create(vals_list)
+        lines._apply_price_defaults()
         lines._sync_daily_price()
         return lines
 
     def write(self, vals):
         res = super().write(vals)
+        if any(k in vals for k in ('product_id', 'supplier_id')):
+            self._apply_price_defaults()
         if any(k in vals for k in ('buy_price', 'sell_price', 'product_id', 'supplier_id')):
             self._sync_daily_price()
         return res

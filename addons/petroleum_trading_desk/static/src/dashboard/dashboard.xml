@@ -63,6 +63,16 @@
                                 </t>
                             </select>
                         </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label small text-muted mb-1">Deal Status</label>
+                            <select class="form-select form-select-sm"
+                                    t-att-value="state.filters.deal_state"
+                                    t-on-change="(ev) => this.onFilterChange('deal_state', ev)">
+                                <t t-foreach="state.filterOptions.deal_states" t-as="st" t-key="st.value">
+                                    <option t-att-value="st.value" t-esc="st.label"/>
+                                </t>
+                            </select>
+                        </div>
                         <div class="col-12 col-md-2 d-flex gap-2">
                             <button class="btn btn-primary btn-sm flex-grow-1" t-on-click="() => this.load()">
                                 Apply
@@ -166,6 +176,65 @@
                             <div class="card-body">
                                 <div class="o_petro_kpi_label">IK Litres</div>
                                 <div class="o_petro_kpi_value" t-esc="state.data.kpis.litres.IK"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Daily position -->
+                <h5 class="mt-4 mb-2 text-muted">
+                    Bulk Position
+                    <span class="fw-normal small" t-if="state.data.position.line_count">
+                        (<span t-esc="state.data.position.date"/>)
+                    </span>
+                </h5>
+                <div class="row g-3 mb-1">
+                    <div class="col-6 col-md-2">
+                        <div class="o_petro_kpi card h-100 border-0 shadow-sm o_petro_clickable"
+                             t-on-click="openDailyPosition">
+                            <div class="card-body">
+                                <div class="o_petro_kpi_label">Opening</div>
+                                <div class="o_petro_kpi_value" t-esc="state.data.position.opening"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <div class="o_petro_kpi card h-100 border-0 shadow-sm o_petro_clickable"
+                             t-on-click="openDailyPosition">
+                            <div class="card-body">
+                                <div class="o_petro_kpi_label">Bought Today</div>
+                                <div class="o_petro_kpi_value" t-esc="state.data.position.bought"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <div class="o_petro_kpi card h-100 border-0 shadow-sm o_petro_clickable"
+                             t-on-click="openDailyPosition">
+                            <div class="card-body">
+                                <div class="o_petro_kpi_label">Allocated</div>
+                                <div class="o_petro_kpi_value" t-esc="state.data.position.sold"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <div class="o_petro_kpi card h-100 border-0 shadow-sm o_petro_clickable"
+                             t-on-click="openDailyPosition">
+                            <div class="card-body">
+                                <div class="o_petro_kpi_label">Remaining</div>
+                                <div class="o_petro_kpi_value"
+                                     t-att-class="state.data.position.remaining_raw &lt;= 0 ? 'text-danger' : 'text-success'"
+                                     t-esc="state.data.position.remaining"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <div class="card h-100 border-0 shadow-sm o_petro_clickable"
+                             t-on-click="openDailyPosition">
+                            <div class="card-body small">
+                                <div class="text-muted mb-1">Remaining by grade</div>
+                                <div>PMS: <strong t-esc="state.data.position.by_grade.PMS.remaining"/></div>
+                                <div>AGO: <strong t-esc="state.data.position.by_grade.AGO.remaining"/></div>
+                                <div>IK: <strong t-esc="state.data.position.by_grade.IK.remaining"/></div>
                             </div>
                         </div>
                     </div>

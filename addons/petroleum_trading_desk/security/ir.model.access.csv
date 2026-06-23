@@ -1,6 +1,12 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_daily_price_user,daily.price.user,model_petroleum_daily_price,sales_team.group_sale_salesman,1,1,1,0
 access_daily_price_manager,daily.price.manager,model_petroleum_daily_price,sales_team.group_sale_manager,1,1,1,1
+access_daily_position_user,daily.position.user,model_petroleum_daily_position_line,sales_team.group_sale_salesman,1,1,1,0
+access_daily_position_manager,daily.position.manager,model_petroleum_daily_position_line,sales_team.group_sale_manager,1,1,1,1
+access_daily_position_alloc_user,daily.position.alloc.user,model_petroleum_daily_position_allocation,sales_team.group_sale_salesman,1,0,0,0
+access_daily_position_alloc_manager,daily.position.alloc.manager,model_petroleum_daily_position_allocation,sales_team.group_sale_manager,1,1,1,1
+access_daily_position_price_hist_user,daily.position.price.hist.user,model_petroleum_daily_position_price_history,sales_team.group_sale_salesman,1,0,0,0
+access_daily_position_price_hist_manager,daily.position.price.hist.manager,model_petroleum_daily_position_price_history,sales_team.group_sale_manager,1,1,1,1
 access_deal_user,deal.user,model_petroleum_deal,sales_team.group_sale_salesman,1,1,1,0
 access_deal_manager,deal.manager,model_petroleum_deal,sales_team.group_sale_manager,1,1,1,1
 access_deal_line_user,deal.line.user,model_petroleum_deal_line,sales_team.group_sale_salesman,1,1,1,1

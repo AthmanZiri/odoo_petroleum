@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_daily_position_list" model="ir.ui.view">
+        <field name="name">petroleum.daily.position.line.list</field>
+        <field name="model">petroleum.daily.position.line</field>
+        <field name="arch" type="xml">
+            <list string="Daily Position" editable="top" default_order="date desc">
+                <header>
+                    <button name="action_carry_forward" type="object"
+                            string="Carry Forward to Today" class="btn-primary"/>
+                    <button name="action_sync_purchase_orders" type="object"
+                            string="Sync Purchase Orders" class="btn-secondary"/>
+                    <button name="action_create_supplier_bills" type="object"
+                            string="Bill Bulk Purchases" class="btn-secondary"/>
+                </header>
+                <field name="date"/>
+                <field name="product_id"/>
+                <field name="supplier_id"/>
+                <field name="depot_id" optional="show"/>
+                <field name="qty_opening" sum="Opening"/>
+                <field name="qty_bought" sum="Bought"/>
+                <field name="qty_total" sum="Total"/>
+                <field name="qty_sold" sum="Sold"/>
+                <field name="qty_remaining" sum="Remaining"
+                       decoration-danger="qty_remaining &lt;= 0"
+                       decoration-success="qty_remaining &gt; 0"/>
+                <field name="buy_price"/>
+                <field name="sell_price"/>
+                <field name="margin" decoration-success="margin &gt; 0" decoration-danger="margin &lt; 0"/>
+                <field name="purchase_order_id" optional="show" readonly="1"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="company_id" column_invisible="1" groups="base.group_multi_company"/>
+                <field name="note" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_daily_position_form" model="ir.ui.view">
+        <field name="name">petroleum.daily.position.line.form</field>
+        <field name="model">petroleum.daily.position.line</field>
+        <field name="arch" type="xml">
+            <form string="Daily Position">
+                <header>
+                    <button name="action_sync_purchase_orders" type="object"
+                            string="Sync Purchase Orders" class="btn-secondary"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="date"/>
+                            <field name="product_id"/>
+                            <field name="supplier_id"/>
+                            <field name="depot_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group>
+                            <field name="qty_opening"/>
+                            <field name="qty_bought"/>
+                            <field name="qty_total"/>
+                            <field name="qty_sold"/>
+                            <field name="qty_remaining"/>
+                            <field name="buy_price"/>
+                            <field name="sell_price"/>
+                            <field name="margin"/>
+                            <field name="purchase_order_id"/>
+                            <field name="rolled_from_line_id"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Allocations">
+                            <field name="allocation_ids" readonly="1">
+                                <list>
+                                    <field name="deal_id"/>
+                                    <field name="product_id"/>
+                                    <field name="quantity" sum="Litres"/>
+                                    <field name="buy_price"/>
+                                    <field name="state"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Buy Price History">
+                            <field name="price_history_ids" readonly="1">
+                                <list>
+                                    <field name="create_date"/>
+                                    <field name="date"/>
+                                    <field name="old_buy_price"/>
+                                    <field name="new_buy_price"/>
+                                    <field name="reason"/>
+                                    <field name="user_id"/>
+                                    <field name="note"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Note">
+                            <field name="note" nolabel="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_daily_position_search" model="ir.ui.view">
+        <field name="name">petroleum.daily.position.line.search</field>
+        <field name="model">petroleum.daily.position.line</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="product_id"/>
+                <field name="supplier_id"/>
+                <field name="depot_id"/>
+                <filter name="today" string="Today" domain="[('date','=',context_today().strftime('%Y-%m-%d'))]"/>
+                <filter name="has_remaining" string="Has Remaining"
+                        domain="[('qty_remaining','&gt;',0)]"/>
+                <filter name="sold_out" string="Sold Out" domain="[('qty_remaining','&lt;=',0)]"/>
+                <group name="group_by">
+                    <filter name="g_date" string="Date" context="{'group_by':'date'}"/>
+                    <filter name="g_product" string="Product" context="{'group_by':'product_id'}"/>
+                    <filter name="g_supplier" string="Supplier" context="{'group_by':'supplier_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_daily_position" model="ir.actions.act_window">
+        <field name="name">Daily Position</field>
+        <field name="res_model">petroleum.daily.position.line</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_today': 1}</field>
+    </record>
+</odoo>
