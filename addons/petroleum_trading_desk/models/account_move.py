@@ -14,16 +14,14 @@ class AccountMove(models.Model):
         currency_field='currency_id')
 
     @api.depends(
-        'deal_id', 'deal_id.margin_total',
         'invoice_line_ids.petro_margin',
         'invoice_line_ids.display_type',
         'invoice_line_ids.product_id',
+        'invoice_line_ids.quantity',
+        'invoice_line_ids.price_unit',
     )
     def _compute_petro_margin_total(self):
         for move in self:
-            if move.deal_id:
-                move.petro_margin_total = move.deal_id.margin_total
-                continue
             lines = move.invoice_line_ids.filtered(
                 lambda l: l.display_type not in _SKIP_INVOICE_LINE_DISPLAY
                 and l.product_id)
