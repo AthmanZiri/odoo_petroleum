@@ -64,6 +64,12 @@
               action="action_desk_bulk_payment"
               sequence="25"/>
 
+    <menuitem id="menu_trading_desk_bank_transfer"
+              name="Inter-Bank Transfer"
+              parent="menu_trading_desk_root"
+              action="action_desk_bank_transfer"
+              sequence="26"/>
+
     <menuitem id="menu_trading_desk_statements"
               name="Send Statements"
               parent="menu_trading_desk_root"

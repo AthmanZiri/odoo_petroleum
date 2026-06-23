@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_desk_bank_transfer_form" model="ir.ui.view">
+        <field name="name">petroleum.desk.bank.transfer.form</field>
+        <field name="model">petroleum.desk.bank.transfer</field>
+        <field name="arch" type="xml">
+            <form string="Inter-Bank Transfer">
+                <group>
+                    <group>
+                        <field name="company_id" groups="base.group_multi_company"/>
+                        <field name="journal_from_id" options="{'no_create': True}"/>
+                        <field name="journal_to_id" options="{'no_create': True}"/>
+                    </group>
+                    <group>
+                        <field name="amount"/>
+                        <field name="transfer_date"/>
+                        <field name="memo" placeholder="e.g. Float top-up"/>
+                    </group>
+                </group>
+                <field name="currency_id" invisible="1"/>
+                <field name="move_id" invisible="1"/>
+                <footer>
+                    <button name="action_confirm" type="object" string="Transfer"
+                            class="btn-primary"/>
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_desk_bank_transfer" model="ir.actions.act_window">
+        <field name="name">Inter-Bank Transfer</field>
+        <field name="res_model">petroleum.desk.bank.transfer</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>
