@@ -33,6 +33,7 @@
                 <field name="is_driver"/>
                 <field name="is_owner"/>
                 <field name="id_no" invisible="not is_driver" required="is_driver"/>
+                <field name="epra_no" invisible="not is_driver"/>
             </field>
         </field>
     </record>

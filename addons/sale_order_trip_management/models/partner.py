@@ -7,5 +7,6 @@ class Partner(models.Model):
     is_driver = fields.Boolean(string='Is Driver')
     is_owner = fields.Boolean(string='Is Transporter')
     id_no = fields.Char(string='ID Number')
+    epra_no = fields.Char(string='EPRA Number')
     truck_ids = fields.One2many('truck.management', 'company_id', string='Trucks')
     truck_history_ids = fields.One2many('truck.history', 'driver_id', string='Truck History')
