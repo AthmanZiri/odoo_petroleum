@@ -17,10 +17,23 @@ class PetroleumDealPayment(models.TransientModel):
         domain="[('type', 'in', ('bank', 'cash')), ('company_id', '=', company_id)]")
     memo = fields.Char(string='Reference')
 
+    def _payment_memo(self):
+        self.ensure_one()
+        bank = self.journal_id.name or ''
+        for suffix in (' Bank', ' bank', ' BANK'):
+            if bank.endswith(suffix):
+                bank = bank[: -len(suffix)].strip()
+                break
+        base = self.memo or self.deal_id.name
+        return _('Payment - %s - %s') % (bank or self.journal_id.display_name, base)
+
     def action_confirm(self):
         self.ensure_one()
         if self.amount <= 0:
             raise UserError(_('Amount must be positive.'))
+        method_line = self.journal_id._get_available_payment_method_lines('inbound')[:1]
+        if not method_line:
+            raise UserError(_('No payment method configured on %s.') % self.journal_id.display_name)
         payment = self.env['account.payment'].create({
             'payment_type': 'inbound',
             'partner_type': 'customer',
@@ -28,7 +41,8 @@ class PetroleumDealPayment(models.TransientModel):
             'amount': self.amount,
             'date': self.payment_date,
             'journal_id': self.journal_id.id,
-            'memo': self.memo or self.deal_id.name,
+            'memo': self._payment_memo(),
+            'payment_method_line_id': method_line.id,
         })
         payment.action_post()
         self.deal_id.payment_ids = [(4, payment.id)]

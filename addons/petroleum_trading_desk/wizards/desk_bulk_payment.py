@@ -320,6 +320,19 @@ class PetroleumDeskBulkPayment(models.TransientModel):
 
             (payment_amls + invoice_amls).reconcile()
 
+    def _payment_memo(self, partner):
+        bank = self.journal_id.name or ''
+        for suffix in (' Bank', ' bank', ' BANK'):
+            if bank.endswith(suffix):
+                bank = bank[: -len(suffix)].strip()
+                break
+        if self.memo:
+            return self.memo
+        label = bank or self.journal_id.display_name
+        if self.payment_side == 'customer':
+            return _('Payment - %s - %s') % (label, partner.display_name)
+        return _('Payment - %s - %s') % (label, partner.display_name)
+
     def _create_partner_payment(self, partner, pay_amount, alloc_lines):
         payment_type = 'inbound' if self.payment_side == 'customer' else 'outbound'
         partner_type = 'customer' if self.payment_side == 'customer' else 'supplier'
@@ -330,7 +343,7 @@ class PetroleumDeskBulkPayment(models.TransientModel):
             'amount': pay_amount,
             'date': self.payment_date,
             'journal_id': self.journal_id.id,
-            'memo': self.memo or partner.display_name,
+            'memo': self._payment_memo(partner),
             'payment_method_line_id': self._payment_method_line().id,
         })
         payment.action_post()
@@ -352,6 +365,8 @@ class PetroleumDeskBulkPayment(models.TransientModel):
         })
         if self.memo:
             register.communication = self.memo
+        else:
+            register.communication = self._payment_memo(partner)
         return register._create_payments()
 
     def _can_use_single_payment(self, alloc_lines):
