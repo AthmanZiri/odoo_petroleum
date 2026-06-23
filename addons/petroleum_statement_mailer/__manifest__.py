@@ -1,6 +1,6 @@
 {
     'name': 'Petroleum Customer Statement Mailer',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.0.1',
     'category': 'Accounting',
     'summary': 'Wizard to email customers their statement of account (invoices, payments, balance)',
     'description': """

@@ -37,8 +37,11 @@
                 <field name="result_html" invisible="state == 'draft'"/>
                 <field name="state" invisible="1"/>
                 <footer invisible="state != 'draft'">
-                    <button name="action_send" type="object" string="Send Statements"
+                    <button name="action_preview_html" type="object" string="Preview"
                             class="btn-primary"
+                            invisible="recipient_count != 1"/>
+                    <button name="action_send" type="object" string="Send Statements"
+                            class="btn-secondary"
                             confirm="Email the statement to the selected customers who have an email address?"/>
                     <button name="action_download_pdf" type="object" string="Download PDF"
                             class="btn-secondary"/>

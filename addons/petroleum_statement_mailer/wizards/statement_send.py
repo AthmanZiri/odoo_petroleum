@@ -145,6 +145,16 @@ class PetroleumStatementSend(models.TransientModel):
             'target': 'self',
         }
 
+    def action_preview_html(self):
+        """Preview the activity statement in the browser before printing or sending."""
+        self.ensure_one()
+        self._validate()
+        if len(self.partner_ids) != 1:
+            raise UserError(_(
+                'Select exactly one customer to preview. '
+                'Use Download PDF for multiple customers.'))
+        return self.partner_ids.action_preview_statement_html(self._statement_data())
+
     def action_download_pdf(self):
         """Download statement PDF for one customer, or a ZIP for several."""
         self.ensure_one()

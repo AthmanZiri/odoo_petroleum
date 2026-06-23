@@ -14,6 +14,10 @@ class ResPartner(models.Model):
         safe = re.sub(r'[^\w\s-]', '', self.name or 'Customer').strip().replace(' ', '_')
         return 'Statement_%s.pdf' % (safe or 'Customer')
 
+    def _statement_report_data(self, report_data):
+        self.ensure_one()
+        return dict(report_data, partner_ids=self.ids)
+
     def _render_statement_pdf(self, report_data):
         """Return (pdf_bytes, filename) for this customer's activity statement."""
         self.ensure_one()
@@ -22,10 +26,21 @@ class ResPartner(models.Model):
             raise_if_not_found=False)
         if not report:
             return b'', self._statement_pdf_filename()
-        data = dict(report_data, partner_ids=self.ids)
+        data = self._statement_report_data(report_data)
         pdf_content, _report_type = self.env['ir.actions.report']._render_qweb_pdf(
             report.report_name, self.ids, data=data)
         return pdf_content, self._statement_pdf_filename()
+
+    def action_preview_statement_html(self, report_data):
+        """Open the activity statement in the browser (HTML preview)."""
+        self.ensure_one()
+        report = self.env.ref(
+            'partner_statement.action_print_activity_statement_html',
+            raise_if_not_found=False)
+        if not report:
+            return False
+        data = self._statement_report_data(report_data)
+        return report.report_action(self, data=data)
 
     def _send_statement_email(self, date_start, date_end, report_data):
         """Email this customer their activity statement PDF for the period."""
