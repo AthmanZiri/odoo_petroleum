@@ -159,8 +159,9 @@ class ActivityStatement(models.AbstractModel):
     def _get_account_display_lines(
         self, company_id, partner_ids, date_start, date_end, account_type
     ):
-        res = dict(map(lambda x: (x, []), partner_ids))
-        partners = tuple(partner_ids)
+        root_ids = list(partner_ids)
+        expanded = tuple(self._expand_statement_partner_ids(root_ids))
+        raw = dict(map(lambda x: (x, []), expanded))
 
         # pylint: disable=E8103
         self.env.cr.execute(
@@ -174,14 +175,35 @@ class ActivityStatement(models.AbstractModel):
         FROM Q2
         ORDER BY date, date_maturity, move_id""".format(
                 self._display_activity_lines_sql_q1(
-                    partners, date_start, date_end, account_type
+                    expanded, date_start, date_end, account_type
                 ),
                 self._display_activity_lines_sql_q2("Q1", company_id),
             )
         )
         for row in self.env.cr.dictfetchall():
-            res[row.pop("partner_id")].append(row)
+            partner_id = row.pop("partner_id")
+            if partner_id in raw:
+                raw[partner_id].append(row)
+        res = self._rollup_statement_partner_data(raw, root_ids)
         return self._enrich_partner_display_lines(res)
+
+    def _get_account_initial_balance(
+        self, company_id, partner_ids, date_start, account_type
+    ):
+        root_ids = list(partner_ids)
+        expanded = self._expand_statement_partner_ids(root_ids)
+        balances = super()._get_account_initial_balance(
+            company_id, expanded, date_start, account_type)
+        return self._rollup_initial_balances(balances, root_ids)
+
+    def _get_account_display_reconciled_lines(
+        self, company_id, partner_ids, date_start, date_end, account_type
+    ):
+        root_ids = list(partner_ids)
+        expanded = self._expand_statement_partner_ids(root_ids)
+        reconciled = super()._get_account_display_reconciled_lines(
+            company_id, expanded, date_start, date_end, account_type)
+        return self._rollup_statement_partner_data(reconciled, root_ids)
 
     def _display_activity_reconciled_lines_sql_q2(self, sub, date_end):
         return str(

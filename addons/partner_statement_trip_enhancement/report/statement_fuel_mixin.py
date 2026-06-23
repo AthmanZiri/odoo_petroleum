@@ -11,6 +11,51 @@ class StatementFuelMixin(models.AbstractModel):
 
     _inherit = 'statement.common'
 
+    def _expand_statement_partner_ids(self, partner_ids):
+        """Include child contacts so payments on delivery addresses appear on the statement."""
+        Partner = self.env['res.partner']
+        expanded = set()
+        for partner in Partner.browse(partner_ids):
+            expanded.update(Partner.search([
+                ('commercial_partner_id', '=', partner.commercial_partner_id.id),
+            ]).ids)
+        return list(expanded)
+
+    def _rollup_statement_partner_data(self, data_by_partner, root_partner_ids):
+        """Merge lines from child contacts onto the commercial partner statement."""
+        roots = set(root_partner_ids)
+        rolled = {pid: [] for pid in root_partner_ids}
+        Partner = self.env['res.partner']
+        for partner_id, rows in data_by_partner.items():
+            commercial = Partner.browse(partner_id).commercial_partner_id.id
+            target = commercial if commercial in roots else partner_id
+            if target in rolled:
+                rolled[target].extend(rows)
+        return rolled
+
+    def _rollup_initial_balances(self, balances, root_partner_ids):
+        """Sum opening balances from child contacts by currency."""
+        roots = set(root_partner_ids)
+        totals = {pid: {} for pid in root_partner_ids}
+        Partner = self.env['res.partner']
+        for partner_id, items in balances.items():
+            commercial = Partner.browse(partner_id).commercial_partner_id.id
+            target = commercial if commercial in roots else partner_id
+            if target not in totals:
+                continue
+            for item in items:
+                currency_id = item['currency_id']
+                totals[target][currency_id] = (
+                    totals[target].get(currency_id, 0.0) + item['balance']
+                )
+        return {
+            pid: [
+                {'currency_id': currency_id, 'balance': balance}
+                for currency_id, balance in currency_map.items()
+            ]
+            for pid, currency_map in totals.items()
+        }
+
     def _has_deal_link(self):
         """True when petroleum_trading_desk linked deal_id is available."""
         move_model = self.env['account.move']
@@ -307,13 +352,19 @@ class StatementFuelMixin(models.AbstractModel):
         return cols
 
     def _is_payment_line(self, line, move_cache):
+        ref = (line.get('ref') or '').upper()
+        if 'PAYMENT' in ref:
+            return True
         if line.get('name') in ('/', ''):
-            ref = (line.get('ref') or '').upper()
-            if 'PAYMENT' in ref:
-                return True
+            move = self._get_move_cached(line.get('move_id'), move_cache)
+            if move and move.journal_id.type in ('bank', 'cash'):
+                return bool(line.get('credit'))
+            return bool(line.get('credit')) and not line.get('debit')
         move = self._get_move_cached(line.get('move_id'), move_cache)
         if move and move.journal_id.type in ('bank', 'cash'):
             return bool(line.get('credit'))
+        if move and getattr(move, 'origin_payment_id', False) and bool(line.get('credit')):
+            return True
         return False
 
     def _payment_bank_label(self, line, move_cache):

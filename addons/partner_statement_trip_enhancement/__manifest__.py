@@ -1,6 +1,6 @@
 {
     'name': 'Partner Statement Trip Enhancement',
-    'version': '19.0.1.0.9',
+    'version': '19.0.1.0.10',
     'category': 'Accounting',
     'summary': 'Fuel-aware partner statements: truck, product, debit/credit, landscape',
     'description': """
