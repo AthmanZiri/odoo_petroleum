@@ -45,54 +45,8 @@ class PetroleumLedgerReconcile(models.TransientModel):
             domain.append(('move_id.petro_import_batch', '!=', False))
         return domain
 
-    def _fifo_reconcile_partner(self, partner, side):
-        """Match open credits against oldest open debits (FIFO by date)."""
-        Line = self.env['account.move.line']
-        lines = Line.search(self._line_domain(partner, side), order='date asc, id asc')
-        positives = lines.filtered(lambda l: l.amount_residual > 0)
-        negatives = lines.filtered(lambda l: l.amount_residual < 0)
-        pairs = 0
-        errors = []
-
-        if self.dry_run:
-            pos_left = {l.id: l.amount_residual for l in positives}
-            for neg in negatives:
-                neg_left = -neg.amount_residual
-                for pos in positives:
-                    if neg_left <= 0:
-                        break
-                    avail = pos_left.get(pos.id, 0.0)
-                    if avail <= 0:
-                        continue
-                    take = min(avail, neg_left)
-                    pos_left[pos.id] = avail - take
-                    neg_left -= take
-                    pairs += 1
-            return pairs, errors
-
-        for neg in negatives:
-            while not self.company_id.currency_id.is_zero(neg.amount_residual):
-                neg.invalidate_recordset(['amount_residual', 'reconciled'])
-                pos = Line.search(
-                    self._line_domain(partner, side)
-                    + [('amount_residual', '>', 0), ('account_id', '=', neg.account_id.id)],
-                    order='date asc, id asc', limit=1,
-                )
-                if not pos:
-                    break
-                try:
-                    (neg | pos).reconcile()
-                    pairs += 1
-                except Exception as exc:  # noqa: BLE001
-                    errors.append('%s / %s: %s' % (partner.display_name, neg.move_id.name, exc))
-                    _logger.exception('FIFO reconcile failed for %s', partner.display_name)
-                    break
-        return pairs, errors
-
-    def _unreconciled_count(self, side):
-        partners = self.env['res.partner'].search(self._partner_domain(side))
+    def _open_line_domain(self, side):
         domain = [
-            ('partner_id', 'in', partners.ids),
             ('account_id.account_type', '=', self._account_type(side)),
             ('parent_state', '=', 'posted'),
             ('reconciled', '=', False),
@@ -100,7 +54,67 @@ class PetroleumLedgerReconcile(models.TransientModel):
         ]
         if self.only_imported:
             domain.append(('move_id.petro_import_batch', '!=', False))
-        return self.env['account.move.line'].search_count(domain)
+        partner_ids = self.env['res.partner'].search(self._partner_domain(side)).ids
+        if not partner_ids:
+            return domain + [('id', '=', False)]
+        domain.append(('partner_id', 'in', partner_ids))
+        return domain
+
+    def _partners_with_open_lines(self, side):
+        return self.env['account.move.line'].search(
+            self._open_line_domain(side),
+        ).mapped('partner_id')
+
+    @staticmethod
+    def _simulate_fifo_pairs(positives, negatives):
+        """Count FIFO pairings without writing reconciliations."""
+        pos_left = {line.id: line.amount_residual for line in positives}
+        pairs = 0
+        for neg in negatives:
+            neg_left = -neg.amount_residual
+            for pos in positives:
+                if neg_left <= 0:
+                    break
+                avail = pos_left.get(pos.id, 0.0)
+                if avail <= 0:
+                    continue
+                take = min(avail, neg_left)
+                pos_left[pos.id] = avail - take
+                neg_left -= take
+                pairs += 1
+        return pairs
+
+    def _fifo_reconcile_partner(self, partner, side):
+        """Match open credits against oldest open debits (FIFO by date)."""
+        Line = self.env['account.move.line'].with_context(
+            tracking_disable=True,
+            mail_notrack=True,
+            mail_create_nosubscribe=True,
+        )
+        lines = Line.search(self._line_domain(partner, side), order='date asc, id asc')
+        positives = lines.filtered(lambda l: l.amount_residual > 0)
+        negatives = lines.filtered(lambda l: l.amount_residual < 0)
+        errors = []
+        if not positives or not negatives:
+            return 0, errors
+
+        pairs = self._simulate_fifo_pairs(positives, negatives)
+        if self.dry_run:
+            return pairs, errors
+
+        for account in (positives | negatives).account_id:
+            account_lines = lines.filtered(lambda l, acc=account: l.account_id == acc)
+            try:
+                account_lines.reconcile()
+            except Exception as exc:  # noqa: BLE001
+                errors.append(
+                    '%s / %s: %s' % (partner.display_name, account.display_name, exc)
+                )
+                _logger.exception('FIFO reconcile failed for %s', partner.display_name)
+        return pairs, errors
+
+    def _unreconciled_count(self, side):
+        return self.env['account.move.line'].search_count(self._open_line_domain(side))
 
     def action_reconcile(self):
         self.ensure_one()
@@ -118,7 +132,7 @@ class PetroleumLedgerReconcile(models.TransientModel):
             if not enabled:
                 continue
             before = self._unreconciled_count(side)
-            partners = self.env['res.partner'].search(self._partner_domain(side))
+            partners = self._partners_with_open_lines(side)
             side_pairs = 0
             processed = 0
             for partner in partners:
