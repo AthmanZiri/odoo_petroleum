@@ -203,7 +203,11 @@ class ActivityStatement(models.AbstractModel):
         expanded = self._expand_statement_partner_ids(root_ids)
         reconciled = super()._get_account_display_reconciled_lines(
             company_id, expanded, date_start, date_end, account_type)
-        return self._rollup_statement_partner_data(reconciled, root_ids)
+        by_partner = {}
+        for row in reconciled:
+            by_partner.setdefault(row['partner_id'], []).append(row)
+        rolled = self._rollup_statement_partner_data(by_partner, root_ids)
+        return [row for rows in rolled.values() for row in rows]
 
     def _display_activity_reconciled_lines_sql_q2(self, sub, date_end):
         return str(
