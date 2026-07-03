@@ -278,7 +278,19 @@ class DeskDashboard(models.TransientModel):
 
     @api.model
     def _invoice_truck_token(self, invoice):
-        """Truck plate from imported invoice ref / narration."""
+        """Truck plate from imported invoice ref / narration.
+
+        For ledger-imported invoices the importer stores the truck plate in
+        ``narration`` (format: "LOADING_POINT TRUCK_PLATE").  The ``ref``
+        field holds the external invoice number from the workbook, not the
+        plate, so we must check narration first for those moves.
+        """
+        # Ledger imports: truck plate is in narration, not ref
+        if getattr(invoice, 'petro_import_batch', False):
+            narr = self._plain_text(invoice.narration)
+            if narr:
+                return narr.split('\n')[0].strip()
+
         ref = self._plain_text(invoice.ref)
         if ref and not ref.upper().startswith('INV/'):
             if ' - INV/' in ref:
@@ -363,6 +375,12 @@ class DeskDashboard(models.TransientModel):
             else:
                 sell = sum(lines.mapped('price_subtotal'))
                 buy = self._import_invoice_matched_buy(invoice)
+                # For ledger-imported invoices with no buy price set on lines,
+                # only count the margin if we actually found a matching vendor
+                # bill.  When buy=0 (no bill found) the formula sell-0=sell
+                # would report 100 % margin which is never correct.
+                if invoice.petro_import_batch and not buy:
+                    continue
                 margin += sell - buy
         return margin
 
@@ -458,12 +476,38 @@ class DeskDashboard(models.TransientModel):
 
     @api.model
     def _position_summary(self, flt):
-        """Bulk position totals for the reference day in the filter window."""
+        """Bulk position totals for the reference day in the filter window.
+
+        Prefers today when today falls inside the window.  If today has no
+        position lines (e.g. the filter covers a completed past month), falls
+        back to the most recent date within the window that does have lines so
+        the panel is never misleadingly blank.
+        """
         today = fields.Date.context_today(self)
         if flt['date_from'] <= today <= flt['date_to']:
             pos_date = today
         else:
             pos_date = flt['date_to']
+
+        # If the candidate date has no lines, find the latest populated date
+        # inside the filter window so historical views remain meaningful.
+        base_domain = []
+        if flt['product_id']:
+            base_domain.append(('product_id', '=', flt['product_id']))
+        if flt['supplier_id']:
+            base_domain.append(('supplier_id', '=', flt['supplier_id']))
+        check = self.env['petroleum.daily.position.line'].search(
+            base_domain + [('date', '=', pos_date)], limit=1)
+        if not check:
+            fallback = self.env['petroleum.daily.position.line'].search(
+                base_domain + [
+                    ('date', '>=', flt['date_from']),
+                    ('date', '<=', flt['date_to']),
+                ],
+                order='date desc', limit=1)
+            if fallback:
+                pos_date = fallback.date
+
         domain = [('date', '=', pos_date)]
         if flt['product_id']:
             domain.append(('product_id', '=', flt['product_id']))

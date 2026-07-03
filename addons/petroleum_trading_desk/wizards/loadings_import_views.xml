@@ -22,6 +22,7 @@
                         <group string="Options">
                             <field name="not_sold_partner_id"/>
                             <field name="skip_existing"/>
+                            <field name="seed_daily_position"/>
                             <field name="auto_confirm"/>
                             <field name="auto_load"/>
                         </group>
@@ -44,5 +45,68 @@
         <field name="res_model">petroleum.loadings.import</field>
         <field name="view_mode">form</field>
         <field name="target">new</field>
+    </record>
+
+    <!-- ── Import Job list / form ─────────────────────────────────── -->
+    <record id="view_loadings_import_job_list" model="ir.ui.view">
+        <field name="name">petroleum.loadings.import.job.list</field>
+        <field name="model">petroleum.loadings.import.job</field>
+        <field name="arch" type="xml">
+            <list string="Loadings Import Jobs" decoration-danger="error_count &gt; 0 and state == 'done'"
+                  decoration-success="error_count == 0 and state == 'done'"
+                  decoration-info="state == 'pending'">
+                <field name="name"/>
+                <field name="state"/>
+                <field name="total_count"/>
+                <field name="confirmed_count"/>
+                <field name="error_count"/>
+                <field name="create_date"/>
+                <button name="action_reseed_and_retry" type="object"
+                        string="Reseed &amp; Retry" icon="fa-refresh"
+                        invisible="state != 'done' or error_count == 0"
+                        class="btn-warning"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_loadings_import_job_form" model="ir.ui.view">
+        <field name="name">petroleum.loadings.import.job.form</field>
+        <field name="model">petroleum.loadings.import.job</field>
+        <field name="arch" type="xml">
+            <form string="Loadings Import Job">
+                <header>
+                    <button name="action_reseed_and_retry" type="object"
+                            string="Reseed &amp; Retry Confirmation"
+                            class="btn-warning"
+                            invisible="state != 'done' or error_count == 0"
+                            help="Create missing daily position lines from the deal lines and re-queue all draft deals for background confirmation. Use when the import ran before seed_daily_position was enabled."/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="state" readonly="1"/>
+                            <field name="total_count" readonly="1"/>
+                            <field name="confirmed_count" readonly="1"/>
+                            <field name="loaded_count" readonly="1"/>
+                            <field name="error_count" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Result">
+                            <field name="result_html" readonly="1" nolabel="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_loadings_import_job" model="ir.actions.act_window">
+        <field name="name">Loadings Import Jobs</field>
+        <field name="res_model">petroleum.loadings.import.job</field>
+        <field name="view_mode">list,form</field>
     </record>
 </odoo>

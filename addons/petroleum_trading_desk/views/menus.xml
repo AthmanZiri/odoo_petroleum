@@ -105,9 +105,21 @@
               action="action_loadings_import"
               sequence="15"/>
 
+    <menuitem id="menu_trading_desk_import_jobs"
+              name="Loadings Import Jobs"
+              parent="menu_trading_desk_config"
+              action="action_loadings_import_job"
+              sequence="16"/>
+
     <menuitem id="menu_trading_desk_ledger_link"
               name="Link Deals to Ledger"
               parent="menu_trading_desk_config"
               action="action_deal_ledger_link"
               sequence="18"/>
+
+    <menuitem id="menu_trading_desk_backfill_margins"
+              name="Backfill Import Margins"
+              parent="menu_trading_desk_config"
+              action="action_backfill_import_buy_prices"
+              sequence="22"/>
 </odoo>

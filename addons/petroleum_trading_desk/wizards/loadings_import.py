@@ -88,6 +88,12 @@ class PetroleumLoadingsImport(models.TransientModel):
         string='Confirm deals (background)', default=True,
         help='Queue sale order / purchase order / trip creation in a '
              'background job so large workbooks do not hit the HTTP timeout.')
+    seed_daily_position = fields.Boolean(
+        string='Backfill daily position from workbook', default=True,
+        help='Create or extend Daily Position lines (litres bought per date, '
+             'supplier and product) from the loadings totals, then sync bulk '
+             'purchase orders. Use when importing a past period that was not '
+             'tracked in Odoo.')
     auto_load = fields.Boolean(
         string='Load and invoice (background)', default=False,
         help='Post customer invoices and vendor bills after confirming. '
@@ -328,6 +334,65 @@ class PetroleumLoadingsImport(models.TransientModel):
             'notes': ' '.join(notes_parts),
         }
 
+    def _seed_daily_position_from_parsed(self, parsed, st):
+        """Derive morning bulk-buy litres from loadings rows (historical backfill)."""
+        from collections import defaultdict
+
+        buckets = defaultdict(lambda: {'qty': 0.0, 'buy_total': 0.0, 'buy_weight': 0.0})
+        for row in parsed:
+            supplier_name, _ = self._split_supplier(row['supplier_raw'])
+            if not supplier_name:
+                continue
+            supplier = self._get_partner(st, supplier_name, is_supplier=True)
+            for line in row['lines']:
+                product = self._get_fuel_product(st, line['grade'])
+                key = (row['date'], supplier.id, product.id)
+                bucket = buckets[key]
+                qty = line['quantity']
+                bucket['qty'] += qty
+                if line['buy_price']:
+                    bucket['buy_weight'] += qty
+                    bucket['buy_total'] += line['buy_price'] * qty
+
+        PositionLine = self.env['petroleum.daily.position.line'].with_company(
+            self.company_id)
+        created = updated = 0
+        for (pos_date, supplier_id, product_id), data in sorted(buckets.items()):
+            buy_price = (
+                data['buy_total'] / data['buy_weight'] if data['buy_weight'] else 0.0
+            )
+            domain = [
+                ('date', '=', pos_date),
+                ('supplier_id', '=', supplier_id),
+                ('product_id', '=', product_id),
+                ('depot_id', '=', False),
+                ('company_id', '=', self.company_id.id),
+            ]
+            pos_line = PositionLine.search(domain, limit=1)
+            if pos_line:
+                vals = {}
+                if pos_line.qty_bought < data['qty']:
+                    vals['qty_bought'] = data['qty']
+                if buy_price and not pos_line.buy_price:
+                    vals['buy_price'] = buy_price
+                if vals:
+                    pos_line.write(vals)
+                    updated += 1
+            else:
+                pos_line = PositionLine.with_context(**IMPORT_CTX).create({
+                    'date': pos_date,
+                    'supplier_id': supplier_id,
+                    'product_id': product_id,
+                    'company_id': self.company_id.id,
+                    'qty_opening': 0.0,
+                    'qty_bought': data['qty'],
+                    'buy_price': buy_price,
+                    'note': _('Backfilled from loadings import.'),
+                })
+                created += 1
+            pos_line._sync_purchase_order_line()
+        return created, updated
+
     # ------------------------------------------------------------------
     # Main
     # ------------------------------------------------------------------
@@ -361,12 +426,19 @@ class PetroleumLoadingsImport(models.TransientModel):
         }
         self._prepare_fuel_products_once(st)
 
+        position_created = position_updated = 0
+        if self.seed_daily_position:
+            position_created, position_updated = self._seed_daily_position_from_parsed(
+                parsed, st)
+
         existing_keys = self._load_existing_keys(parsed) if self.skip_existing else set()
         Deal = self.env['petroleum.deal'].with_company(self.company_id).with_context(**IMPORT_CTX)
 
         counters = {
             'created': 0, 'skipped': 0, 'queued': 0,
             'draft': 0, 'errors': 0,
+            'position_created': position_created,
+            'position_updated': position_updated,
         }
         error_rows = []
         to_create = []
@@ -471,6 +543,12 @@ class PetroleumLoadingsImport(models.TransientModel):
             total_rows, c['created'], c['skipped'], c['queued'],
             c['draft'], 'red' if c['errors'] else 'green', c['errors'],
         )
+
+        if c.get('position_created') or c.get('position_updated'):
+            head += (
+                "<p>Daily position backfill: <b>%d</b> line(s) created, "
+                "<b>%d</b> updated (bulk purchase orders synced).</p>"
+            ) % (c.get('position_created', 0), c.get('position_updated', 0))
 
         if c['queued']:
             head += (

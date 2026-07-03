@@ -101,6 +101,121 @@ class PetroleumLoadingsImportJob(models.Model):
         if not remaining:
             self._finish(errors)
 
+    # ------------------------------------------------------------------
+    # Reseed + Retry (called when position lines were missing at import time)
+    # ------------------------------------------------------------------
+    def action_reseed_and_retry(self):
+        """Seed daily position lines from the existing deal line data, then
+        re-queue all still-draft deals from this job for background confirmation.
+
+        Use this when the import ran before ``seed_daily_position`` was
+        deployed (so no position lines were created) and all deals failed the
+        confirmation step with "No daily position" errors.
+        """
+        self.ensure_one()
+        draft_deals = self.deal_ids.filtered(lambda d: d.state == 'draft')
+        if not draft_deals:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('Nothing to retry'),
+                    'message': _('No draft deals remain in this job.'),
+                    'type': 'warning',
+                    'sticky': False,
+                },
+            }
+
+        PositionLine = self.env['petroleum.daily.position.line'].with_company(
+            self.company_id)
+
+        # ── 1. Bucket deal-line quantities by (date, supplier, product) ──
+        from collections import defaultdict
+        buckets = defaultdict(lambda: {'qty': 0.0, 'buy_total': 0.0, 'buy_weight': 0.0})
+        for deal in draft_deals:
+            for line in deal.line_ids:
+                if not line.supplier_id or not line.product_id:
+                    continue
+                key = (deal.date, line.supplier_id.id, line.product_id.id)
+                b = buckets[key]
+                b['qty'] += line.quantity
+                if line.buy_price:
+                    b['buy_weight'] += line.quantity
+                    b['buy_total'] += line.buy_price * line.quantity
+
+        # ── 2. Create / update position lines ────────────────────────────
+        created = updated = 0
+        errors = []
+        for (pos_date, supplier_id, product_id), data in sorted(buckets.items()):
+            buy_price = (
+                data['buy_total'] / data['buy_weight'] if data['buy_weight'] else 0.0
+            )
+            domain = [
+                ('date', '=', pos_date),
+                ('supplier_id', '=', supplier_id),
+                ('product_id', '=', product_id),
+                ('depot_id', '=', False),
+                ('company_id', '=', self.company_id.id),
+            ]
+            pos_line = PositionLine.search(domain, limit=1)
+            if pos_line:
+                vals = {}
+                if pos_line.qty_bought < data['qty']:
+                    vals['qty_bought'] = data['qty']
+                if buy_price and not pos_line.buy_price:
+                    vals['buy_price'] = buy_price
+                if vals:
+                    pos_line.write(vals)
+                    updated += 1
+            else:
+                pos_line = PositionLine.with_context(**IMPORT_CTX).create({
+                    'date': pos_date,
+                    'supplier_id': supplier_id,
+                    'product_id': product_id,
+                    'company_id': self.company_id.id,
+                    'qty_opening': 0.0,
+                    'qty_bought': data['qty'],
+                    'buy_price': buy_price,
+                    'note': _('Backfilled from import job retry.'),
+                })
+                created += 1
+            try:
+                if pos_line.buy_price and pos_line.qty_total > 0:
+                    pos_line._sync_purchase_order_line()
+            except Exception as exc:  # noqa: BLE001
+                errors.append('%s: %s' % (pos_line.display_name, exc))
+                _logger.warning('Reseed PO sync failed for %s: %s', pos_line, exc)
+
+        # ── 3. Re-queue the draft deals ──────────────────────────────────
+        queue_ids = draft_deals.ids
+        self.write({
+            'state': 'pending',
+            'queue_deal_ids': queue_ids,
+            'error_count': 0,
+            'confirmed_count': 0,
+            'error_log': json.dumps(errors[-100:]) if errors else '[]',
+            'result_html': _(
+                '<p>Reseeded <b>%d</b> position line(s) created, '
+                '<b>%d</b> updated. Re-queued <b>%d</b> deal(s) for '
+                'confirmation.</p>'
+            ) % (created, updated, len(queue_ids)),
+        })
+        self._kick()
+
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Reseed complete'),
+                'message': _(
+                    '%d position line(s) created, %d updated. '
+                    '%d deal(s) re-queued for background confirmation.'
+                ) % (created, updated, len(queue_ids)),
+                'type': 'success',
+                'sticky': True,
+            },
+        }
+
     def _finish(self, errors=None):
         if errors is None:
             errors = []
