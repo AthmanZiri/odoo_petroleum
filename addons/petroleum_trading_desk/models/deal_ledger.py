@@ -133,12 +133,37 @@ class PetroleumDeal(models.Model):
         if require_truck and not plate:
             return self.env['account.move']
 
+        from datetime import timedelta
+
         Move = self.env['account.move']
-        domain = self._ledger_base_domain('out_invoice', only_imported)
-        domain.append(('partner_id', 'in', self._ledger_partner_match_ids(
-            self.partner_id, role='customer', use_aliases=use_aliases)))
-        candidates = self._ledger_filter_moves(
-            Move.search(domain), plate, self.amount_sell, require_truck)
+        partner_ids = self._ledger_partner_match_ids(
+            self.partner_id, role='customer', use_aliases=use_aliases)
+
+        def _search_date(date):
+            base = [
+                ('company_id', '=', self.company_id.id),
+                ('move_type', '=', 'out_invoice'),
+                ('state', '=', 'posted'),
+                ('deal_id', '=', False),
+                ('invoice_date', '=', date),
+                ('partner_id', 'in', partner_ids),
+            ]
+            if only_imported:
+                base.append(('petro_import_batch', '!=', False))
+            moves = Move.search(base)
+            # Match on partner + truck plate. The loadings report and customer
+            # ledger use different sell prices, so amount matching is skipped.
+            return moves.filtered(
+                lambda m: not require_truck or self._ledger_move_has_plate(m, plate))
+
+        # Priority 1: exact date
+        candidates = _search_date(self.date)
+        if not candidates:
+            # Priority 2: ±1 day — covers billing-day vs loading-day differences
+            for delta in (1, -1):
+                candidates = _search_date(self.date + timedelta(days=delta))
+                if candidates:
+                    break
         return self._ledger_pick_best(candidates, self.amount_sell)
 
     def _ledger_find_vendor_bills(
@@ -267,9 +292,9 @@ class PetroleumDeal(models.Model):
                     )
                 if invs_plate and not invs_amt:
                     return _(
-                        'Invoice(s) found for this truck/date but sell amount does not match '
-                        '(deal %(deal)s, tolerance applied).',
-                        deal=self.amount_sell,
+                        'Invoice(s) found for this truck/date but partner does not match '
+                        '(deal client: %(deal)s).',
+                        deal=self.partner_id.name,
                     )
                 return _('No matching customer invoice.')
         hints = []
