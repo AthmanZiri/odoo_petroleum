@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_margin_backfill_form" model="ir.ui.view">
+        <field name="name">petroleum.margin.backfill.form</field>
+        <field name="model">petroleum.margin.backfill</field>
+        <field name="arch" type="xml">
+            <form string="Backfill Invoice Buy Prices">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>Backfill Invoice Buy Prices from Loadings Report</h1>
+                        <p class="text-muted">
+                            Upload the monthly loadings workbook.  The wizard reads the
+                            agreed buy prices (columns B / D / F) for each truck and date,
+                            then stores them on the matching customer invoice lines so that
+                            <b>Margin</b> is computed correctly on each invoice.
+                        </p>
+                    </div>
+
+                    <group invisible="state == 'done'">
+                        <group string="Loadings Workbook">
+                            <field name="loadings_file" filename="loadings_filename"
+                                   widget="binary"/>
+                            <field name="loadings_filename" invisible="1"/>
+                        </group>
+                        <group string="Options">
+                            <field name="overwrite"/>
+                        </group>
+                    </group>
+
+                    <group invisible="state != 'done'">
+                        <field name="result_html" widget="html" nolabel="1"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_run" type="object" string="Backfill Buy Prices"
+                            class="btn-primary" invisible="state == 'done'"/>
+                    <button string="Close" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_margin_backfill" model="ir.actions.act_window">
+        <field name="name">Backfill Import Margins</field>
+        <field name="res_model">petroleum.margin.backfill</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

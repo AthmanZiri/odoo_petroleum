@@ -31,3 +31,5 @@ access_desk_bank_transfer_user,desk.bank.transfer.user,model_petroleum_desk_bank
 access_desk_bank_transfer_manager,desk.bank.transfer.manager,model_petroleum_desk_bank_transfer,sales_team.group_sale_manager,1,1,1,1
 access_ledger_partner_alias_user,ledger.partner.alias.user,model_petroleum_ledger_partner_alias,sales_team.group_sale_salesman,1,0,0,0
 access_ledger_partner_alias_manager,ledger.partner.alias.manager,model_petroleum_ledger_partner_alias,sales_team.group_sale_manager,1,1,1,1
+access_margin_backfill_user,margin.backfill.user,model_petroleum_margin_backfill,sales_team.group_sale_salesman,1,1,1,1
+access_margin_backfill_manager,margin.backfill.manager,model_petroleum_margin_backfill,sales_team.group_sale_manager,1,1,1,1

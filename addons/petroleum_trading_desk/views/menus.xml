@@ -120,6 +120,6 @@
     <menuitem id="menu_trading_desk_backfill_margins"
               name="Backfill Import Margins"
               parent="menu_trading_desk_config"
-              action="action_backfill_import_buy_prices"
+              action="action_margin_backfill"
               sequence="22"/>
 </odoo>

@@ -45,6 +45,7 @@ A single place for the trader to run the whole buy-and-sell flow.
         'wizards/desk_bank_transfer_views.xml',
         'wizards/loadings_import_views.xml',
         'wizards/deal_ledger_link_views.xml',
+        'wizards/margin_backfill_views.xml',
         'views/account_move_views.xml',
         'views/partner_views.xml',
         'reports/proforma_report.xml',
