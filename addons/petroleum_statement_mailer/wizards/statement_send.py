@@ -12,8 +12,14 @@ _logger = logging.getLogger(__name__)
 
 class PetroleumStatementSend(models.TransientModel):
     _name = 'petroleum.statement.send'
-    _description = 'Send Customer Statements'
+    _description = 'Send Partner Statements'
 
+    statement_type = fields.Selection(
+        [('customer', 'Customer'), ('vendor', 'Vendor')],
+        string='Statement For',
+        required=True,
+        default='customer',
+    )
     company_id = fields.Many2one(
         'res.company', required=True, default=lambda self: self.env.company)
     date_end = fields.Date(
@@ -21,12 +27,11 @@ class PetroleumStatementSend(models.TransientModel):
         default=fields.Date.context_today)
     date_start = fields.Date(string='From', required=True)
     partner_ids = fields.Many2many(
-        'res.partner', string='Customers', required=True,
-        domain="[('customer_rank', '>', 0), ('parent_id', '=', False)]")
+        'res.partner', string='Partners', required=True)
     only_with_balance = fields.Boolean(
-        string='Only customers with a balance', default=True)
+        string='Only partners with a balance', default=True)
     only_with_email = fields.Boolean(
-        string='Only customers with an email', default=True)
+        string='Only partners with an email', default=True)
 
     recipient_count = fields.Integer(compute='_compute_counts')
     ready_count = fields.Integer(compute='_compute_counts')
@@ -49,14 +54,40 @@ class PetroleumStatementSend(models.TransientModel):
             res['partner_ids'] = [(6, 0, self._recipient_ids(res).ids)]
         return res
 
+    def _is_vendor_statement(self, vals=None):
+        statement_type = (vals or {}).get('statement_type')
+        if not statement_type and self:
+            statement_type = self[:1].statement_type
+        return statement_type == 'vendor'
+
+    def _partner_rank_domain(self, vals=None):
+        if self._is_vendor_statement(vals):
+            return ('supplier_rank', '>', 0)
+        return ('customer_rank', '>', 0)
+
+    def _balance_field(self, vals=None):
+        if self._is_vendor_statement(vals):
+            return 'debit'
+        return 'credit'
+
+    def _account_type(self, vals=None):
+        if self._is_vendor_statement(vals):
+            return 'liability_payable'
+        return 'asset_receivable'
+
+    def _partner_label(self, vals=None):
+        if self._is_vendor_statement(vals):
+            return _('vendor')
+        return _('customer')
+
     def _recipient_domain(self):
         domain = [
-            ('customer_rank', '>', 0),
+            self._partner_rank_domain(),
             ('parent_id', '=', False),
             ('company_id', 'in', [False, self.company_id.id]),
         ]
         if self.only_with_balance:
-            domain.append(('credit', '>', 0))
+            domain.append((self._balance_field(), '>', 0))
         return domain
 
     @api.model
@@ -66,11 +97,11 @@ class PetroleumStatementSend(models.TransientModel):
             vals.get('company_id') or self.env.company.id)
         Partner = self.env['res.partner'].with_company(company)
         domain = [
-            ('customer_rank', '>', 0),
+            self._partner_rank_domain(vals),
             ('parent_id', '=', False),
         ]
         if vals.get('only_with_balance', True):
-            domain.append(('credit', '>', 0))
+            domain.append((self._balance_field(vals), '>', 0))
         partners = Partner.search(domain)
         if vals.get('only_with_email', True):
             partners = partners.filtered('email')
@@ -84,9 +115,10 @@ class PetroleumStatementSend(models.TransientModel):
             wiz.ready_count = len(ready)
             wiz.skipped_no_email = len(wiz.partner_ids - ready)
 
-    @api.onchange('only_with_balance', 'only_with_email', 'company_id')
+    @api.onchange('statement_type', 'only_with_balance', 'only_with_email', 'company_id')
     def _onchange_filters(self):
         self.partner_ids = self._recipient_ids({
+            'statement_type': self.statement_type,
             'company_id': self.company_id.id,
             'only_with_balance': self.only_with_balance,
             'only_with_email': self.only_with_email,
@@ -95,6 +127,7 @@ class PetroleumStatementSend(models.TransientModel):
     def action_refresh_recipients(self):
         self.ensure_one()
         self.partner_ids = self._recipient_ids({
+            'statement_type': self.statement_type,
             'company_id': self.company_id.id,
             'only_with_balance': self.only_with_balance,
             'only_with_email': self.only_with_email,
@@ -116,7 +149,7 @@ class PetroleumStatementSend(models.TransientModel):
             'show_aging_buckets': True,
             'show_only_overdue': False,
             'filter_non_due_partners': False,
-            'account_type': 'asset_receivable',
+            'account_type': self._account_type(),
             'aging_type': 'days',
             'filter_negative_balances': False,
             'excluded_accounts_ids': [],
@@ -126,7 +159,7 @@ class PetroleumStatementSend(models.TransientModel):
     def _validate(self):
         self.ensure_one()
         if not self.partner_ids:
-            raise UserError(_('Select at least one customer.'))
+            raise UserError(_('Select at least one %s.') % self._partner_label())
         if self.date_start > self.date_end:
             raise UserError(_('The start date must be on or before the statement date.'))
 
@@ -151,8 +184,8 @@ class PetroleumStatementSend(models.TransientModel):
         self._validate()
         if len(self.partner_ids) != 1:
             raise UserError(_(
-                'Select exactly one customer to preview. '
-                'Use Download PDF for multiple customers.'))
+                'Select exactly one %s to preview. '
+                'Use Download PDF for multiple partners.') % self._partner_label())
         return self.partner_ids.action_preview_statement_html(self._statement_data())
 
     def action_download_pdf(self):
@@ -174,7 +207,8 @@ class PetroleumStatementSend(models.TransientModel):
                     filename = filename.replace('.pdf', '_%s.pdf' % partner.id)
                 used_names.add(filename)
                 zf.writestr(filename, pdf_content)
-        zip_name = 'Customer_Statements_%s.zip' % self.date_end.strftime('%Y-%m-%d')
+        prefix = 'Vendor' if self.statement_type == 'vendor' else 'Customer'
+        zip_name = '%s_Statements_%s.zip' % (prefix, self.date_end.strftime('%Y-%m-%d'))
         return self._download_attachment(
             buffer.getvalue(), zip_name, 'application/zip')
 
@@ -196,8 +230,8 @@ class PetroleumStatementSend(models.TransientModel):
                 _logger.exception('Statement email failed for %s', partner.display_name)
 
         html = (
-            '<p>Statements sent to <b>%d</b> of <b>%d</b> selected customer(s).</p>'
-            % (sent, len(self.partner_ids))
+            '<p>Statements sent to <b>%d</b> of <b>%d</b> selected %s(s).</p>'
+            % (sent, len(self.partner_ids), self._partner_label())
         )
         if skipped:
             html += '<p>Skipped (no email): %s</p>' % ', '.join(skipped.mapped('display_name'))

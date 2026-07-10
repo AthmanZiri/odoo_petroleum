@@ -23,4 +23,28 @@
             </div>
         </field>
     </record>
+
+    <record id="mail_template_vendor_statement" model="mail.template">
+        <field name="name">Vendor Statement</field>
+        <field name="model_id" ref="base.model_res_partner"/>
+        <field name="subject">Supplier Statement - {{ user.company_id.name }}</field>
+        <field name="email_from">{{ (user.company_id.email_formatted or user.email_formatted) }}</field>
+        <field name="email_to">{{ object.email }}</field>
+        <field name="lang">{{ object.lang or user.lang }}</field>
+        <field name="body_html" type="html">
+            <div style="margin:0px;padding:0px;font-size:13px;">
+                <p>Dear <t t-out="object.name or ''">Supplier</t>,</p>
+                <p>Please find attached your supplier statement as at today, showing bills,
+                   payments made and the current balance.</p>
+                <p>The balance on your account is
+                   <strong t-out="format_amount(object.debit, user.company_id.currency_id) or ''">KSh 0.00</strong>.
+                </p>
+                <p>If any amounts remain outstanding on our side, we will process payment
+                   according to our agreed terms. If you believe a payment has not been
+                   reflected, please reply with the confirmation details.</p>
+                <p>Regards,<br/>
+                   <t t-out="user.company_id.name or ''">Company</t></p>
+            </div>
+        </field>
+    </record>
 </odoo>

@@ -1,14 +1,14 @@
 {
     'name': 'Petroleum Customer Statement Mailer',
-    'version': '19.0.1.0.1',
+    'version': '19.0.1.1.0',
     'category': 'Accounting',
-    'summary': 'Wizard to email customers their statement of account (invoices, payments, balance)',
+    'summary': 'Wizard to email customers and vendors their statement of account',
     'description': """
-Send customer statements on demand via a wizard.
+Send partner statements on demand via a wizard.
 
 * Reuses the OCA Activity Statement (invoices + payments + running balance,
   with the trip/truck/product columns from partner_statement_trip_enhancement).
-* Open **Send Customer Statements** each morning, review the customer list,
+* Open **Customer Statements** or **Vendor Statements**, review the partner list,
   adjust the statement period if needed, and click Send.
 * Also available from the Trading Desk Overview dashboard.
 """,

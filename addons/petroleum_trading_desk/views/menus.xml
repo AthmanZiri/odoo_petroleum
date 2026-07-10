@@ -73,8 +73,19 @@
     <menuitem id="menu_trading_desk_statements"
               name="Send Statements"
               parent="menu_trading_desk_root"
-              action="petroleum_statement_mailer.action_statement_send_wizard"
               sequence="30"/>
+
+    <menuitem id="menu_trading_desk_statements_customer"
+              name="Customer Statements"
+              parent="menu_trading_desk_statements"
+              action="petroleum_statement_mailer.action_statement_send_wizard"
+              sequence="10"/>
+
+    <menuitem id="menu_trading_desk_statements_vendor"
+              name="Vendor Statements"
+              parent="menu_trading_desk_statements"
+              action="petroleum_statement_mailer.action_statement_send_wizard_vendor"
+              sequence="20"/>
 
     <menuitem id="menu_trading_desk_config"
               name="Configuration"
