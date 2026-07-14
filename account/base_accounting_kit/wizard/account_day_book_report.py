@@ -72,5 +72,5 @@ class DayBookWizard(models.TransientModel):
                                             lang=self.env.context.get(
                                                 'lang') or 'en_US')
         return self.env.ref(
-            'base_accounting_kit.day_book_pdf_report').report_action(self,
-                                                                     data=data)
+            'base_accounting_kit.day_book_pdf_report').with_context(
+            landscape=True).report_action(self, data=data)

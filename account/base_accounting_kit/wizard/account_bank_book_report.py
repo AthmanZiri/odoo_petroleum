@@ -108,5 +108,5 @@ class BankBookWizard(models.TransientModel):
                                             lang=self.env.context.get(
                                                 'lang') or 'en_US')
         return self.env.ref(
-            'base_accounting_kit.action_report_bank_book').report_action(self,
-                                                                         data=data)
+            'base_accounting_kit.action_report_bank_book').with_context(
+            landscape=True).report_action(self, data=data)
