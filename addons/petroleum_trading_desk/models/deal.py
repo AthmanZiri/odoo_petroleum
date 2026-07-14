@@ -183,7 +183,8 @@ class PetroleumDeal(models.Model):
     @api.onchange('depot_id', 'date')
     def _onchange_deal_refresh_line_prices(self):
         for line in self.line_ids:
-            line._apply_price_defaults_onchange()
+            # Refresh buy from position/board; keep any manual sell price.
+            line._apply_price_defaults_onchange(force_sell=False)
 
     @api.onchange('truck_id')
     def _onchange_truck_id(self):
@@ -575,32 +576,42 @@ class PetroleumDealLine(models.Model):
                 result['supplier_id'] = dp.supplier_id.id
         return result
 
-    def _apply_price_defaults_onchange(self):
+    def _apply_price_defaults_onchange(self, force_sell=False):
         defaults = self._get_price_defaults()
         if defaults.get('supplier_id') and not self.supplier_id:
             self.supplier_id = self.env['res.partner'].browse(defaults['supplier_id'])
         if 'buy_price' in defaults:
             self.buy_price = defaults['buy_price']
-        if defaults.get('sell_price'):
+        if defaults.get('sell_price') and (force_sell or not self.sell_price):
             self.sell_price = defaults['sell_price']
 
-    def _apply_price_defaults(self):
-        """Persisted records: always refresh buy from daily position when matched."""
+    def _apply_price_defaults(self, force_sell=False):
+        """Refresh buy from daily position when matched.
+
+        Sell price is only filled when empty, unless force_sell (e.g. product
+        or supplier changed). Manual sell prices must persist across save.
+        """
         for line in self:
             defaults = line._get_price_defaults()
             vals = {}
             if 'buy_price' in defaults:
                 vals['buy_price'] = defaults['buy_price']
-            if defaults.get('sell_price'):
+            if defaults.get('sell_price') and (force_sell or not line.sell_price):
                 vals['sell_price'] = defaults['sell_price']
             if vals:
                 line.write(vals)
 
-    @api.onchange('product_id', 'supplier_id', 'deal_id', 'deal_id.depot_id', 'deal_id.date')
+    @api.onchange('product_id', 'supplier_id')
     def _onchange_product_prices(self):
         for line in self:
             if line.product_id:
-                line._apply_price_defaults_onchange()
+                line._apply_price_defaults_onchange(force_sell=True)
+
+    @api.onchange('deal_id', 'deal_id.depot_id', 'deal_id.date')
+    def _onchange_deal_context_prices(self):
+        for line in self:
+            if line.product_id:
+                line._apply_price_defaults_onchange(force_sell=False)
 
     def _sync_daily_price(self):
         """Update the daily price board from deal lines (not position-backed buys)."""
@@ -615,14 +626,16 @@ class PetroleumDealLine(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         lines = super().create(vals_list)
-        lines._apply_price_defaults()
+        # Do not overwrite sell_price passed in create vals.
+        lines._apply_price_defaults(force_sell=False)
         lines._sync_daily_price()
         return lines
 
     def write(self, vals):
         res = super().write(vals)
         if any(k in vals for k in ('product_id', 'supplier_id')):
-            self._apply_price_defaults()
+            # If this write also sets sell_price, keep the user's value.
+            self._apply_price_defaults(force_sell='sell_price' not in vals)
         if any(k in vals for k in ('buy_price', 'sell_price', 'product_id', 'supplier_id')):
             self._sync_daily_price()
         return res
