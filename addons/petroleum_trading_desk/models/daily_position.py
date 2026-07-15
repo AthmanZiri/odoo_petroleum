@@ -145,8 +145,10 @@ class PetroleumDailyPositionLine(models.Model):
             for line in self:
                 price_logs.append((line, line.buy_price, vals['buy_price']))
         res = super().write(vals)
+        reason = self.env.context.get('buy_price_log_reason', 'revision')
+        note = self.env.context.get('buy_price_log_note', False)
         for line, old_price, new_price in price_logs:
-            line._log_buy_price_change(old_price, new_price)
+            line._log_buy_price_change(old_price, new_price, reason=reason, note=note)
         return res
 
     @api.model
@@ -180,19 +182,53 @@ class PetroleumDailyPositionLine(models.Model):
 
     @api.model
     def find_for_deal_line(self, deal_line):
-        """Match a deal line to today's position lot (product, supplier, depot, price)."""
+        """Match a deal line to today's position lot (product, supplier, depot, price).
+
+        If the deal line explicitly selects a position lot, that wins.
+        """
+        if deal_line.position_line_id:
+            return deal_line.position_line_id
         deal = deal_line.deal_id
-        domain = self._line_domain(
-            deal.date, deal_line.product_id, deal_line.supplier_id,
-            deal.depot_id, deal.company_id)
-        candidates = self.search(domain, order='id')
-        if not candidates and deal.depot_id:
-            domain = self._line_domain(
-                deal.date, deal_line.product_id, deal_line.supplier_id,
-                False, deal.company_id)
-            candidates = self.search(domain, order='id')
+        candidates = self.candidates_for_deal_line(deal_line)
         return self._pick_matching_line(
             candidates, buy_price=deal_line.buy_price, qty_needed=deal_line.quantity)
+
+    @api.model
+    def candidates_for_deal_line(self, deal_line):
+        """All same-day lots that could supply this deal line.
+
+        Depot is soft-matched: if the deal has a depot, prefer that depot (and
+        lots with no depot). If the deal has no depot, every depot matches so
+        traders can still pick Buy Lots from KPRL / GAPCO, etc.
+        """
+        deal = deal_line.deal_id
+        if not (deal and deal_line.product_id and deal_line.supplier_id and deal.date):
+            return self.browse()
+        domain = [
+            ('date', '=', deal.date),
+            ('product_id', '=', deal_line.product_id.id),
+            ('supplier_id', '=', deal_line.supplier_id.id),
+            ('company_id', '=', deal.company_id.id),
+        ]
+        if deal.depot_id:
+            domain.append(('depot_id', 'in', [deal.depot_id.id, False]))
+        return self.search(domain, order='buy_price, id')
+
+    def _get_linked_purchase_order(self):
+        """PO for this lot, walking rolled-from ancestors for opening stock.
+
+        Carried-forward lines often have no PO of their own (stock was bought
+        on an earlier day). Trips and deal confirm still need that original PO.
+        """
+        self.ensure_one()
+        seen = self.env['petroleum.daily.position.line']
+        line = self
+        while line and line not in seen:
+            seen |= line
+            if line.purchase_order_id:
+                return line.purchase_order_id
+            line = line.rolled_from_line_id
+        return self.env['purchase.order']
 
     def _po_origin(self):
         self.ensure_one()
@@ -279,7 +315,15 @@ class PetroleumDailyPositionLine(models.Model):
             lambda m: m.state == 'draft' and m.move_type == 'in_invoice')
         if bills:
             invoice_date = po.daily_position_date or fields.Date.context_today(self)
-            bills.write({'invoice_date': invoice_date})
+            bill_vals = {
+                'invoice_date': invoice_date,
+                # Bill Reference / Source Document → PO number (e.g. P00099).
+                'ref': po.name,
+                'invoice_origin': po.name,
+            }
+            if 'purchase_id' in bills._fields:
+                bill_vals['purchase_id'] = po.id
+            bills.write(bill_vals)
             bills.action_post()
 
     def action_sync_purchase_orders(self):
@@ -320,6 +364,7 @@ class PetroleumDailyPositionLine(models.Model):
                 ) % len(lines),
                 'type': 'success',
                 'sticky': False,
+                'next': {'type': 'ir.actions.client', 'tag': 'soft_reload'},
             },
         }
 
@@ -330,7 +375,6 @@ class PetroleumDailyPositionLine(models.Model):
             self._line_domain(today, product, supplier, depot, company), order='id')
         return candidates.filtered(lambda l: l._same_buy_price(buy_price))[:1]
 
-    @api.model
     def action_carry_forward(self):
         """Roll unsold volume from any prior day into today and open the board.
 
@@ -353,7 +397,18 @@ class PetroleumDailyPositionLine(models.Model):
             roll_qty = prev.qty_remaining
             if existing:
                 existing.write({'qty_opening': existing.qty_opening + roll_qty})
+                # Keep a PO link for sales from rolled opening when possible.
+                if not existing.purchase_order_id:
+                    source_po = prev._get_linked_purchase_order()
+                    if source_po:
+                        existing.write({
+                            'purchase_order_id': source_po.id,
+                            'purchase_order_line_id': (
+                                prev.purchase_order_line_id.id
+                                if prev.purchase_order_line_id else False),
+                        })
             else:
+                source_po = prev._get_linked_purchase_order()
                 new_line = self.create({
                     'date': today,
                     'product_id': prev.product_id.id,
@@ -364,6 +419,10 @@ class PetroleumDailyPositionLine(models.Model):
                     'buy_price': prev.buy_price,
                     'sell_price': prev.sell_price,
                     'rolled_from_line_id': prev.id,
+                    'purchase_order_id': source_po.id if source_po else False,
+                    'purchase_order_line_id': (
+                        prev.purchase_order_line_id.id
+                        if prev.purchase_order_line_id else False),
                 })
                 new_line._log_buy_price_change(
                     0.0, prev.buy_price, reason='roll_forward',
@@ -374,42 +433,41 @@ class PetroleumDailyPositionLine(models.Model):
             rolled_qty += roll_qty
 
         self.env['petroleum.daily.price']._carry_forward_prices(today)
-        action = self._action_open_today()
         if rolled_count:
-            action = {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
-                'params': {
-                    'title': _('Stock carried forward'),
-                    'message': _(
-                        'Rolled %(count)d line(s) / %(qty).2f L into today.',
-                        count=rolled_count, qty=rolled_qty),
-                    'type': 'success',
-                    'sticky': False,
-                    'next': action,
-                },
-            }
+            title = _('Stock carried forward')
+            message = _(
+                'Rolled %(count)d line(s) / %(qty).2f L into today.',
+                count=rolled_count, qty=rolled_qty)
+            ntype = 'success'
         else:
-            action = {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
-                'params': {
-                    'title': _('Nothing to carry forward'),
-                    'message': _(
-                        'No unrolled remaining stock found before today. '
-                        'Check previous days for remaining volume that is still '
-                        'allocated to deals (cancel those deals first), or lines '
-                        'already marked as rolled.'),
-                    'type': 'warning',
-                    'sticky': False,
-                    'next': self._action_open_today(),
-                },
-            }
-        return action
+            title = _('Nothing to carry forward')
+            message = _(
+                'No unrolled remaining stock found before today. '
+                'Check previous days for remaining volume that is still '
+                'allocated to deals (cancel those deals first), or lines '
+                'already marked as rolled.')
+            ntype = 'warning'
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': title,
+                'message': message,
+                'type': ntype,
+                'sticky': False,
+                'next': {'type': 'ir.actions.client', 'tag': 'soft_reload'},
+            },
+        }
 
-    @api.depends('date', 'product_id', 'supplier_id', 'depot_id', 'buy_price')
+    @api.depends('date', 'product_id', 'supplier_id', 'depot_id', 'buy_price', 'qty_remaining')
     def _compute_display_name(self):
+        lot_label = self.env.context.get('deal_position_lot_name')
         for line in self:
+            if lot_label:
+                line.display_name = _('%(price)s — %(qty)s L left',
+                                      price=line.buy_price,
+                                      qty=line.qty_remaining)
+                continue
             depot = line.depot_id.code or line.depot_id.name or ''
             parts = [
                 fields.Date.to_string(line.date),
@@ -421,6 +479,184 @@ class PetroleumDailyPositionLine(models.Model):
             if line.buy_price:
                 parts.append('@ %s' % line.buy_price)
             line.display_name = ' / '.join(parts)
+
+    def action_open_revise_buy_price(self):
+        """Open the supplier / lot price revision wizard for one position line."""
+        self.ensure_one()
+        if self.qty_remaining <= 0:
+            raise UserError(_(
+                'Nothing left to revise on %(line)s — remaining stock is zero.',
+                line=self.display_name,
+            ))
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Revise Buy Price'),
+            'res_model': 'petroleum.daily.position.revise.price',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_position_line_id': self.id,
+                'default_new_buy_price': self.buy_price,
+            },
+        }
+
+    def _find_merge_target(self, new_buy_price):
+        """Another same-day lot that already owns ``new_buy_price``."""
+        self.ensure_one()
+        candidates = self.search([
+            ('date', '=', self.date),
+            ('product_id', '=', self.product_id.id),
+            ('supplier_id', '=', self.supplier_id.id),
+            ('depot_id', '=', self.depot_id.id),
+            ('company_id', '=', self.company_id.id),
+            ('id', '!=', self.id),
+        ])
+        return candidates.filtered(lambda l: l._same_buy_price(new_buy_price))[:1]
+
+    def _transfer_remaining_to(self, target):
+        """Move remaining litres onto ``target`` as opening stock; keep sold history here."""
+        self.ensure_one()
+        target.ensure_one()
+        remaining = self.qty_remaining
+        if remaining <= 0:
+            return 0.0
+        reduce_opening = min(self.qty_opening, remaining)
+        reduce_bought = remaining - reduce_opening
+        self.write({
+            'qty_opening': self.qty_opening - reduce_opening,
+            'qty_bought': self.qty_bought - reduce_bought,
+        })
+        target.write({'qty_opening': target.qty_opening + remaining})
+        # Re-point open (not yet confirmed) deal lines to the surviving lot.
+        draft_lines = self.env['petroleum.deal.line'].search([
+            ('position_line_id', '=', self.id),
+            ('deal_id.state', 'in', ('draft', 'proforma')),
+        ])
+        if draft_lines:
+            draft_lines.write({
+                'position_line_id': target.id,
+                'buy_price': target.buy_price,
+            })
+        return remaining
+
+    def action_revise_buy_price(
+            self, new_buy_price, note='', merge_into_matching=True,
+            create_credit_note=True):
+        """Revise remaining stock cost after a supplier price reduction.
+
+        - Logs price history.
+        - If a same-day lot already exists at ``new_buy_price``, merges remaining
+          litres into it (sold allocations stay on this line for audit).
+        - Otherwise updates this line's buy price.
+        - Optionally creates a draft vendor credit note for the price drop on
+          remaining litres.
+        """
+        self.ensure_one()
+        precision = self._price_precision()
+        new_price = float(new_buy_price)
+        if float_compare(new_price, 0.0, precision_digits=precision) < 0:
+            raise UserError(_('New buy price cannot be negative.'))
+        if self._same_buy_price(new_price):
+            raise UserError(_('New buy price is the same as the current buy price.'))
+        remaining = self.qty_remaining
+        if remaining <= 0:
+            raise UserError(_('No remaining volume to revise on this lot.'))
+
+        old_price = self.buy_price
+        note = (note or '').strip() or _(
+            'Supplier price reduction on remaining stock.')
+        merge_target = self._find_merge_target(new_price)
+        credit_note = self.env['account.move']
+        transferred = 0.0
+
+        if merge_into_matching and merge_target:
+            self._log_buy_price_change(
+                old_price, new_price, reason='supplier_reduction',
+                note=_('%(note)s — merged %(qty)s L into lot @ %(price)s.',
+                       note=note, qty=remaining, price=new_price))
+            transferred = self._transfer_remaining_to(merge_target)
+            surviving = merge_target
+        elif merge_target and not merge_into_matching:
+            raise UserError(_(
+                'A position lot already exists at buy price %(price)s. '
+                'Enable “Merge into matching lot” or pick a different price.',
+                price=new_price,
+            ))
+        else:
+            self.with_context(
+                buy_price_log_reason='supplier_reduction',
+                buy_price_log_note=note,
+            ).write({'buy_price': new_price})
+            # Refresh draft deals still pointing at this lot.
+            draft_lines = self.env['petroleum.deal.line'].search([
+                ('position_line_id', '=', self.id),
+                ('deal_id.state', 'in', ('draft', 'proforma')),
+            ])
+            if draft_lines:
+                draft_lines.write({'buy_price': new_price})
+            surviving = self
+            transferred = remaining
+
+        if create_credit_note and float_compare(
+                old_price, new_price, precision_digits=precision) > 0:
+            credit_note = self._create_supplier_price_credit_note(
+                old_price, new_price, transferred or remaining, note)
+
+        return {
+            'surviving_line': surviving,
+            'credit_note': credit_note,
+            'transferred_qty': transferred or remaining,
+            'merged': bool(merge_into_matching and merge_target),
+            'old_price': old_price,
+            'new_price': new_price,
+        }
+
+    def _create_supplier_price_credit_note(self, old_price, new_price, quantity, note):
+        """Draft vendor credit note for (old − new) × remaining litres."""
+        self.ensure_one()
+        unit_credit = old_price - new_price
+        if unit_credit <= 0 or quantity <= 0:
+            return self.env['account.move']
+
+        product = self.product_id
+        po = self.purchase_order_id
+        # Prefer tax from the linked PO line when available.
+        taxes = self.env['account.tax']
+        if self.purchase_order_line_id and self.purchase_order_line_id.tax_ids:
+            taxes = self.purchase_order_line_id.tax_ids
+        elif product.supplier_taxes_id:
+            taxes = product.supplier_taxes_id.filtered(
+                lambda t: t.company_id == self.company_id)
+
+        line_name = _(
+            'Supplier price reduction on %(product)s: %(old)s → %(new)s '
+            '(%(qty)s L). %(note)s',
+            product=product.display_name,
+            old=old_price,
+            new=new_price,
+            qty=quantity,
+            note=note,
+        )
+        move_vals = {
+            'move_type': 'in_refund',
+            'partner_id': self.supplier_id.id,
+            'company_id': self.company_id.id,
+            'invoice_date': fields.Date.context_today(self),
+            'ref': _('Price reduction %(product)s @ %(old)s→%(new)s',
+                     product=product.display_name, old=old_price, new=new_price),
+            'invoice_origin': po.name if po else self.display_name,
+            'invoice_line_ids': [fields.Command.create({
+                'product_id': product.id,
+                'name': line_name,
+                'quantity': quantity,
+                'price_unit': unit_credit,
+                'tax_ids': [fields.Command.set(taxes.ids)],
+                'product_uom_id': product.uom_id.id,
+            })],
+        }
+        if 'purchase_id' in self.env['account.move']._fields and po:
+            move_vals['purchase_id'] = po.id
+        return self.env['account.move'].create(move_vals)
 
     def action_create_supplier_bills(self):
         """Post vendor bills for today's synced bulk purchase orders."""
@@ -434,9 +670,19 @@ class PetroleumDailyPositionLine(models.Model):
             raise UserError(_('No bulk purchase orders ready to bill for today.'))
         for po in pos:
             po.action_create_invoice()
+            bills = po.invoice_ids.filtered(
+                lambda m: m.state == 'draft' and m.move_type == 'in_invoice')
+            if bills:
+                bill_vals = {
+                    'invoice_date': today,
+                    'ref': po.name,
+                    'invoice_origin': po.name,
+                }
+                if 'purchase_id' in bills._fields:
+                    bill_vals['purchase_id'] = po.id
+                bills.write(bill_vals)
         bills = pos.invoice_ids.filtered(lambda m: m.state == 'draft')
         if bills:
-            bills.write({'invoice_date': today})
             bills.action_post()
         return {
             'type': 'ir.actions.client',
@@ -457,6 +703,7 @@ class PetroleumDailyPositionLine(models.Model):
             'name': _('Daily Position'),
             'res_model': 'petroleum.daily.position.line',
             'view_mode': 'list,form',
+            'views': [(False, 'list'), (False, 'form')],
             'domain': [('date', '=', today)],
             'context': {'default_date': today},
             'target': 'current',
@@ -500,6 +747,7 @@ class PetroleumDailyPositionPriceHistory(models.Model):
         ('initial', 'Initial entry'),
         ('roll_forward', 'Rolled from previous day'),
         ('revision', 'Manual revision'),
+        ('supplier_reduction', 'Supplier price reduction'),
     ], required=True, default='revision')
     note = fields.Text()
     user_id = fields.Many2one(

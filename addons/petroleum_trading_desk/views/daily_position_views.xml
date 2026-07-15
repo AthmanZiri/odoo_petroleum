@@ -28,6 +28,9 @@
                 <field name="sell_price"/>
                 <field name="margin" decoration-success="margin &gt; 0" decoration-danger="margin &lt; 0"/>
                 <field name="purchase_order_id" optional="show" readonly="1"/>
+                <button name="action_open_revise_buy_price" type="object"
+                        string="Revise Price" icon="fa-pencil"
+                        title="Supplier price reduction / revise buy price"/>
                 <field name="currency_id" column_invisible="1"/>
                 <field name="company_id" column_invisible="1" groups="base.group_multi_company"/>
                 <field name="note" optional="hide"/>
@@ -41,6 +44,9 @@
         <field name="arch" type="xml">
             <form string="Daily Position">
                 <header>
+                    <button name="action_open_revise_buy_price" type="object"
+                            string="Revise Buy Price" class="btn-primary"
+                            invisible="qty_remaining &lt;= 0"/>
                     <button name="action_sync_purchase_orders" type="object"
                             string="Sync Purchase Orders" class="btn-secondary"/>
                 </header>
