@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="account_journal_dashboard_kanban_view_bank_reco" model="ir.ui.view">
+        <field name="name">account.journal.dashboard.kanban.bank.reconciliation</field>
+        <field name="model">account.journal</field>
+        <field name="inherit_id" ref="account.account_journal_dashboard_kanban_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='bank_cash_buttons']" position="inside">
+                <button t-if="dashboard.number_to_reconcile &gt; 0"
+                        type="object"
+                        name="action_open_reconcile"
+                        class="btn btn-secondary"
+                        groups="account.group_account_basic">
+                    <t t-out="dashboard.number_to_reconcile"/> to reconcile
+                </button>
+            </xpath>
+            <xpath expr="//div[@id='dashboard_bank_cash_right']" position="inside">
+                <t t-if="dashboard.number_to_check &gt; 0">
+                    <div class="row" groups="account.group_account_readonly">
+                        <div class="col overflow-hidden text-start">
+                            <a type="object" name="action_open_to_check">
+                                <t t-out="dashboard.number_to_check"/> To Review
+                            </a>
+                        </div>
+                        <div class="col-auto text-end">
+                            <span dir="ltr"><t t-out="dashboard.to_check_balance"/></span>
+                        </div>
+                    </div>
+                </t>
+            </xpath>
+            <xpath expr="//div[@id='bank_and_cash_container']" position="inside">
+                <div class="col-4" groups="account.group_account_basic">
+                    <h5 class="o_kanban_card_manage_title"><span>Exceptions</span></h5>
+                    <div>
+                        <a type="object" name="action_open_invalid_statements">Invalid Statements</a>
+                    </div>
+                    <div>
+                        <a type="object" name="action_open_to_check">To Review</a>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

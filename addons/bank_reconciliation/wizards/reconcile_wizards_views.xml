@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_bank_rec_auto_reconcile_wizard" model="ir.ui.view">
+        <field name="name">bank.rec.auto.reconcile.wizard.form</field>
+        <field name="model">bank.rec.auto.reconcile.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Auto-Reconcile">
+                <group>
+                    <group>
+                        <field name="company_id" groups="base.group_multi_company"/>
+                        <field name="search_mode" widget="radio"/>
+                        <field name="from_date"/>
+                        <field name="to_date"/>
+                    </group>
+                    <group>
+                        <field name="account_ids" widget="many2many_tags"/>
+                        <field name="partner_ids" widget="many2many_tags"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_auto_reconcile" type="object" string="Auto-Reconcile" class="btn-primary"/>
+                    <button string="Cancel" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_bank_rec_auto_reconcile_wizard" model="ir.actions.act_window">
+        <field name="name">Auto-Reconcile</field>
+        <field name="res_model">bank.rec.auto.reconcile.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <record id="view_bank_rec_reconcile_wizard" model="ir.ui.view">
+        <field name="name">bank.rec.reconcile.wizard.form</field>
+        <field name="model">bank.rec.reconcile.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Reconcile">
+                <group>
+                    <field name="company_id" groups="base.group_multi_company"/>
+                    <field name="company_currency_id" invisible="1"/>
+                    <field name="move_line_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                    <field name="residual"/>
+                    <field name="allow_write_off"/>
+                    <field name="write_off_journal_id" invisible="not allow_write_off" required="allow_write_off"/>
+                    <field name="write_off_account_id" invisible="not allow_write_off" required="allow_write_off"/>
+                    <field name="label" invisible="not allow_write_off"/>
+                </group>
+                <footer>
+                    <button name="action_reconcile" type="object" string="Reconcile" class="btn-primary"/>
+                    <button string="Cancel" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_bank_rec_reconcile_wizard" model="ir.actions.act_window">
+        <field name="name">Reconcile</field>
+        <field name="res_model">bank.rec.reconcile.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="account.model_account_move_line"/>
+        <field name="binding_view_types">list</field>
+    </record>
+
+    <!-- Journal items to reconcile -->
+    <record id="action_move_line_to_reconcile" model="ir.actions.act_window">
+        <field name="name">Reconcile</field>
+        <field name="res_model">account.move.line</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[
+            ('parent_state', '=', 'posted'),
+            ('reconciled', '=', False),
+            ('account_id.reconcile', '=', True),
+            ('display_type', 'not in', ('line_section', 'line_subsection', 'line_note')),
+        ]</field>
+        <field name="context">{
+            'search_default_account_id': 0,
+        }</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No open items to reconcile</p>
+            <p>Select journal items and use Action → Reconcile, or open Auto-Reconcile.</p>
+        </field>
+    </record>
+</odoo>

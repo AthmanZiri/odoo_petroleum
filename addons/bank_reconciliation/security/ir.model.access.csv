@@ -1,0 +1,6 @@
+# -*- coding: utf-8 -*-
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_bank_rec_auto_reconcile_wizard_user,bank.rec.auto.reconcile.wizard.user,model_bank_rec_auto_reconcile_wizard,account.group_account_user,1,1,1,1
+access_bank_rec_reconcile_wizard_user,bank.rec.reconcile.wizard.user,model_bank_rec_reconcile_wizard,account.group_account_user,1,1,1,1
+access_bank_rec_auto_reconcile_wizard_invoice,bank.rec.auto.reconcile.wizard.invoice,model_bank_rec_auto_reconcile_wizard,account.group_account_invoice,1,1,1,1
+access_bank_rec_reconcile_wizard_invoice,bank.rec.reconcile.wizard.invoice,model_bank_rec_reconcile_wizard,account.group_account_invoice,1,1,1,1

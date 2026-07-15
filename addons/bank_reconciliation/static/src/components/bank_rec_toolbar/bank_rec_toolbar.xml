@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="bank_reconciliation.BankRecToolbar">
+        <div class="o_bank_rec_toolbar border rounded p-2 mb-2 bg-view">
+            <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+                <button type="button" class="btn btn-secondary btn-sm" t-on-click="openSearch">
+                    Search entries
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" t-on-click="suggestPartner">
+                    Suggest partner
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" t-on-click="quickCreate">
+                    Quick create
+                </button>
+            </div>
+            <t t-if="state.summary">
+                <div class="small text-muted d-flex flex-wrap gap-3">
+                    <span><b t-esc="state.summary.journal"/></span>
+                    <span t-if="state.summary.statement">Statement: <t t-esc="state.summary.statement"/></span>
+                    <span t-if="state.summary.date">Date: <t t-esc="state.summary.date"/></span>
+                    <span>
+                        Amount:
+                        <b>
+                            <t t-esc="state.summary.currency"/>
+                            <t t-esc="state.summary.amount"/>
+                        </b>
+                    </span>
+                    <span>Unmatched in journal: <b t-esc="state.summary.unmatched_count"/></span>
+                    <span>To review: <b t-esc="state.summary.to_check_count"/></span>
+                    <span t-if="state.summary.partner">Partner: <t t-esc="state.summary.partner"/></span>
+                </div>
+                <div class="small" t-if="state.summary.payment_ref">
+                    <t t-esc="state.summary.payment_ref"/>
+                </div>
+            </t>
+        </div>
+    </t>
+
+    <t t-name="bank_reconciliation.BankRecSearchDialog">
+        <Dialog title="'Search journal items'" size="'lg'">
+            <div class="mb-2 d-flex gap-2">
+                <input type="text" class="form-control" placeholder="Search…"
+                       t-model="state.term"
+                       t-on-keydown="(ev) => ev.key === 'Enter' and this.search()"/>
+                <button type="button" class="btn btn-primary" t-on-click="search">Search</button>
+            </div>
+            <div t-if="state.loading" class="text-muted">Loading…</div>
+            <table class="table table-sm table-hover" t-elif="state.rows.length">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Entry</th>
+                        <th>Partner</th>
+                        <th>Account</th>
+                        <th class="text-end">Residual</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr t-foreach="state.rows" t-as="row" t-key="row.id"
+                        style="cursor: pointer"
+                        t-on-click="() => this.onSelect(row)">
+                        <td t-esc="row.date"/>
+                        <td>
+                            <div t-esc="row.move_name"/>
+                            <div class="text-muted small" t-esc="row.name"/>
+                        </td>
+                        <td t-esc="row.partner"/>
+                        <td t-esc="row.account"/>
+                        <td class="text-end">
+                            <t t-esc="row.currency"/>
+                            <t t-esc="row.amount_residual"/>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div t-else="" class="text-muted">No open items found.</div>
+            <t t-set-slot="footer">
+                <button class="btn btn-secondary" t-on-click="() => props.close()">Close</button>
+            </t>
+        </Dialog>
+    </t>
+</templates>

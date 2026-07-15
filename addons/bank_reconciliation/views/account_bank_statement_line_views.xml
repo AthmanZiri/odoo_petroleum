@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_bank_reconcile_widget_form_matching" model="ir.ui.view">
+        <field name="name">account.bank.statement.line.bank.rec.matching</field>
+        <field name="model">account.bank.statement.line</field>
+        <field name="inherit_id" ref="base_accounting_kit.view_bank_reconcile_widget_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='to_check']" position="after">
+                <field name="matching_aml_ids" invisible="1"/>
+                <field name="available_reconcile_model_ids" invisible="1"/>
+            </xpath>
+            <xpath expr="//field[@name='lines_widget']" position="before">
+                <field name="bank_rec_toolbar" widget="bank_rec_toolbar" nolabel="1" colspan="2"/>
+            </xpath>
+            <xpath expr="//button[@name='button_validation']" position="attributes">
+                <attribute name="invisible">bank_state == 'reconciled'</attribute>
+                <attribute name="class">btn btn-primary</attribute>
+            </xpath>
+            <xpath expr="//button[@name='button_validation']/following-sibling::button[1]" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//button[@name='button_set_as_checked']" position="after">
+                <button name="action_auto_reconcile"
+                        type="object"
+                        string="Auto-reconcile"
+                        class="btn btn-secondary"
+                        invisible="bank_state == 'reconciled'"/>
+                <button name="action_retrieve_partner"
+                        type="object"
+                        string="Suggest Partner"
+                        class="btn btn-secondary"
+                        invisible="partner_id or bank_state == 'reconciled'"/>
+            </xpath>
+            <xpath expr="//div[hasclass('bank_reconcile_models')]" position="replace">
+                <div class="bank_reconcile_models ms-3"
+                     invisible="bank_state == 'reconciled'">
+                    <field name="available_reconcile_model_ids"
+                           widget="bank_rec_model_buttons"
+                           nolabel="1"/>
+                </div>
+            </xpath>
+            <xpath expr="//page[@name='manual_operations_tab']/group" position="before">
+                <div class="alert alert-info" role="alert">
+                    Use <b>Search entries</b> or click items under <b>Match Existing Entries</b>,
+                    apply a <b>reconciliation model</b>, and/or set an <b>Account</b> for fees,
+                    then click <b>Validate</b>.
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

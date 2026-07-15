@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_bank_reconciliation" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.bank.reconciliation</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="account.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//app[@name='account']" position="inside">
+                <block title="Bank Reconciliation" name="bank_reconciliation_setting">
+                    <setting string="Payment Tolerance"
+                             help="Allow small differences when matching bank lines (0.03 = 3%).">
+                        <field name="bank_rec_payment_tolerance"/>
+                        <div class="text-muted">
+                            Example: 0.03 allows a 3% difference to be written off automatically.
+                        </div>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

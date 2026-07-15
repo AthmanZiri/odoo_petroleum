@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="bank_reconciliation.BankRecModelButtons">
+        <div class="o_bank_rec_model_buttons d-flex flex-wrap gap-1">
+            <t t-foreach="state.models" t-as="model" t-key="model.id">
+                <button type="button"
+                        class="btn btn-secondary btn-sm"
+                        t-att-disabled="state.busy"
+                        t-on-click="() => this.onApply(model.id)">
+                    <t t-esc="model.name"/>
+                </button>
+            </t>
+            <span t-if="!state.models.length" class="text-muted small align-self-center">
+                No matching reconciliation models
+            </span>
+        </div>
+    </t>
+</templates>
