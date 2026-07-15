@@ -265,11 +265,29 @@ class PetroleumDailyPositionLine(models.Model):
             'purchase_order_id': po.id,
             'purchase_order_line_id': po_line.id,
         })
+        self._complete_daily_position_po(po)
+
+    @api.model
+    def _complete_daily_position_po(self, po):
+        """Confirm the bulk PO, validate receipt, and post the vendor bill."""
         if po.state in ('draft', 'sent'):
             po.button_confirm()
+        # Idempotent for already-confirmed POs that missed receipt/bill.
+        po._auto_validate_receipt()
+        po._auto_create_vendor_bill()
+        bills = po.invoice_ids.filtered(
+            lambda m: m.state == 'draft' and m.move_type == 'in_invoice')
+        if bills:
+            invoice_date = po.daily_position_date or fields.Date.context_today(self)
+            bills.write({'invoice_date': invoice_date})
+            bills.action_post()
 
     def action_sync_purchase_orders(self):
-        """Create or update bulk POs for selected lines, or all of today from the list."""
+        """Create or update bulk POs for selected lines, or all of today from the list.
+
+        Each sync confirms the PO, validates the goods receipt, and posts the
+        supplier bill so the morning position is fully booked in one step.
+        """
         if self:
             lines = self.filtered(lambda line: line.qty_bought > 0)
         else:
@@ -296,7 +314,10 @@ class PetroleumDailyPositionLine(models.Model):
             'tag': 'display_notification',
             'params': {
                 'title': _('Purchase orders synced'),
-                'message': _('%d position line(s) linked to bulk purchase orders.') % len(lines),
+                'message': _(
+                    '%d position line(s) linked — purchase confirmed, goods '
+                    'received, and supplier bill posted.'
+                ) % len(lines),
                 'type': 'success',
                 'sticky': False,
             },
