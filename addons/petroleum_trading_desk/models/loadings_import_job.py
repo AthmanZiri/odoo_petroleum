@@ -129,41 +129,34 @@ class PetroleumLoadingsImportJob(models.Model):
         PositionLine = self.env['petroleum.daily.position.line'].with_company(
             self.company_id)
 
-        # ── 1. Bucket deal-line quantities by (date, supplier, product) ──
+        # ── 1. Bucket by (date, supplier, product, buy_price) lots ──
         from collections import defaultdict
-        buckets = defaultdict(lambda: {'qty': 0.0, 'buy_total': 0.0, 'buy_weight': 0.0})
+        buckets = defaultdict(lambda: {'qty': 0.0})
         for deal in draft_deals:
             for line in deal.line_ids:
                 if not line.supplier_id or not line.product_id:
                     continue
-                key = (deal.date, line.supplier_id.id, line.product_id.id)
-                b = buckets[key]
-                b['qty'] += line.quantity
-                if line.buy_price:
-                    b['buy_weight'] += line.quantity
-                    b['buy_total'] += line.buy_price * line.quantity
+                buy_price = round(line.buy_price or 0.0, 4)
+                key = (deal.date, line.supplier_id.id, line.product_id.id, buy_price)
+                buckets[key]['qty'] += line.quantity
 
         # ── 2. Create / update position lines ────────────────────────────
         created = updated = 0
         errors = []
-        for (pos_date, supplier_id, product_id), data in sorted(buckets.items()):
-            buy_price = (
-                data['buy_total'] / data['buy_weight'] if data['buy_weight'] else 0.0
-            )
-            domain = [
+        for (pos_date, supplier_id, product_id, buy_price), data in sorted(buckets.items()):
+            candidates = PositionLine.search([
                 ('date', '=', pos_date),
                 ('supplier_id', '=', supplier_id),
                 ('product_id', '=', product_id),
                 ('depot_id', '=', False),
                 ('company_id', '=', self.company_id.id),
-            ]
-            pos_line = PositionLine.search(domain, limit=1)
+            ])
+            pos_line = candidates.filtered(
+                lambda l, price=buy_price: l._same_buy_price(price))[:1]
             if pos_line:
                 vals = {}
                 if pos_line.qty_bought < data['qty']:
                     vals['qty_bought'] = data['qty']
-                if buy_price and not pos_line.buy_price:
-                    vals['buy_price'] = buy_price
                 if vals:
                     pos_line.write(vals)
                     updated += 1
@@ -180,7 +173,7 @@ class PetroleumLoadingsImportJob(models.Model):
                 })
                 created += 1
             try:
-                if pos_line.buy_price and pos_line.qty_total > 0:
+                if pos_line.buy_price and pos_line.qty_bought > 0:
                     pos_line._sync_purchase_order_line()
             except Exception as exc:  # noqa: BLE001
                 errors.append('%s: %s' % (pos_line.display_name, exc))

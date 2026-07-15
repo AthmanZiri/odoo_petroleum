@@ -1,13 +1,12 @@
-from datetime import timedelta
-
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError, ValidationError
+from odoo.tools.float_utils import float_compare
 
 
 class PetroleumDailyPositionLine(models.Model):
     _name = 'petroleum.daily.position.line'
     _description = 'Daily Fuel Position'
-    _order = 'date desc, product_id, supplier_id'
+    _order = 'date desc, product_id, supplier_id, buy_price'
 
     date = fields.Date(
         string='Date', required=True, default=fields.Date.context_today, index=True)
@@ -59,6 +58,18 @@ class PetroleumDailyPositionLine(models.Model):
         'petroleum.daily.position.price.history', 'position_line_id', string='Price History')
     note = fields.Char(string='Note')
 
+    def _price_precision(self):
+        self.ensure_one()
+        currency = self.currency_id or self.env.company.currency_id
+        return currency.decimal_places if currency else 2
+
+    def _same_buy_price(self, other_price):
+        """Compare buy prices using currency rounding."""
+        self.ensure_one()
+        return float_compare(
+            self.buy_price, other_price, precision_digits=self._price_precision()
+        ) == 0
+
     @api.depends('qty_opening', 'qty_bought', 'allocation_ids.quantity', 'allocation_ids.state')
     def _compute_quantities(self):
         for line in self:
@@ -73,8 +84,13 @@ class PetroleumDailyPositionLine(models.Model):
         for line in self:
             line.margin = line.sell_price - line.buy_price
 
-    @api.constrains('date', 'product_id', 'supplier_id', 'depot_id', 'company_id')
+    @api.constrains('date', 'product_id', 'supplier_id', 'depot_id', 'company_id', 'buy_price')
     def _check_unique_line(self):
+        """One line per date/product/supplier/depot/company/buy-price lot.
+
+        Same supplier and product may be bought several times on the same day
+        as long as each purchase has a distinct buy price.
+        """
         for line in self:
             domain = [
                 ('date', '=', line.date),
@@ -84,14 +100,17 @@ class PetroleumDailyPositionLine(models.Model):
                 ('company_id', '=', line.company_id.id),
                 ('id', '!=', line.id),
             ]
-            if self.search_count(domain):
-                raise ValidationError(_(
-                    'A position line already exists for %(product)s / %(supplier)s '
-                    'on %(date)s.',
-                    product=line.product_id.display_name,
-                    supplier=line.supplier_id.display_name,
-                    date=line.date,
-                ))
+            for other in self.search(domain):
+                if line._same_buy_price(other.buy_price):
+                    raise ValidationError(_(
+                        'A position line already exists for %(product)s / %(supplier)s '
+                        'on %(date)s at buy price %(price)s. '
+                        'Add another line only when the buy price is different.',
+                        product=line.product_id.display_name,
+                        supplier=line.supplier_id.display_name,
+                        date=line.date,
+                        price=line.buy_price,
+                    ))
 
     @api.constrains('qty_opening', 'qty_bought')
     def _check_non_negative_qty(self):
@@ -141,19 +160,39 @@ class PetroleumDailyPositionLine(models.Model):
         ]
 
     @api.model
+    def _pick_matching_line(self, candidates, buy_price=None, qty_needed=0.0):
+        """Choose the best position lot among product/supplier/depot matches.
+
+        Prefer an exact buy-price lot when a price is known; otherwise the
+        first lot with enough remaining volume (FIFO by id).
+        """
+        if not candidates:
+            return candidates.browse()
+        if buy_price:
+            priced = candidates.filtered(lambda l: l._same_buy_price(buy_price))
+            if priced:
+                with_stock = priced.filtered(lambda l: l.qty_remaining >= qty_needed)
+                return (with_stock or priced)[:1]
+        with_stock = candidates.filtered(lambda l: l.qty_remaining >= qty_needed)
+        if with_stock:
+            return with_stock.sorted('id')[:1]
+        return candidates.sorted('id')[:1]
+
+    @api.model
     def find_for_deal_line(self, deal_line):
-        """Match a deal line to today's position (product, supplier, depot)."""
+        """Match a deal line to today's position lot (product, supplier, depot, price)."""
         deal = deal_line.deal_id
         domain = self._line_domain(
             deal.date, deal_line.product_id, deal_line.supplier_id,
             deal.depot_id, deal.company_id)
-        line = self.search(domain, limit=1)
-        if not line and deal.depot_id:
+        candidates = self.search(domain, order='id')
+        if not candidates and deal.depot_id:
             domain = self._line_domain(
                 deal.date, deal_line.product_id, deal_line.supplier_id,
                 False, deal.company_id)
-            line = self.search(domain, limit=1)
-        return line
+            candidates = self.search(domain, order='id')
+        return self._pick_matching_line(
+            candidates, buy_price=deal_line.buy_price, qty_needed=deal_line.quantity)
 
     def _po_origin(self):
         self.ensure_one()
@@ -182,9 +221,13 @@ class PetroleumDailyPositionLine(models.Model):
         })
 
     def _sync_purchase_order_line(self):
-        """Create or update the bulk PO line for this position."""
+        """Create or update the bulk PO line for new buys on this position.
+
+        Only ``qty_bought`` is synced — rolled opening stock was already
+        purchased on a prior day and must not inflate today's PO.
+        """
         self.ensure_one()
-        if self.qty_total <= 0:
+        if self.qty_bought <= 0:
             return
         if not self.buy_price:
             raise UserError(_(
@@ -204,8 +247,8 @@ class PetroleumDailyPositionLine(models.Model):
             ], limit=1)
         vals = {
             'product_id': self.product_id.id,
-            'name': self.product_id.display_name,
-            'product_qty': self.qty_total,
+            'name': '%s @ %s' % (self.product_id.display_name, self.buy_price),
+            'product_qty': self.qty_bought,
             'product_uom_id': self.product_id.uom_id.id,
             'price_unit': self.buy_price,
             'date_planned': fields.Datetime.to_datetime(self.date),
@@ -228,15 +271,18 @@ class PetroleumDailyPositionLine(models.Model):
     def action_sync_purchase_orders(self):
         """Create or update bulk POs for selected lines, or all of today from the list."""
         if self:
-            lines = self.filtered(lambda line: line.qty_total > 0)
+            lines = self.filtered(lambda line: line.qty_bought > 0)
         else:
             today = fields.Date.context_today(self)
             lines = self.search([
                 ('date', '=', today),
-                ('qty_total', '>', 0),
+                ('qty_bought', '>', 0),
             ])
         if not lines:
-            raise UserError(_('Add position lines with volume before syncing purchase orders.'))
+            raise UserError(_(
+                'Add position lines with Bought Today volume before syncing '
+                'purchase orders. Rolled opening stock is not re-purchased.'
+            ))
         errors = []
         for line in lines:
             try:
@@ -256,19 +302,33 @@ class PetroleumDailyPositionLine(models.Model):
             },
         }
 
+    @api.model
+    def _find_today_lot(self, today, product, supplier, depot, company, buy_price):
+        """Find today's position lot matching product/supplier/depot/buy price."""
+        candidates = self.search(
+            self._line_domain(today, product, supplier, depot, company), order='id')
+        return candidates.filtered(lambda l: l._same_buy_price(buy_price))[:1]
+
+    @api.model
     def action_carry_forward(self):
-        """Roll unsold volume into today and open the position board."""
+        """Roll unsold volume from any prior day into today and open the board.
+
+        Looks beyond calendar yesterday so weekends / skipped trading days
+        still carry remaining stock forward. Each buy-price lot rolls into
+        its own opening line for today.
+        """
         today = fields.Date.context_today(self)
-        yesterday = today - timedelta(days=1)
         prev_lines = self.search([
-            ('date', '=', yesterday),
+            ('date', '<', today),
             ('qty_remaining', '>', 0),
             ('rolled_forward_on', '=', False),
-        ])
+        ], order='date, id')
+        rolled_count = 0
+        rolled_qty = 0.0
         for prev in prev_lines:
-            domain = self._line_domain(
-                today, prev.product_id, prev.supplier_id, prev.depot_id, prev.company_id)
-            existing = self.search(domain, limit=1)
+            existing = self._find_today_lot(
+                today, prev.product_id, prev.supplier_id, prev.depot_id,
+                prev.company_id, prev.buy_price)
             roll_qty = prev.qty_remaining
             if existing:
                 existing.write({'qty_opening': existing.qty_opening + roll_qty})
@@ -287,13 +347,46 @@ class PetroleumDailyPositionLine(models.Model):
                 new_line._log_buy_price_change(
                     0.0, prev.buy_price, reason='roll_forward',
                     note=_('Rolled %(qty)s L from %(date)s',
-                           qty=roll_qty, date=yesterday))
+                           qty=roll_qty, date=prev.date))
             prev.write({'rolled_forward_on': today})
+            rolled_count += 1
+            rolled_qty += roll_qty
 
         self.env['petroleum.daily.price']._carry_forward_prices(today)
-        return self._action_open_today()
+        action = self._action_open_today()
+        if rolled_count:
+            action = {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('Stock carried forward'),
+                    'message': _(
+                        'Rolled %(count)d line(s) / %(qty).2f L into today.',
+                        count=rolled_count, qty=rolled_qty),
+                    'type': 'success',
+                    'sticky': False,
+                    'next': action,
+                },
+            }
+        else:
+            action = {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('Nothing to carry forward'),
+                    'message': _(
+                        'No unrolled remaining stock found before today. '
+                        'Check previous days for remaining volume that is still '
+                        'allocated to deals (cancel those deals first), or lines '
+                        'already marked as rolled.'),
+                    'type': 'warning',
+                    'sticky': False,
+                    'next': self._action_open_today(),
+                },
+            }
+        return action
 
-    @api.depends('date', 'product_id', 'supplier_id', 'depot_id')
+    @api.depends('date', 'product_id', 'supplier_id', 'depot_id', 'buy_price')
     def _compute_display_name(self):
         for line in self:
             depot = line.depot_id.code or line.depot_id.name or ''
@@ -304,6 +397,8 @@ class PetroleumDailyPositionLine(models.Model):
             ]
             if depot:
                 parts.append(depot)
+            if line.buy_price:
+                parts.append('@ %s' % line.buy_price)
             line.display_name = ' / '.join(parts)
 
     def action_create_supplier_bills(self):

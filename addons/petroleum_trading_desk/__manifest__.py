@@ -1,6 +1,6 @@
 {
     'name': 'Petroleum Trading Desk',
-    'version': '19.0.1.0.20',
+    'version': '19.0.1.0.21',
     'category': 'Sales',
     'summary': 'Single-screen trading desk: one Deal per truck load drives sale, purchase, trip, invoice and payment',
     'description': """
@@ -16,9 +16,10 @@ A single place for the trader to run the whole buy-and-sell flow.
   invoice + vendor bill, and the customer payment to the right bank.
 * **Daily Prices** board to capture each morning's supplier buy prices and your
   sell prices; deals default their prices from it.
-* **Daily Position** board for the morning bulk buy: record litres purchased,
-  roll unsold volume forward, sync one purchase order per supplier per day,
-  and allocate litres to deals as they load.
+* **Daily Position** board for the morning bulk buy: record litres purchased
+  (multiple buys of the same product/supplier at different prices are allowed),
+  roll unsold volume forward from any prior day, sync one purchase order per
+  supplier per day, and allocate litres to deals as they load.
 * A **Trading Desk** kanban pipeline (Quotation -> Proforma -> Confirmed ->
   Loaded -> Settled) as the home screen.
 """,

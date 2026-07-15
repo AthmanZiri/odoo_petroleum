@@ -335,10 +335,13 @@ class PetroleumLoadingsImport(models.TransientModel):
         }
 
     def _seed_daily_position_from_parsed(self, parsed, st):
-        """Derive morning bulk-buy litres from loadings rows (historical backfill)."""
+        """Derive morning bulk-buy litres from loadings rows (historical backfill).
+
+        Rows with different buy prices become separate position lots.
+        """
         from collections import defaultdict
 
-        buckets = defaultdict(lambda: {'qty': 0.0, 'buy_total': 0.0, 'buy_weight': 0.0})
+        buckets = defaultdict(lambda: {'qty': 0.0})
         for row in parsed:
             supplier_name, _ = self._split_supplier(row['supplier_raw'])
             if not supplier_name:
@@ -346,35 +349,27 @@ class PetroleumLoadingsImport(models.TransientModel):
             supplier = self._get_partner(st, supplier_name, is_supplier=True)
             for line in row['lines']:
                 product = self._get_fuel_product(st, line['grade'])
-                key = (row['date'], supplier.id, product.id)
-                bucket = buckets[key]
-                qty = line['quantity']
-                bucket['qty'] += qty
-                if line['buy_price']:
-                    bucket['buy_weight'] += qty
-                    bucket['buy_total'] += line['buy_price'] * qty
+                buy_price = round(line['buy_price'] or 0.0, 4)
+                key = (row['date'], supplier.id, product.id, buy_price)
+                buckets[key]['qty'] += line['quantity']
 
         PositionLine = self.env['petroleum.daily.position.line'].with_company(
             self.company_id)
         created = updated = 0
-        for (pos_date, supplier_id, product_id), data in sorted(buckets.items()):
-            buy_price = (
-                data['buy_total'] / data['buy_weight'] if data['buy_weight'] else 0.0
-            )
-            domain = [
+        for (pos_date, supplier_id, product_id, buy_price), data in sorted(buckets.items()):
+            candidates = PositionLine.search([
                 ('date', '=', pos_date),
                 ('supplier_id', '=', supplier_id),
                 ('product_id', '=', product_id),
                 ('depot_id', '=', False),
                 ('company_id', '=', self.company_id.id),
-            ]
-            pos_line = PositionLine.search(domain, limit=1)
+            ])
+            pos_line = candidates.filtered(
+                lambda l, price=buy_price: l._same_buy_price(price))[:1]
             if pos_line:
                 vals = {}
                 if pos_line.qty_bought < data['qty']:
                     vals['qty_bought'] = data['qty']
-                if buy_price and not pos_line.buy_price:
-                    vals['buy_price'] = buy_price
                 if vals:
                     pos_line.write(vals)
                     updated += 1

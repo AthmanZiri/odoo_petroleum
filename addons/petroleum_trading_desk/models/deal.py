@@ -90,13 +90,21 @@ class PetroleumDeal(models.Model):
                         date=deal.date,
                     ))
                 if pos_line.qty_remaining < line.quantity:
+                    same_lots = PositionLine.search(PositionLine._line_domain(
+                        deal.date, line.product_id, line.supplier_id,
+                        deal.depot_id, deal.company_id))
+                    total_left = sum(same_lots.mapped('qty_remaining'))
                     raise UserError(_(
                         'Not enough volume on daily position for %(product)s '
-                        '(%(supplier)s): %(need)s L needed, %(left)s L remaining.',
+                        '(%(supplier)s) at buy price %(price)s: %(need)s L needed, '
+                        '%(left)s L on that price lot '
+                        '(%(total)s L across all price lots).',
                         product=line.product_id.display_name,
                         supplier=line.supplier_id.display_name,
+                        price=pos_line.buy_price,
                         need=line.quantity,
                         left=pos_line.qty_remaining,
+                        total=total_left,
                     ))
                 Allocation.create({
                     'position_line_id': pos_line.id,
