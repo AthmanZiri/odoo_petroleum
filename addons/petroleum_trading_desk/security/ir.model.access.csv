@@ -33,3 +33,5 @@ access_ledger_partner_alias_user,ledger.partner.alias.user,model_petroleum_ledge
 access_ledger_partner_alias_manager,ledger.partner.alias.manager,model_petroleum_ledger_partner_alias,sales_team.group_sale_manager,1,1,1,1
 access_margin_backfill_user,margin.backfill.user,model_petroleum_margin_backfill,sales_team.group_sale_salesman,1,1,1,1
 access_margin_backfill_manager,margin.backfill.manager,model_petroleum_margin_backfill,sales_team.group_sale_manager,1,1,1,1
+access_position_revise_price_user,position.revise.price.user,model_petroleum_daily_position_revise_price,sales_team.group_sale_salesman,1,1,1,1
+access_position_revise_price_manager,position.revise.price.manager,model_petroleum_daily_position_revise_price,sales_team.group_sale_manager,1,1,1,1

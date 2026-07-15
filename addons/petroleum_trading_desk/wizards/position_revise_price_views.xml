@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_daily_position_revise_price_form" model="ir.ui.view">
+        <field name="name">petroleum.daily.position.revise.price.form</field>
+        <field name="model">petroleum.daily.position.revise.price</field>
+        <field name="arch" type="xml">
+            <form string="Revise Buy Price">
+                <group>
+                    <group string="Lot">
+                        <field name="position_line_id" readonly="1"/>
+                        <field name="date"/>
+                        <field name="product_id"/>
+                        <field name="supplier_id"/>
+                        <field name="qty_remaining"/>
+                        <field name="current_buy_price"/>
+                        <field name="currency_id" invisible="1"/>
+                    </group>
+                    <group string="Revision">
+                        <field name="new_buy_price"/>
+                        <field name="price_drop"/>
+                        <field name="credit_amount"/>
+                        <field name="matching_lot_id" readonly="1"
+                               invisible="not matching_lot_id"/>
+                        <field name="merge_into_matching"
+                               invisible="not matching_lot_id"/>
+                        <field name="create_credit_note"
+                               invisible="credit_amount &lt;= 0"/>
+                        <field name="note" placeholder="e.g. Supplier agreed today rate"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_confirm" type="object" string="Apply Revision"
+                            class="btn-primary"/>
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

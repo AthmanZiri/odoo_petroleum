@@ -4,3 +4,4 @@ from . import desk_bank_transfer
 from . import desk_bulk_payment
 from . import loadings_import
 from . import margin_backfill
+from . import position_revise_price
