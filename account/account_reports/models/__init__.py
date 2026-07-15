@@ -9,6 +9,7 @@ from . import kit_report_compat
 from . import account_analytic_report
 from . import bank_reconciliation_report
 from . import account_general_ledger
+from . import account_book_reports
 from . import account_generic_tax_report
 from . import account_journal_report
 from . import account_cash_flow_report

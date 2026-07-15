@@ -51,6 +51,27 @@
             <field name="context" eval="{'report_id': ref('account_reports.general_ledger_report')}"/>
         </record>
 
+        <record id="action_account_report_bank_book" model="ir.actions.client">
+            <field name="name">Bank Book</field>
+            <field name="tag">account_report</field>
+            <field name="path">bank-book</field>
+            <field name="context" eval="{'report_id': ref('account_reports.bank_book_report')}"/>
+        </record>
+
+        <record id="action_account_report_cash_book" model="ir.actions.client">
+            <field name="name">Cash Book</field>
+            <field name="tag">account_report</field>
+            <field name="path">cash-book</field>
+            <field name="context" eval="{'report_id': ref('account_reports.cash_book_report')}"/>
+        </record>
+
+        <record id="action_account_report_day_book" model="ir.actions.client">
+            <field name="name">Day Book</field>
+            <field name="tag">account_report</field>
+            <field name="path">day-book</field>
+            <field name="context" eval="{'report_id': ref('account_reports.day_book_report')}"/>
+        </record>
+
         <record id="action_account_report_multicurrency_revaluation" model="ir.actions.client">
             <field name="name">Unrealized Currency Gains/Losses</field>
             <field name="path">unrealized-currency</field>

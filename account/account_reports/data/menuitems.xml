@@ -8,6 +8,10 @@
         <menuitem id="menu_action_account_report_general_ledger" name="General Ledger" action="action_account_report_general_ledger" groups="account.group_account_readonly,account.group_account_basic"/>
     </menuitem>
 
+    <menuitem id="menu_action_account_report_bank_book" name="Bank Book" action="action_account_report_bank_book" parent="base_accounting_kit.account_reports_daily_reports" sequence="10" groups="account.group_account_readonly,account.group_account_basic"/>
+    <menuitem id="menu_action_account_report_cash_book" name="Cash Book" action="action_account_report_cash_book" parent="base_accounting_kit.account_reports_daily_reports" sequence="20" groups="account.group_account_readonly,account.group_account_basic"/>
+    <menuitem id="menu_action_account_report_day_book" name="Day Book" action="action_account_report_day_book" parent="base_accounting_kit.account_reports_daily_reports" sequence="30" groups="account.group_account_readonly,account.group_account_basic"/>
+
     <menuitem id="menu_action_account_report_gt" name="Tax Report" action="action_account_report_gt" parent="account.account_reports_taxes_and_fiscal_menu" groups="account.group_account_readonly,account.group_account_basic"/>
     <menuitem id="menu_action_account_report_sales" action="action_account_report_sales" parent="account.account_reports_taxes_and_fiscal_menu" sequence="20" groups="account.group_account_readonly,account.group_account_basic" active="False"/>
 

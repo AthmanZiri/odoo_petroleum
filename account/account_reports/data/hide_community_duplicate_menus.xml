@@ -2,7 +2,6 @@
 <odoo>
     <!--
         Prefer interactive account_reports over overlapping kit wizard PDFs.
-        Day / Bank / Cash books from the kit stay available.
         dynamic_accounts_report menus are toggled in the post_init hook when present.
     -->
     <record id="base_accounting_kit.account_financial_reports_profit_loss" model="ir.ui.menu">
@@ -29,4 +28,15 @@
     <record id="base_accounting_kit.menu_tax_report" model="ir.ui.menu">
         <field name="active" eval="False"/>
     </record>
+    <record id="base_accounting_kit.account_bank_book_menu" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
+    <record id="base_accounting_kit.account_cash_book_menu" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
+    <record id="base_accounting_kit.account_day_book_menu" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
+
+    <function model="ir.ui.menu" name="_account_reports_hide_duplicate_dynamic_menus"/>
 </odoo>

@@ -14,6 +14,8 @@ _DYNAMIC_DUPLICATE_MENU_XMLIDS = (
     'dynamic_accounts_report.aged_receivable_menu',
     'dynamic_accounts_report.aged_payable_menu',
     'dynamic_accounts_report.tax_report_menu',
+    'dynamic_accounts_report.menu_bank_book',
+    'dynamic_accounts_report.menu_cash_book',
 )
 
 
