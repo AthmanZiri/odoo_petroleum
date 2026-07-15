@@ -1,6 +1,6 @@
 {
     'name': 'Petroleum Trading Desk',
-    'version': '19.0.1.0.29',
+    'version': '19.0.1.0.30',
     'category': 'Sales',
     'summary': 'Single-screen trading desk: one Deal per truck load drives sale, purchase, trip, invoice and payment',
     'description': """

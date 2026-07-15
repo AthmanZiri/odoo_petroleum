@@ -82,6 +82,10 @@
                             <field name="product_id"/>
                             <field name="quantity" sum="Litres"/>
                             <field name="supplier_id"/>
+                            <field name="position_line_id" string="Buy Lot"
+                                   context="{'deal_position_lot_name': True}"
+                                   options="{'no_create': True, 'no_open': True}"
+                                   optional="show"/>
                             <field name="position_qty_available" string="Left"
                                    decoration-danger="position_qty_available &lt; quantity"
                                    optional="show"/>
