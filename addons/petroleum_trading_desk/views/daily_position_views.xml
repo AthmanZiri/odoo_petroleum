@@ -30,7 +30,8 @@
                 <field name="purchase_order_id" optional="show" readonly="1"/>
                 <button name="action_open_revise_buy_price" type="object"
                         string="Revise Price" icon="fa-pencil"
-                        title="Supplier price reduction / revise buy price"/>
+                        title="Supplier price reduction / revise buy price"
+                        invisible="qty_remaining &lt;= 0"/>
                 <field name="currency_id" column_invisible="1"/>
                 <field name="company_id" column_invisible="1" groups="base.group_multi_company"/>
                 <field name="note" optional="hide"/>
