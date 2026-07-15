@@ -1,6 +1,6 @@
 {
     'name': 'Petroleum Operations',
-    'version': '19.0.1.0.2',
+    'version': '19.0.1.0.4',
     'category': 'Sales',
     'summary': 'Back-to-back supplier sourcing, margins, depots and loading details for bulk fuel trading',
     'description': """
@@ -16,6 +16,7 @@ Operational customisations for the bulk-fuel brokerage workflow:
   trips.
 * Loading details (EPRA number, tanker compartment plan) captured on the trip
   and copied onto the purchase order / loading instruction.
+* On PO confirm: auto-validate the receipt and create a draft vendor bill.
 * Relaxes the one-driver-per-truck and one-active-trip-per-truck hard blocks
   (kept as informational warnings) to match real daily operations.
 """,
@@ -23,6 +24,7 @@ Operational customisations for the bulk-fuel brokerage workflow:
     'license': 'LGPL-3',
     'depends': [
         'sale_order_trip_management',
+        'purchase_stock',
     ],
     'data': [
         'security/ir.model.access.csv',
