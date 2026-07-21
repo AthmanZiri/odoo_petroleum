@@ -22,6 +22,9 @@
                     <button name="action_load" type="object" string="Load Bill"
                             class="btn-primary"
                             invisible="state != 'confirmed' or not is_not_sold"/>
+                    <button name="action_open_revise_sell_price" type="object"
+                            string="Revise Sell Price" class="btn-secondary"
+                            invisible="state in ('draft','proforma','cancel') or is_not_sold"/>
                     <button name="action_open_ledger_link_wizard" type="object"
                             string="Link Vendor Bill"
                             class="btn-secondary"
@@ -104,6 +107,10 @@
                         <field name="amount_sell"/>
                         <field name="margin_total" class="oe_subtotal_footer_separator"
                                decoration-success="margin_total &gt; 0"/>
+                        <field name="adjustment_margin_total"
+                               invisible="adjustment_margin_total == 0"
+                               decoration-success="adjustment_margin_total &gt; 0"
+                               decoration-danger="adjustment_margin_total &lt; 0"/>
                         <field name="amount_paid"/>
                         <field name="balance"/>
                         <field name="currency_id" invisible="1"/>

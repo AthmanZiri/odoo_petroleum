@@ -66,9 +66,12 @@ class PetroleumDailyPositionLine(models.Model):
     def _same_buy_price(self, other_price):
         """Compare buy prices using currency rounding."""
         self.ensure_one()
+        return self._same_price_values(self.buy_price, other_price)
+
+    def _same_price_values(self, first, second):
+        self.ensure_one()
         return float_compare(
-            self.buy_price, other_price, precision_digits=self._price_precision()
-        ) == 0
+            first, second, precision_digits=self._price_precision()) == 0
 
     @api.depends('qty_opening', 'qty_bought', 'allocation_ids.quantity', 'allocation_ids.state')
     def _compute_quantities(self):
@@ -483,9 +486,9 @@ class PetroleumDailyPositionLine(models.Model):
     def action_open_revise_buy_price(self):
         """Open the supplier / lot price revision wizard for one position line."""
         self.ensure_one()
-        if self.qty_remaining <= 0:
+        if self.qty_remaining <= 0 and self.qty_sold <= 0:
             raise UserError(_(
-                'Nothing left to revise on %(line)s — remaining stock is zero.',
+                'Nothing to revise on %(line)s — both remaining and sold volume are zero.',
                 line=self.display_name,
             ))
         return {
@@ -497,6 +500,10 @@ class PetroleumDailyPositionLine(models.Model):
             'context': {
                 'default_position_line_id': self.id,
                 'default_new_buy_price': self.buy_price,
+                'default_volume_scope': (
+                    'remaining' if self.qty_remaining > 0 else 'sold'),
+                'default_affected_quantity': (
+                    self.qty_remaining if self.qty_remaining > 0 else self.qty_sold),
             },
         }
 
@@ -563,15 +570,17 @@ class PetroleumDailyPositionLine(models.Model):
             raise UserError(_('No remaining volume to revise on this lot.'))
 
         old_price = self.buy_price
+        history_reason = (
+            'supplier_reduction' if new_price < old_price else 'revision')
         note = (note or '').strip() or _(
-            'Supplier price reduction on remaining stock.')
+            'Supplier price adjustment on remaining stock.')
         merge_target = self._find_merge_target(new_price)
         credit_note = self.env['account.move']
         transferred = 0.0
 
         if merge_into_matching and merge_target:
             self._log_buy_price_change(
-                old_price, new_price, reason='supplier_reduction',
+                old_price, new_price, reason=history_reason,
                 note=_('%(note)s — merged %(qty)s L into lot @ %(price)s.',
                        note=note, qty=remaining, price=new_price))
             transferred = self._transfer_remaining_to(merge_target)
@@ -584,7 +593,7 @@ class PetroleumDailyPositionLine(models.Model):
             ))
         else:
             self.with_context(
-                buy_price_log_reason='supplier_reduction',
+                buy_price_log_reason=history_reason,
                 buy_price_log_note=note,
             ).write({'buy_price': new_price})
             # Refresh draft deals still pointing at this lot.
@@ -599,7 +608,11 @@ class PetroleumDailyPositionLine(models.Model):
 
         if create_credit_note and float_compare(
                 old_price, new_price, precision_digits=precision) > 0:
-            credit_note = self._create_supplier_price_credit_note(
+            credit_note = self._create_supplier_price_adjustment(
+                old_price, new_price, transferred or remaining, note)
+        elif create_credit_note and float_compare(
+                old_price, new_price, precision_digits=precision) < 0:
+            credit_note = self._create_supplier_price_adjustment(
                 old_price, new_price, transferred or remaining, note)
 
         return {
@@ -611,11 +624,13 @@ class PetroleumDailyPositionLine(models.Model):
             'new_price': new_price,
         }
 
-    def _create_supplier_price_credit_note(self, old_price, new_price, quantity, note):
-        """Draft vendor credit note for (old − new) × remaining litres."""
+    def _create_supplier_price_adjustment(
+            self, old_price, new_price, quantity, note, deal=False,
+            scope='remaining'):
+        """Draft vendor CN/DN for a supplier price change."""
         self.ensure_one()
-        unit_credit = old_price - new_price
-        if unit_credit <= 0 or quantity <= 0:
+        unit_adjustment = abs(old_price - new_price)
+        if not unit_adjustment or quantity <= 0:
             return self.env['account.move']
 
         product = self.product_id
@@ -628,9 +643,19 @@ class PetroleumDailyPositionLine(models.Model):
             taxes = product.supplier_taxes_id.filtered(
                 lambda t: t.company_id == self.company_id)
 
+        is_reduction = new_price < old_price
+        direction = _('reduction') if is_reduction else _('increase')
+        original = self.env['account.move']
+        if deal:
+            original = deal.bill_ids.filtered(
+                lambda move: move.move_type == 'in_invoice'
+                and move.state == 'posted'
+                and move.partner_id.commercial_partner_id
+                == self.supplier_id.commercial_partner_id)[:1]
         line_name = _(
-            'Supplier price reduction on %(product)s: %(old)s → %(new)s '
+            'Supplier price %(direction)s on %(product)s: %(old)s → %(new)s '
             '(%(qty)s L). %(note)s',
+            direction=direction,
             product=product.display_name,
             old=old_price,
             new=new_price,
@@ -638,18 +663,26 @@ class PetroleumDailyPositionLine(models.Model):
             note=note,
         )
         move_vals = {
-            'move_type': 'in_refund',
+            'move_type': 'in_refund' if is_reduction else 'in_invoice',
             'partner_id': self.supplier_id.id,
             'company_id': self.company_id.id,
             'invoice_date': fields.Date.context_today(self),
-            'ref': _('Price reduction %(product)s @ %(old)s→%(new)s',
-                     product=product.display_name, old=old_price, new=new_price),
+            'deal_id': deal.id if deal else False,
+            'petro_price_adjustment': 'supplier_buy',
+            'petro_original_move_id': original.id if original else False,
+            'petro_adjustment_scope': scope,
+            'petro_old_price': old_price,
+            'petro_new_price': new_price,
+            'petro_adjustment_quantity': quantity,
+            'ref': _('Supplier price %(direction)s %(product)s @ %(old)s→%(new)s',
+                     direction=direction, product=product.display_name,
+                     old=old_price, new=new_price),
             'invoice_origin': po.name if po else self.display_name,
             'invoice_line_ids': [fields.Command.create({
                 'product_id': product.id,
                 'name': line_name,
                 'quantity': quantity,
-                'price_unit': unit_credit,
+                'price_unit': unit_adjustment,
                 'tax_ids': [fields.Command.set(taxes.ids)],
                 'product_uom_id': product.uom_id.id,
             })],
@@ -657,6 +690,63 @@ class PetroleumDailyPositionLine(models.Model):
         if 'purchase_id' in self.env['account.move']._fields and po:
             move_vals['purchase_id'] = po.id
         return self.env['account.move'].create(move_vals)
+
+    def action_create_sold_price_adjustments(
+            self, new_buy_price, quantity, note=''):
+        """Create deal-linked supplier CN/DN documents for sold allocations."""
+        self.ensure_one()
+        quantity = float(quantity)
+        if quantity <= 0 or quantity > self.qty_sold:
+            raise UserError(_(
+                'Affected sold litres must be between zero and %s L.',
+                self.qty_sold,
+            ))
+        allocations = self.allocation_ids.filtered(
+            lambda allocation: allocation.state == 'active'
+            and not self._same_price_values(
+                allocation.buy_price, new_buy_price)).sorted('id')
+        adjustable = sum(allocations.mapped('quantity'))
+        if quantity > adjustable:
+            raise UserError(_(
+                'Only %(qty)s sold litres still carry a different buy price.',
+                qty=adjustable,
+            ))
+        left = quantity
+        moves = self.env['account.move']
+        for allocation in allocations:
+            if left <= 0:
+                break
+            affected = min(left, allocation.quantity)
+            move = self._create_supplier_price_adjustment(
+                allocation.buy_price, new_buy_price, affected, note,
+                deal=allocation.deal_id, scope='sold')
+            moves |= move
+            if affected < allocation.quantity:
+                allocation.write({
+                    'quantity': allocation.quantity - affected,
+                })
+                self.env['petroleum.daily.position.allocation'].create({
+                    'position_line_id': self.id,
+                    'deal_id': allocation.deal_id.id,
+                    'deal_line_id': allocation.deal_line_id.id,
+                    'quantity': affected,
+                    'buy_price': new_buy_price,
+                    'state': allocation.state,
+                })
+            else:
+                allocation.write({'buy_price': new_buy_price})
+            left -= affected
+        if left > 0:
+            raise UserError(_(
+                'Only %(allocated)s L of the sold volume is linked to active deals; '
+                '%(missing)s L could not be assigned.',
+                allocated=quantity - left, missing=left,
+            ))
+        self._log_buy_price_change(
+            self.buy_price, new_buy_price, reason='revision',
+            note=_('%(note)s — %(qty)s sold litres adjusted through CN/DN.',
+                   note=note, qty=quantity))
+        return moves
 
     def action_create_supplier_bills(self):
         """Post vendor bills for today's synced bulk purchase orders."""

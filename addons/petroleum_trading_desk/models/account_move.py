@@ -18,6 +18,25 @@ class AccountMove(models.Model):
     deal_id = fields.Many2one(
         'petroleum.deal', string='Trading Deal', index=True, copy=False, ondelete='set null',
         help='Links this imported ledger invoice or bill to the matching Trading Desk deal.')
+    petro_price_adjustment = fields.Selection([
+        ('customer_sell', 'Customer Sell Price'),
+        ('supplier_buy', 'Supplier Buy Price'),
+    ], string='Petroleum Price Adjustment', copy=False, index=True,
+        help='Identifies price-only documents so they affect margin without '
+             'double-counting litres.')
+    petro_original_move_id = fields.Many2one(
+        'account.move', string='Original Petroleum Document', copy=False,
+        ondelete='set null', index=True)
+    petro_adjustment_scope = fields.Selection([
+        ('remaining', 'Remaining Stock'),
+        ('sold', 'Sold Volume'),
+    ], string='Petroleum Adjustment Scope', copy=False)
+    petro_old_price = fields.Float(
+        string='Previous Petroleum Price', digits='Product Price', copy=False)
+    petro_new_price = fields.Float(
+        string='New Petroleum Price', digits='Product Price', copy=False)
+    petro_adjustment_quantity = fields.Float(
+        string='Adjusted Litres', digits='Product Unit of Measure', copy=False)
     petro_margin_total = fields.Monetary(
         string='Margin', compute='_compute_petro_margin_total', store=True,
         currency_field='currency_id')
@@ -44,6 +63,18 @@ class AccountMove(models.Model):
             )._compute_petro_margin_total()
             self.mapped('invoice_line_ids')._compute_petro_margin()
         return res
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        """Keep reversals attached to the same deal for margin reporting."""
+        for vals in vals_list:
+            reversed_id = vals.get('reversed_entry_id')
+            if reversed_id and not vals.get('deal_id'):
+                original = self.browse(reversed_id)
+                if original.deal_id:
+                    vals['deal_id'] = original.deal_id.id
+                vals.setdefault('petro_original_move_id', original.id)
+        return super().create(vals_list)
 
     # ------------------------------------------------------------------
     # Backfill buy prices on imported ledger invoices

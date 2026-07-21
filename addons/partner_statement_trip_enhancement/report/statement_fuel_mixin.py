@@ -419,6 +419,15 @@ class StatementFuelMixin(models.AbstractModel):
             wide = self._fuel_wide_from_sql_fields(line)
         line.update(wide)
 
+        move = self._get_move_cached(line.get('move_id'), move_cache)
+        if move and getattr(move, 'petro_price_adjustment', False):
+            kind = (
+                _('Customer price adjustment')
+                if move.petro_price_adjustment == 'customer_sell'
+                else _('Supplier price adjustment')
+            )
+            line['ref'] = '%s — %s' % (kind, move.ref or move.name)
+
         truck = (line.get('truck_number') or '').strip()
         if truck and truck.upper().startswith('PAYMENT'):
             line['truck_number'] = ''

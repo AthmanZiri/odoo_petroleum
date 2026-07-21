@@ -12,19 +12,22 @@
                         <field name="product_id"/>
                         <field name="supplier_id"/>
                         <field name="qty_remaining"/>
+                        <field name="qty_sold"/>
                         <field name="current_buy_price"/>
                         <field name="currency_id" invisible="1"/>
                     </group>
                     <group string="Revision">
+                        <field name="volume_scope"/>
+                        <field name="affected_quantity"/>
                         <field name="new_buy_price"/>
                         <field name="price_drop"/>
                         <field name="credit_amount"/>
                         <field name="matching_lot_id" readonly="1"
-                               invisible="not matching_lot_id"/>
+                               invisible="not matching_lot_id or volume_scope != 'remaining'"/>
                         <field name="merge_into_matching"
-                               invisible="not matching_lot_id"/>
+                               invisible="not matching_lot_id or volume_scope != 'remaining'"/>
                         <field name="create_credit_note"
-                               invisible="credit_amount &lt;= 0"/>
+                               invisible="credit_amount &lt;= 0 or volume_scope == 'sold'"/>
                         <field name="note" placeholder="e.g. Supplier agreed today rate"/>
                     </group>
                 </group>

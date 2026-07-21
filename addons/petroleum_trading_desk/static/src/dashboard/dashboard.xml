@@ -98,7 +98,7 @@
                     <span t-esc="state.data.kpis.deal_invoices_count"/> from deals)
                     · <span t-esc="state.data.kpis.import_bills_count"/> imported bill(s)
                     · <span t-esc="state.data.kpis.deals_count"/> deal(s) in pipeline
-                    · margin = customer sell − vendor buy (deals + imported bills)
+                    · margin = customer sell − vendor buy, including posted price CN/DN
                 </div>
                 <div class="alert alert-warning py-2 small mb-2"
                      t-if="state.data.kpis.imports_outside_period">
@@ -279,7 +279,7 @@
                 <div class="row g-3 mt-1">
                     <div class="col-12 col-lg-8">
                         <div class="card border-0 shadow-sm h-100"><div class="card-body">
-                            <h6 class="text-muted">Margin trend — posted invoices (filtered period)</h6>
+                            <h6 class="text-muted">Margin trend — posted invoices and price CN/DN (filtered period)</h6>
                             <div class="o_petro_chart"><canvas t-ref="marginChart"/></div>
                         </div></div>
                     </div>

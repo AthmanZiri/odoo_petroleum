@@ -131,10 +131,31 @@ class DeskDashboard(models.TransientModel):
                 vol[grade] += line.quantity
         return vol
 
+    @staticmethod
+    def _customer_move_sign(move):
+        return -1.0 if move.move_type == 'out_refund' else 1.0
+
+    @staticmethod
+    def _supplier_adjustment_margin(move):
+        """Margin effect of a supplier price adjustment.
+
+        Uses the entered price delta (price_unit × quantity) rather than the
+        untaxed total, because deal buy/sell prices are tax-inclusive pump
+        prices and margin is computed on those entered values.
+        """
+        amount = sum(
+            line.price_unit * line.quantity
+            for line in move.invoice_line_ids
+            if line.product_id and line.display_type not in _SKIP_LINE_DISPLAY)
+        return amount if move.move_type == 'in_refund' else -amount
+
     @api.model
     def _invoice_deal(self, invoice):
         if invoice.deal_id:
             return invoice.deal_id
+        original = invoice.petro_original_move_id or invoice.reversed_entry_id
+        if original and original.deal_id:
+            return original.deal_id
         orders = invoice.invoice_line_ids.sale_line_ids.order_id
         if orders:
             deal = self.env['petroleum.deal'].search(
@@ -151,7 +172,8 @@ class DeskDashboard(models.TransientModel):
     @api.model
     def _posted_customer_invoices(self, moves):
         return moves.filtered(
-            lambda m: m.move_type == 'out_invoice' and m.state == 'posted')
+            lambda m: m.move_type in ('out_invoice', 'out_refund')
+            and m.state == 'posted')
 
     @api.model
     def _get_dashboard_invoices(self, flt):
@@ -174,7 +196,7 @@ class DeskDashboard(models.TransientModel):
 
         linked = Move.search([
             ('deal_id', '!=', False),
-            ('move_type', '=', 'out_invoice'),
+            ('move_type', 'in', ('out_invoice', 'out_refund')),
             ('state', '=', 'posted'),
         ])
         for inv in linked:
@@ -183,7 +205,7 @@ class DeskDashboard(models.TransientModel):
 
         if 'petro_import_batch' in Move._fields:
             imported = Move.search([
-                ('move_type', '=', 'out_invoice'),
+                ('move_type', 'in', ('out_invoice', 'out_refund')),
                 ('state', '=', 'posted'),
                 ('petro_import_batch', '!=', False),
                 ('deal_id', '=', False),
@@ -191,6 +213,21 @@ class DeskDashboard(models.TransientModel):
             for inv in imported:
                 if self._invoice_in_period(inv, flt):
                     invoice_ids.add(inv.id)
+
+        # Historical Odoo reversals may predate deal_id propagation. Resolve
+        # them through their original invoice so their margin is not lost.
+        refunds = Move.search([
+            ('move_type', '=', 'out_refund'),
+            ('state', '=', 'posted'),
+            ('deal_id', '=', False),
+        ])
+        for refund in refunds:
+            original = refund.petro_original_move_id or refund.reversed_entry_id
+            is_imported = bool(
+                original and getattr(original, 'petro_import_batch', False))
+            if (self._invoice_deal(refund) or is_imported) and self._invoice_in_period(
+                    refund, flt):
+                invoice_ids.add(refund.id)
 
         invoices = Move.browse(list(invoice_ids))
 
@@ -269,6 +306,36 @@ class DeskDashboard(models.TransientModel):
                     self._is_invoice_product_line(l) and l.product_id.id == pid
                     for l in m.invoice_line_ids))
         return bills
+
+    @api.model
+    def _get_supplier_margin_adjustments(self, flt):
+        """Posted supplier CN/DN documents that alter petroleum buy cost."""
+        Move = self.env['account.move']
+        moves = Move.search([
+            ('state', '=', 'posted'),
+            ('move_type', 'in', ('in_invoice', 'in_refund')),
+            ('petro_price_adjustment', '=', 'supplier_buy'),
+            ('petro_adjustment_scope', '!=', 'remaining'),
+        ])
+        # Remaining-stock documents reconcile AP but the revised lot price is
+        # already used as cost when those litres sell; counting both would
+        # double the same supplier change.
+        moves = moves.filtered(lambda m: self._invoice_in_period(m, flt))
+        if flt['supplier_id']:
+            moves = moves.filtered(
+                lambda m, sid=flt['supplier_id']: m.partner_id.id == sid)
+        if flt['partner_id']:
+            moves = moves.filtered(
+                lambda m, pid=flt['partner_id']:
+                self._invoice_deal(m)
+                and self._invoice_deal(m).partner_id.id == pid)
+        if flt['product_id']:
+            moves = moves.filtered(
+                lambda m, pid=flt['product_id']: any(
+                    self._is_invoice_product_line(line)
+                    and line.product_id.id == pid
+                    for line in m.invoice_line_ids))
+        return moves
 
     @staticmethod
     def _plain_text(value):
@@ -357,11 +424,19 @@ class DeskDashboard(models.TransientModel):
 
     @api.model
     def _invoice_sell_and_volume(self, invoices, flt):
-        all_lines = self.env['account.move.line']
+        sell_total = 0.0
+        vol = {grade: 0.0 for grade in GRADE_CODES}
         for invoice in invoices:
-            all_lines |= self._filter_invoice_lines(invoice, flt)
-        vol = self._volume_by_grade_from_lines(all_lines)
-        sell_total = sum(all_lines.mapped('price_subtotal'))
+            lines = self._filter_invoice_lines(invoice, flt)
+            sign = self._customer_move_sign(invoice)
+            sell_total += sign * sum(lines.mapped('price_subtotal'))
+            # Price-only notes change economics but do not represent another
+            # loading. Quantity reversals continue to reduce reported volume.
+            if invoice.petro_price_adjustment:
+                continue
+            line_vol = self._volume_by_grade_from_lines(lines)
+            for grade in GRADE_CODES:
+                vol[grade] += sign * line_vol[grade]
         return sell_total, vol
 
     @api.model
@@ -381,7 +456,7 @@ class DeskDashboard(models.TransientModel):
                 # would report 100 % margin which is never correct.
                 if invoice.petro_import_batch and not buy:
                     continue
-                margin += sell - buy
+                margin += self._customer_move_sign(invoice) * (sell - buy)
         return margin
 
     @api.model
@@ -551,9 +626,12 @@ class DeskDashboard(models.TransientModel):
             lambda m: getattr(m, 'petro_import_batch', False) and not m.deal_id)
         deal_invoices = invoices - import_invoices
         import_bills = self._get_imported_vendor_bills(flt)
+        supplier_adjustments = self._get_supplier_margin_adjustments(flt)
         sell_total, vol = self._invoice_sell_and_volume(invoices, flt)
         total_litres = sum(vol.values())
-        margin_total = self._invoice_margin(invoices, flt)
+        margin_total = self._invoice_margin(invoices, flt) + sum(
+            self._supplier_adjustment_margin(move)
+            for move in supplier_adjustments)
         deals_pipeline = self._deals_pipeline(flt)
         imports_outside = self._import_invoices_outside_period(flt)
 
@@ -566,6 +644,7 @@ class DeskDashboard(models.TransientModel):
             'import_invoices_count': len(import_invoices),
             'deal_invoices_count': len(deal_invoices),
             'import_bills_count': len(import_bills),
+            'supplier_adjustments_count': len(supplier_adjustments),
             'invoice_ids': invoices.ids,
             'deals_count': deals_pipeline['total_count'],
             'imports_outside_period': imports_outside,
@@ -645,6 +724,10 @@ class DeskDashboard(models.TransientModel):
         trend_labels, trend_values = [], []
         for day in trend_days:
             margin_day = self._margin_by_invoice_date(invoices, flt, day)
+            margin_day += sum(
+                self._supplier_adjustment_margin(move)
+                for move in supplier_adjustments
+                if self._invoice_effective_date(move) == day)
             trend_labels.append(day.strftime('%d %b'))
             trend_values.append(round(margin_day, 2))
 

@@ -15,6 +15,68 @@ class PetroleumDeal(models.Model):
     ledger_link_state = fields.Selection(
         [('none', 'Not Linked'), ('partial', 'Partially Linked'), ('full', 'Fully Linked')],
         string='Ledger Link', compute='_compute_ledger_link_state', store=True)
+    adjustment_margin_total = fields.Monetary(
+        string='Price Adjustments', compute='_compute_amounts', store=True,
+        currency_field='currency_id',
+        help='Posted customer and supplier CN/DN margin effect.')
+    adjustment_sell_total = fields.Monetary(
+        string='Customer Adjustments', compute='_compute_amounts', store=True,
+        currency_field='currency_id')
+
+    @api.depends(
+        'line_ids.quantity', 'line_ids.price_subtotal',
+        'line_ids.cost_subtotal', 'line_ids.margin',
+        'sale_order_id.invoice_ids.state',
+        'sale_order_id.invoice_ids.move_type',
+        'sale_order_id.invoice_ids.petro_price_adjustment',
+        'sale_order_id.invoice_ids.petro_margin_total',
+        'sale_order_id.invoice_ids.amount_untaxed_signed',
+        'purchase_order_ids.invoice_ids.state',
+        'purchase_order_ids.invoice_ids.move_type',
+        'purchase_order_ids.invoice_ids.petro_price_adjustment',
+        'purchase_order_ids.invoice_ids.petro_adjustment_scope',
+        'purchase_order_ids.invoice_ids.amount_untaxed_signed',
+        'ledger_move_ids.state', 'ledger_move_ids.move_type',
+        'ledger_move_ids.petro_price_adjustment',
+        'ledger_move_ids.petro_adjustment_scope',
+        'ledger_move_ids.petro_margin_total',
+        'ledger_move_ids.amount_untaxed_signed',
+        'ledger_move_ids.invoice_line_ids.price_unit',
+        'ledger_move_ids.invoice_line_ids.quantity',
+    )
+    def _compute_amounts(self):
+        super()._compute_amounts()
+        for deal in self:
+            moves = (
+                deal.sale_order_id.invoice_ids
+                | deal.purchase_order_ids.invoice_ids
+                | deal.ledger_move_ids
+            ).filtered(lambda move: move.state == 'posted')
+            effect = 0.0
+            sell_effect = 0.0
+            for move in moves:
+                # Deal buy/sell prices are entered tax-inclusive, so measure
+                # adjustments on the entered price × qty, not untaxed totals.
+                entered = sum(
+                    line.price_unit * line.quantity
+                    for line in move.invoice_line_ids
+                    if line.product_id and line.display_type not in (
+                        'line_section', 'line_subsection', 'line_note'))
+                if move.move_type in ('out_invoice', 'out_refund'):
+                    if (move.petro_price_adjustment == 'customer_sell'
+                            or move.move_type == 'out_refund'):
+                        effect += move.petro_margin_total
+                        sell_effect += (
+                            -entered if move.move_type == 'out_refund' else entered)
+                elif move.move_type in ('in_invoice', 'in_refund'):
+                    if (move.petro_price_adjustment == 'supplier_buy'
+                            and move.petro_adjustment_scope != 'remaining'):
+                        effect += (
+                            entered if move.move_type == 'in_refund' else -entered)
+            deal.adjustment_sell_total = sell_effect
+            deal.adjustment_margin_total = effect
+            deal.amount_sell += sell_effect
+            deal.margin_total += effect
 
     # ------------------------------------------------------------------
     @api.depends(
@@ -33,13 +95,13 @@ class PetroleumDeal(models.Model):
     def _compute_links(self):
         for deal in self:
             so_invoices = deal.sale_order_id.invoice_ids.filtered(
-                lambda m: m.move_type == 'out_invoice')
+                lambda m: m.move_type in ('out_invoice', 'out_refund'))
             so_bills = deal.purchase_order_ids.invoice_ids.filtered(
-                lambda m: m.move_type == 'in_invoice')
+                lambda m: m.move_type in ('in_invoice', 'in_refund'))
             ledger_invoices = deal.ledger_move_ids.filtered(
-                lambda m: m.move_type == 'out_invoice')
+                lambda m: m.move_type in ('out_invoice', 'out_refund'))
             ledger_bills = deal.ledger_move_ids.filtered(
-                lambda m: m.move_type == 'in_invoice')
+                lambda m: m.move_type in ('in_invoice', 'in_refund'))
             deal.invoice_ids = so_invoices | ledger_invoices
             deal.bill_ids = so_bills | ledger_bills
             deal.po_count = len(deal.purchase_order_ids)

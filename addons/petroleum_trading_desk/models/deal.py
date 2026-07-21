@@ -522,6 +522,48 @@ class PetroleumDeal(models.Model):
         self.ensure_one()
         return self._action_open_moves(self.invoice_ids, _('Invoices'))
 
+    def action_open_revise_sell_price(self):
+        self.ensure_one()
+        posted = self.invoice_ids.filtered(
+            lambda move: move.move_type == 'out_invoice'
+            and move.state == 'posted')
+        if not posted:
+            raise UserError(_(
+                'Post a customer invoice before creating a price adjustment.'))
+        line = self.line_ids[:1]
+        pending = self.env['account.move'].search([
+            ('deal_id', '=', self.id),
+            ('petro_price_adjustment', '=', 'customer_sell'),
+            ('state', '=', 'draft'),
+        ], limit=1)
+        if pending:
+            raise UserError(_(
+                'Post or cancel the existing draft price adjustment %s first.',
+                pending.display_name,
+            ))
+        latest = self.env['account.move'].search([
+            ('deal_id', '=', self.id),
+            ('petro_price_adjustment', '=', 'customer_sell'),
+            ('state', '=', 'posted'),
+        ], order='invoice_date desc, id desc').filtered(
+            lambda move: line.product_id in move.invoice_line_ids.product_id)[:1]
+        effective_price = latest.petro_new_price if latest else line.sell_price
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Revise Customer Sell Price'),
+            'res_model': 'petroleum.deal.revise.sell.price',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_deal_id': self.id,
+                'default_deal_line_id': line.id,
+                'default_original_invoice_id': posted[:1].id,
+                'default_current_sell_price': effective_price,
+                'default_new_sell_price': effective_price,
+                'default_quantity': line.quantity,
+            },
+        }
+
     def action_view_bills(self):
         self.ensure_one()
         return self._action_open_moves(self.bill_ids, _('Vendor Bills'))
