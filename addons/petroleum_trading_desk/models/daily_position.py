@@ -92,7 +92,8 @@ class PetroleumDailyPositionLine(models.Model):
         """One line per date/product/supplier/depot/company/buy-price lot.
 
         Same supplier and product may be bought several times on the same day
-        as long as each purchase has a distinct buy price.
+        as long as each purchase has a distinct buy price. Same-price volume
+        (opening + bought) belongs on the existing lot — see create().
         """
         for line in self:
             domain = [
@@ -108,7 +109,8 @@ class PetroleumDailyPositionLine(models.Model):
                     raise ValidationError(_(
                         'A position line already exists for %(product)s / %(supplier)s '
                         'on %(date)s at buy price %(price)s. '
-                        'Add another line only when the buy price is different.',
+                        'Increase Bought Today on that existing line instead of adding '
+                        'a new row (another line is only needed when the buy price differs).',
                         product=line.product_id.display_name,
                         supplier=line.supplier_id.display_name,
                         date=line.date,
@@ -134,13 +136,54 @@ class PetroleumDailyPositionLine(models.Model):
             'note': note or '',
         })
 
+    def _merge_incoming_vals(self, vals):
+        """Fold a same-price create into this lot (opening + bought on one row)."""
+        self.ensure_one()
+        write_vals = {}
+        qty_bought = float(vals.get('qty_bought') or 0.0)
+        qty_opening = float(vals.get('qty_opening') or 0.0)
+        if qty_bought:
+            write_vals['qty_bought'] = self.qty_bought + qty_bought
+        if qty_opening:
+            write_vals['qty_opening'] = self.qty_opening + qty_opening
+        for field in (
+            'depot_id', 'purchase_order_id', 'purchase_order_line_id',
+            'sell_price', 'note', 'rolled_from_line_id',
+        ):
+            if vals.get(field) and not self[field]:
+                write_vals[field] = vals[field]
+        if write_vals:
+            self.write(write_vals)
+        return self
+
     @api.model_create_multi
     def create(self, vals_list):
-        lines = super().create(vals_list)
-        for line, vals in zip(lines, vals_list):
+        """Merge into an existing same-price lot when one already exists.
+
+        Rolled-forward opening and a same-day buy at the same price share one
+        row (qty_opening + qty_bought). Creating a second row would hit the
+        uniqueness constraint; callers such as the editable list often try that.
+        """
+        created = self.browse()
+        for vals in vals_list:
+            product = vals.get('product_id')
+            supplier = vals.get('supplier_id')
+            if product and supplier:
+                date = vals.get('date') or fields.Date.context_today(self)
+                company = vals.get('company_id') or self.env.company.id
+                depot = vals.get('depot_id') or False
+                buy_price = vals.get('buy_price') or 0.0
+                existing = self._find_today_lot(
+                    date, product, supplier, depot, company, buy_price)
+                if existing:
+                    existing._merge_incoming_vals(vals)
+                    created |= existing
+                    continue
+            line = super().create([vals])
             if vals.get('buy_price') and not vals.get('rolled_from_line_id'):
                 line._log_buy_price_change(0.0, vals['buy_price'], reason='initial')
-        return lines
+            created |= line
+        return created
 
     def write(self, vals):
         price_logs = []
@@ -160,7 +203,7 @@ class PetroleumDailyPositionLine(models.Model):
             ('date', '=', date),
             ('product_id', '=', product.id if hasattr(product, 'id') else product),
             ('supplier_id', '=', supplier.id if hasattr(supplier, 'id') else supplier),
-            ('depot_id', '=', depot.id if depot else False),
+            ('depot_id', '=', depot.id if hasattr(depot, 'id') else (depot or False)),
             ('company_id', '=', company.id if hasattr(company, 'id') else company),
         ]
 

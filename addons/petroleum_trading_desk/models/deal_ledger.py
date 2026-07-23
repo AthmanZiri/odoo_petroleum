@@ -65,12 +65,21 @@ class PetroleumDeal(models.Model):
                 if move.move_type in ('out_invoice', 'out_refund'):
                     if (move.petro_price_adjustment == 'customer_sell'
                             or move.move_type == 'out_refund'):
+                        # Credit/debit notes on a shared document should only
+                        # affect the deal they are linked to.
+                        if move.deal_id and move.deal_id != deal:
+                            continue
                         effect += move.petro_margin_total
                         sell_effect += (
                             -entered if move.move_type == 'out_refund' else entered)
                 elif move.move_type in ('in_invoice', 'in_refund'):
                     if (move.petro_price_adjustment == 'supplier_buy'
                             and move.petro_adjustment_scope != 'remaining'):
+                        # Bulk daily-position POs are shared across many deals;
+                        # a sold-volume supplier CN/DN must not inflate every
+                        # deal that happens to list that PO.
+                        if move.deal_id and move.deal_id != deal:
+                            continue
                         effect += (
                             entered if move.move_type == 'in_refund' else -entered)
             deal.adjustment_sell_total = sell_effect

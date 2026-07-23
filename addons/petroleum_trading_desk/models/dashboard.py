@@ -203,6 +203,17 @@ class DeskDashboard(models.TransientModel):
             if self._invoice_in_period(inv, flt):
                 invoice_ids.add(inv.id)
 
+        # Price-only customer CN/DN may be tagged without a deal link (legacy
+        # manual notes, or revise flows that left deal_id empty).
+        tagged_customer = Move.search([
+            ('state', '=', 'posted'),
+            ('move_type', 'in', ('out_invoice', 'out_refund')),
+            ('petro_price_adjustment', '=', 'customer_sell'),
+        ])
+        for inv in tagged_customer:
+            if self._invoice_in_period(inv, flt):
+                invoice_ids.add(inv.id)
+
         if 'petro_import_batch' in Move._fields:
             imported = Move.search([
                 ('move_type', 'in', ('out_invoice', 'out_refund')),
