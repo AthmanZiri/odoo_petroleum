@@ -522,6 +522,31 @@ class PetroleumDeal(models.Model):
         self.ensure_one()
         return self._action_open_moves(self.invoice_ids, _('Invoices'))
 
+    def action_open_revise_confirmed(self):
+        self.ensure_one()
+        if self.state != 'confirmed':
+            raise UserError(_('Only confirmed deals can be revised before loading.'))
+        if not self.sale_order_id:
+            raise UserError(_('Confirm the deal before revising it.'))
+        line = self.line_ids[:1]
+        if not line:
+            raise UserError(_('Add at least one product line.'))
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Revise Confirmed Deal'),
+            'res_model': 'petroleum.deal.revise.confirmed',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_deal_id': self.id,
+                'default_deal_line_id': line.id,
+                'default_current_quantity': line.quantity,
+                'default_current_sell_price': line.sell_price,
+                'default_new_quantity': line.quantity,
+                'default_new_sell_price': line.sell_price,
+            },
+        }
+
     def action_open_revise_sell_price(self):
         self.ensure_one()
         posted = self.invoice_ids.filtered(

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_deal_revise_confirmed_form" model="ir.ui.view">
+        <field name="name">petroleum.deal.revise.confirmed.form</field>
+        <field name="model">petroleum.deal.revise.confirmed</field>
+        <field name="arch" type="xml">
+            <form string="Revise Confirmed Deal">
+                <group>
+                    <group string="Current Deal">
+                        <field name="deal_id" readonly="1"/>
+                        <field name="deal_line_id"/>
+                        <field name="product_id"/>
+                        <field name="currency_id" invisible="1"/>
+                        <field name="current_quantity"/>
+                        <field name="current_sell_price"/>
+                    </group>
+                    <group string="Revision">
+                        <field name="new_quantity"/>
+                        <field name="new_sell_price"/>
+                        <field name="note"/>
+                    </group>
+                </group>
+                <div class="alert alert-info" role="alert">
+                    Use this before loading/invoicing. It updates the deal line,
+                    linked sale order line, and daily-position allocation together.
+                    Once a customer invoice exists, use accounting credit/debit notes
+                    for quantity corrections.
+                </div>
+                <footer>
+                    <button name="action_confirm" type="object"
+                            string="Apply Revision" class="btn-primary"/>
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>
