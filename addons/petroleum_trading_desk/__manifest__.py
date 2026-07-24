@@ -49,6 +49,7 @@ A single place for the trader to run the whole buy-and-sell flow.
         'wizards/margin_backfill_views.xml',
         'wizards/position_revise_price_views.xml',
         'wizards/deal_revise_sell_price_views.xml',
+        'wizards/deal_revise_confirmed_views.xml',
         'views/account_move_views.xml',
         'views/partner_views.xml',
         'reports/proforma_report.xml',

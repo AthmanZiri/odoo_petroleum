@@ -37,3 +37,5 @@ access_position_revise_price_user,position.revise.price.user,model_petroleum_dai
 access_position_revise_price_manager,position.revise.price.manager,model_petroleum_daily_position_revise_price,sales_team.group_sale_manager,1,1,1,1
 access_deal_revise_sell_price_user,deal.revise.sell.price.user,model_petroleum_deal_revise_sell_price,sales_team.group_sale_salesman,1,1,1,1
 access_deal_revise_sell_price_manager,deal.revise.sell.price.manager,model_petroleum_deal_revise_sell_price,sales_team.group_sale_manager,1,1,1,1
+access_deal_revise_confirmed_user,deal.revise.confirmed.user,model_petroleum_deal_revise_confirmed,sales_team.group_sale_salesman,1,1,1,1
+access_deal_revise_confirmed_manager,deal.revise.confirmed.manager,model_petroleum_deal_revise_confirmed,sales_team.group_sale_manager,1,1,1,1
