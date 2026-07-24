@@ -196,3 +196,32 @@ class TestConfirmedDealRevision(AccountTestInvoicingCommon):
         with self.assertRaises(UserError) as error:
             self._wizard(deal, 80.0, 10.0).action_confirm()
         self.assertIn('draft invoice', str(error.exception).lower())
+
+    def test_revise_loaded_deal_qty_and_price(self):
+        deal, position = self._confirmed_deal()
+        line = deal.line_ids
+        invoice = self._post_customer_invoice(deal)
+        deal.write({'state': 'loaded'})
+        allocation = deal.position_allocation_ids.filtered(
+            lambda alloc: alloc.deal_line_id == line and alloc.state == 'active')
+
+        action = deal.action_open_revise_confirmed()
+        self.assertEqual(action['res_model'], 'petroleum.deal.revise.confirmed')
+
+        action = self._wizard(deal, 80.0, 9.0, 'Loaded short + price').action_confirm()
+        drafts = self.env['account.move'].search(action['domain'])
+
+        self.assertEqual(len(drafts), 2)
+        self.assertEqual(line.quantity, 80.0)
+        self.assertEqual(line.sell_price, 9.0)
+        self.assertEqual(allocation.quantity, 80.0)
+        self.assertEqual(position.qty_remaining, 70.0)
+        self.assertTrue(
+            drafts.filtered(lambda move: move.petro_original_move_id == invoice))
+
+    def test_revise_sell_price_button_opens_unified_wizard(self):
+        deal, _position = self._confirmed_deal()
+        self._post_customer_invoice(deal)
+        deal.write({'state': 'loaded'})
+        action = deal.action_open_revise_sell_price()
+        self.assertEqual(action['res_model'], 'petroleum.deal.revise.confirmed')

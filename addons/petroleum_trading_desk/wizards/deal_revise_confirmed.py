@@ -29,7 +29,7 @@ class PetroleumDealReviseConfirmed(models.TransientModel):
         string='New Sell Price', required=True, digits='Product Price')
     note = fields.Char(
         string='Reason / Note', required=True,
-        default='Confirmed deal correction')
+        default='Deal correction')
 
     @api.depends(
         'deal_id', 'deal_id.invoice_ids', 'deal_id.invoice_ids.state',
@@ -352,9 +352,9 @@ class PetroleumDealReviseConfirmed(models.TransientModel):
         self.ensure_one()
         deal = self.deal_id
         line = self.deal_line_id
-        if deal.state != 'confirmed':
+        if deal.state not in ('confirmed', 'loaded', 'done'):
             raise UserError(_(
-                'Only deals in Confirmed status can be revised with this action.'))
+                'Only confirmed, loaded, or settled deals can be revised.'))
         if self.new_quantity <= 0:
             raise UserError(_('New litres must be greater than zero.'))
 
@@ -389,7 +389,7 @@ class PetroleumDealReviseConfirmed(models.TransientModel):
             drafts |= self._create_price_adjustment_move(original, effective_price)
 
         deal.message_post(body=_(
-            'Confirmed deal revised for %(product)s: %(old_qty)s L @ %(old_price)s '
+            'Deal revised for %(product)s: %(old_qty)s L @ %(old_price)s '
             '→ %(new_qty)s L @ %(new_price)s. %(note)s',
             product=line.product_id.display_name,
             old_qty=old_quantity,

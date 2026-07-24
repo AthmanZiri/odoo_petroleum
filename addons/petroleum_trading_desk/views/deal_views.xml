@@ -24,10 +24,7 @@
                             invisible="state != 'confirmed' or not is_not_sold"/>
                     <button name="action_open_revise_confirmed" type="object"
                             string="Revise Deal" class="btn-secondary"
-                            invisible="state != 'confirmed'"/>
-                    <button name="action_open_revise_sell_price" type="object"
-                            string="Revise Sell Price" class="btn-secondary"
-                            invisible="state not in ('loaded','done') or is_not_sold"/>
+                            invisible="state not in ('confirmed', 'loaded', 'done')"/>
                     <button name="action_open_ledger_link_wizard" type="object"
                             string="Link Vendor Bill"
                             class="btn-secondary"
