@@ -531,6 +531,13 @@ class PetroleumDeal(models.Model):
         line = self.line_ids[:1]
         if not line:
             raise UserError(_('Add at least one product line.'))
+        latest = self.env['account.move'].search([
+            ('deal_id', '=', self.id),
+            ('petro_price_adjustment', '=', 'customer_sell'),
+            ('state', '=', 'posted'),
+        ], order='invoice_date desc, id desc').filtered(
+            lambda move: line.product_id in move.invoice_line_ids.product_id)[:1]
+        effective_price = latest.petro_new_price if latest else line.sell_price
         return {
             'type': 'ir.actions.act_window',
             'name': _('Revise Confirmed Deal'),
@@ -541,9 +548,9 @@ class PetroleumDeal(models.Model):
                 'default_deal_id': self.id,
                 'default_deal_line_id': line.id,
                 'default_current_quantity': line.quantity,
-                'default_current_sell_price': line.sell_price,
+                'default_current_sell_price': effective_price,
                 'default_new_quantity': line.quantity,
-                'default_new_sell_price': line.sell_price,
+                'default_new_sell_price': effective_price,
             },
         }
 

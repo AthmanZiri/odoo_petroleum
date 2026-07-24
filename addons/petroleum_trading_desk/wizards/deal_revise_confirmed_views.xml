@@ -5,6 +5,7 @@
         <field name="model">petroleum.deal.revise.confirmed</field>
         <field name="arch" type="xml">
             <form string="Revise Confirmed Deal">
+                <field name="has_posted_invoice" invisible="1"/>
                 <group>
                     <group string="Current Deal">
                         <field name="deal_id" readonly="1"/>
@@ -20,11 +21,16 @@
                         <field name="note"/>
                     </group>
                 </group>
-                <div class="alert alert-info" role="alert">
+                <div class="alert alert-info" role="alert"
+                     invisible="has_posted_invoice">
                     Use this before loading/invoicing. It updates the deal line,
                     linked sale order line, and daily-position allocation together.
-                    Once a customer invoice exists, use accounting credit/debit notes
-                    for quantity corrections.
+                </div>
+                <div class="alert alert-warning" role="alert"
+                     invisible="not has_posted_invoice">
+                    A posted customer invoice already exists. Apply Revision updates
+                    the deal line, sale order, and position allocation, and creates
+                    draft credit/debit note(s). The original invoice is not rewritten.
                 </div>
                 <footer>
                     <button name="action_confirm" type="object"
