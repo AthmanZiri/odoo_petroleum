@@ -1,6 +1,6 @@
 {
     'name': 'Petroleum Accounting Reports',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.0.1',
     'category': 'Accounting',
     'summary': 'Petroleum P&L: Revenue, Cost of Sales (purchases), Gross, Expenses, Net',
     'description': """
