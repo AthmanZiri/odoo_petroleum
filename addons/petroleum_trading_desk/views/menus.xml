@@ -70,6 +70,29 @@
               action="action_desk_bank_transfer"
               sequence="26"/>
 
+    <menuitem id="menu_trading_desk_capital"
+              name="Capital &amp; Loans"
+              parent="menu_trading_desk_root"
+              sequence="27"/>
+
+    <menuitem id="menu_trading_desk_investor_capital"
+              name="Investor Capital"
+              parent="menu_trading_desk_capital"
+              action="petroleum_capital.action_investor_capital"
+              sequence="10"/>
+
+    <menuitem id="menu_trading_desk_loan_issued"
+              name="Loans Issued"
+              parent="menu_trading_desk_capital"
+              action="petroleum_capital.action_loan_issued"
+              sequence="20"/>
+
+    <menuitem id="menu_trading_desk_roi_payment"
+              name="Pay Investor ROI"
+              parent="menu_trading_desk_capital"
+              action="petroleum_capital.action_roi_payment"
+              sequence="30"/>
+
     <menuitem id="menu_trading_desk_statements"
               name="Send Statements"
               parent="menu_trading_desk_root"

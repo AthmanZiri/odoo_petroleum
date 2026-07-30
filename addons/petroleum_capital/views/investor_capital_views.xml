@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_investor_capital_tree" model="ir.ui.view">
+        <field name="name">petroleum.investor.capital.list</field>
+        <field name="model">petroleum.investor.capital</field>
+        <field name="arch" type="xml">
+            <list string="Investor Capital">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="date"/>
+                <field name="amount" sum="Total Invested"/>
+                <field name="monthly_roi_amount"/>
+                <field name="state"
+                         decoration-info="state == 'draft'"
+                         decoration-success="state == 'posted'"
+                         widget="badge"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_investor_capital_form" model="ir.ui.view">
+        <field name="name">petroleum.investor.capital.form</field>
+        <field name="model">petroleum.investor.capital</field>
+        <field name="arch" type="xml">
+            <form string="Investor Capital">
+                <header>
+                    <button name="action_post_opening" type="object"
+                            string="Post Opening"
+                            class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_pay_roi" type="object"
+                            string="Pay ROI"
+                            invisible="state != 'posted'"/>
+                    <button name="action_open_opening_move" type="object"
+                            string="Opening Entry"
+                            invisible="not opening_move_id"/>
+                    <field name="state" widget="statusbar"
+                             statusbar_visible="draft,posted"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="Investor">
+                            <field name="partner_id" readonly="state == 'posted'"/>
+                            <field name="date" readonly="state == 'posted'"/>
+                            <field name="amount" readonly="state == 'posted'"/>
+                            <field name="monthly_roi_amount"/>
+                            <field name="company_id" groups="base.group_multi_company"
+                                      readonly="state == 'posted'"/>
+                        </group>
+                        <group string="Accounts">
+                            <field name="equity_account_id" readonly="state == 'posted'"
+                                      options="{'no_create': True}"/>
+                            <field name="roi_expense_account_id"
+                                      options="{'no_create': True}"/>
+                            <field name="bank_journal_id" readonly="state == 'posted'"
+                                      options="{'no_create': True}"/>
+                            <field name="capital_journal_id" readonly="1"/>
+                            <field name="opening_move_id" readonly="1"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="note" placeholder="Notes…"/>
+                    </group>
+                    <div class="alert alert-info" role="alert">
+                        Opening posts to Equity via the Capital &amp; Loans journal
+                        (not Miscellaneous Operations). Paying ROI debits the ROI
+                        Expense account and credits Bank — invested capital is never reduced.
+                    </div>
+                    <field name="currency_id" invisible="1"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_investor_capital" model="ir.actions.act_window">
+        <field name="name">Investor Capital</field>
+        <field name="res_model">petroleum.investor.capital</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Record investor equity openings (e.g. Zaynu KES 7,000,000).
+            </p>
+            <p>
+                ROI is paid separately as an expense so the invested amount stays intact.
+            </p>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_investor_capital_accountant,investor.capital.accountant,model_petroleum_investor_capital,account.group_account_invoice,1,1,1,0
+access_investor_capital_manager,investor.capital.manager,model_petroleum_investor_capital,account.group_account_manager,1,1,1,1
+access_loan_issued_accountant,loan.issued.accountant,model_petroleum_loan_issued,account.group_account_invoice,1,1,1,0
+access_loan_issued_manager,loan.issued.manager,model_petroleum_loan_issued,account.group_account_manager,1,1,1,1
+access_roi_payment_accountant,roi.payment.accountant,model_petroleum_roi_payment,account.group_account_invoice,1,1,1,1
+access_roi_payment_manager,roi.payment.manager,model_petroleum_roi_payment,account.group_account_manager,1,1,1,1
