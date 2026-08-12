@@ -1,0 +1,3 @@
+buy_total,buy_unit,cus_date,customer,date_offset_days,grade,margin_total,margin_unit,match_note,qty,sell_total,sell_unit,sup_date,supplier,truck
+2000000.0,200.0,2026-08-06,DIMKA,0,PMS,-10000.0,-1.0,truck+grade+qty ±1d,10000.0,1990000.0,199.0,2026-08-06,VITALAC INTERNATIONAL  LIMITED,KCA 072Q
+1227000.0,204.5,2026-08-07,ARABIYA,2,PMS,-18000.0,-3.0,grade+qty ±2d,6000.0,1209000.0,201.5,2026-08-05,VITALAC INTERNATIONAL  LIMITED,KDL 369T→KAV 369B

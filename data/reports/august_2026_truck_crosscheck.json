@@ -1,0 +1,748 @@
+{
+  "matched_truck_days": 83,
+  "sup_only_truck_days": 8,
+  "cus_only_truck_days": 8,
+  "qty_mismatches": 2,
+  "truck_margin_total": -1168400.0,
+  "truck_sell_total": 234500600.0,
+  "truck_buy_total": 235669000.0,
+  "neg_margin_trucks": [
+    {
+      "date": "2026-08-06",
+      "truck": "KAV 369B",
+      "margin": -1964000.0,
+      "buy": 4000000.0,
+      "sell": 2036000.0,
+      "sup": [
+        "VITALAC INTERNATIONAL  LIMITED"
+      ],
+      "cus": [
+        "ARABIYA",
+        "HOKOLA"
+      ],
+      "sup_legs": [
+        [
+          "PMS",
+          6000.0,
+          200.0,
+          2000000.0,
+          0.0
+        ],
+        [
+          "AGO",
+          4000.0,
+          200.0,
+          2000000.0,
+          0.0
+        ]
+      ],
+      "cus_legs": [
+        [
+          "PMS",
+          4000.0,
+          203.0,
+          812000.0,
+          0.0
+        ],
+        [
+          "PMS",
+          6000.0,
+          204.0,
+          1224000.0,
+          0.0
+        ]
+      ]
+    },
+    {
+      "date": "2026-08-06",
+      "truck": "KCA 072Q",
+      "margin": -10000.0,
+      "buy": 2000000.0,
+      "sell": 1990000.0,
+      "sup": [
+        "VITALAC INTERNATIONAL  LIMITED"
+      ],
+      "cus": [
+        "DIMKA"
+      ],
+      "sup_legs": [
+        [
+          "PMS",
+          10000.0,
+          200.0,
+          2000000.0,
+          0.0
+        ]
+      ],
+      "cus_legs": [
+        [
+          "PMS",
+          10000.0,
+          199.0,
+          1990000.0,
+          0.0
+        ]
+      ]
+    },
+    {
+      "date": "2026-08-06",
+      "truck": "KDG 103L",
+      "margin": -568500.0,
+      "buy": 2000000.0,
+      "sell": 1431500.0,
+      "sup": [
+        "VITALAC INTERNATIONAL  LIMITED"
+      ],
+      "cus": [
+        "SAKATII",
+        "SHAMEEL"
+      ],
+      "sup_legs": [
+        [
+          "PMS",
+          3000.0,
+          200.0,
+          600000.0,
+          0.0
+        ],
+        [
+          "PMS",
+          4000.0,
+          200.0,
+          800000.0,
+          0.0
+        ],
+        [
+          "PMS",
+          3000.0,
+          200.0,
+          600000.0,
+          0.0
+        ]
+      ],
+      "cus_legs": [
+        [
+          "PMS",
+          4000.0,
+          204.5,
+          818000.0,
+          0.0
+        ],
+        [
+          "PMS",
+          3000.0,
+          204.5,
+          613500.0,
+          0.0
+        ]
+      ]
+    },
+    {
+      "date": "2026-08-07",
+      "truck": "KDC 920Y",
+      "margin": -17000.0,
+      "buy": 2000000.0,
+      "sell": 1983000.0,
+      "sup": [
+        "VITALAC INTERNATIONAL  LIMITED"
+      ],
+      "cus": [
+        "BOLD"
+      ],
+      "sup_legs": [
+        [
+          "PMS",
+          10000.0,
+          200.0,
+          2000000.0,
+          0.0
+        ]
+      ],
+      "cus_legs": [
+        [
+          "AGO",
+          10000.0,
+          198.3,
+          1983000.0,
+          0.0
+        ]
+      ]
+    },
+    {
+      "date": "2026-08-07",
+      "truck": "KDG 103L",
+      "margin": -987500.0,
+      "buy": 1995000.0,
+      "sell": 1007500.0,
+      "sup": [
+        "VITALAC INTERNATIONAL  LIMITED"
+      ],
+      "cus": [
+        "TRANSGLIDE"
+      ],
+      "sup_legs": [
+        [
+          "AGO",
+          5000.0,
+          199.5,
+          997500.0,
+          0.0
+        ],
+        [
+          "AGO",
+          5000.0,
+          199.5,
+          997500.0,
+          0.0
+        ]
+      ],
+      "cus_legs": [
+        [
+          "AGO",
+          5000.0,
+          201.5,
+          1007500.0,
+          0.0
+        ]
+      ]
+    }
+  ],
+  "sup_only": [
+    {
+      "date": "2026-08-03",
+      "truck": "KBK 308Q",
+      "partners": [
+        "RAAD ENERGY LIMITED"
+      ],
+      "legs": [
+        [
+          "AGO",
+          16000.0,
+          195.0,
+          0.0,
+          3120000.0
+        ]
+      ],
+      "buy": 3120000.0
+    },
+    {
+      "date": "2026-08-03",
+      "truck": "KCC 166U",
+      "partners": [
+        "VITALAC INTERNATIONAL  LIMITED"
+      ],
+      "legs": [
+        [
+          "PMS",
+          10000.0,
+          198.0,
+          1980000.0,
+          0.0
+        ]
+      ],
+      "buy": 1980000.0
+    },
+    {
+      "date": "2026-08-04",
+      "truck": "KAV 369B",
+      "partners": [
+        "VITALAC INTERNATIONAL  LIMITED"
+      ],
+      "legs": [
+        [
+          "PMS",
+          6000.0,
+          198.0,
+          1980000.0,
+          0.0
+        ],
+        [
+          "AGO",
+          4000.0,
+          198.0,
+          1980000.0,
+          0.0
+        ]
+      ],
+      "buy": 3960000.0
+    },
+    {
+      "date": "2026-08-04",
+      "truck": "KDM 130W",
+      "partners": [
+        "VITALAC INTERNATIONAL  LIMITED"
+      ],
+      "legs": [
+        [
+          "PMS",
+          6000.0,
+          200.0,
+          2000000.0,
+          0.0
+        ],
+        [
+          "AGO",
+          4000.0,
+          200.0,
+          2000000.0,
+          0.0
+        ]
+      ],
+      "buy": 4000000.0
+    },
+    {
+      "date": "2026-08-05",
+      "truck": "KCR 924W",
+      "partners": [
+        "VITALAC INTERNATIONAL  LIMITED"
+      ],
+      "legs": [
+        [
+          "PMS",
+          10000.0,
+          200.0,
+          2000000.0,
+          0.0
+        ]
+      ],
+      "buy": 2000000.0
+    },
+    {
+      "date": "2026-08-05",
+      "truck": "KDL 369T",
+      "partners": [
+        "VITALAC INTERNATIONAL  LIMITED"
+      ],
+      "legs": [
+        [
+          "PMS",
+          6000.0,
+          204.5,
+          1227000.0,
+          0.0
+        ]
+      ],
+      "buy": 1227000.0
+    },
+    {
+      "date": "2026-08-10",
+      "truck": "KBF 520W",
+      "partners": [
+        "OIL HUB ENERGY LIIMITED"
+      ],
+      "legs": [
+        [
+          "AGO",
+          10000.0,
+          199.0,
+          0.0,
+          1990000.0
+        ]
+      ],
+      "buy": 1990000.0
+    },
+    {
+      "date": "2026-08-10",
+      "truck": "KCN 025A",
+      "partners": [
+        "FOSSIL SUPPLIES  LIMITED"
+      ],
+      "legs": [
+        [
+          "PMS",
+          6000.0,
+          205.0,
+          0.0,
+          1230000.0
+        ]
+      ],
+      "buy": 1230000.0
+    }
+  ],
+  "cus_only": [
+    {
+      "date": "2026-08-01",
+      "truck": "KBB 038G",
+      "partners": [
+        "PETROL KIM"
+      ],
+      "legs": [
+        [
+          "PMS",
+          10000.0,
+          199.3,
+          1993000.0,
+          0.0
+        ]
+      ],
+      "sell": 1993000.0
+    },
+    {
+      "date": "2026-08-01",
+      "truck": "KBS 311L",
+      "partners": [
+        "PETROL KIM"
+      ],
+      "legs": [
+        [
+          "PMS",
+          10000.0,
+          199.3,
+          1993000.0,
+          0.0
+        ]
+      ],
+      "sell": 1993000.0
+    },
+    {
+      "date": "2026-08-01",
+      "truck": "KCR 924W",
+      "partners": [
+        "PETROL KIM"
+      ],
+      "legs": [
+        [
+          "AGO",
+          10000.0,
+          199.3,
+          1993000.0,
+          0.0
+        ]
+      ],
+      "sell": 1993000.0
+    },
+    {
+      "date": "2026-08-04",
+      "truck": "KBK 308Q",
+      "partners": [
+        "HASHAM"
+      ],
+      "legs": [
+        [
+          "AGO",
+          16000.0,
+          197.5,
+          3160000.0,
+          0.0
+        ]
+      ],
+      "sell": 3160000.0
+    },
+    {
+      "date": "2026-08-04",
+      "truck": "KCC 166U",
+      "partners": [
+        "MOHAMED"
+      ],
+      "legs": [
+        [
+          "PMS",
+          10000.0,
+          199.0,
+          1990000.0,
+          0.0
+        ]
+      ],
+      "sell": 1990000.0
+    },
+    {
+      "date": "2026-08-05",
+      "truck": "KDM 130W",
+      "partners": [
+        "BOLD"
+      ],
+      "legs": [
+        [
+          "PMS",
+          6000.0,
+          200.3,
+          2003000.0,
+          0.0
+        ],
+        [
+          "AGO",
+          4000.0,
+          200.3,
+          2003000.0,
+          0.0
+        ]
+      ],
+      "sell": 4006000.0
+    },
+    {
+      "date": "2026-08-06",
+      "truck": "KCR 924W",
+      "partners": [
+        "PETROL KIM"
+      ],
+      "legs": [
+        [
+          "PMS",
+          10000.0,
+          202.3,
+          2023000.0,
+          0.0
+        ]
+      ],
+      "sell": 2023000.0
+    },
+    {
+      "date": "2026-08-07",
+      "truck": "KAV 369B",
+      "partners": [
+        "ARABIYA"
+      ],
+      "legs": [
+        [
+          "PMS",
+          6000.0,
+          201.5,
+          2023000.0,
+          0.0
+        ],
+        [
+          "AGO",
+          4000.0,
+          203.5,
+          2023000.0,
+          0.0
+        ]
+      ],
+      "sell": 4046000.0
+    }
+  ],
+  "fuzzy_truck_plate_mismatch": [
+    {
+      "date": "2026-08-05",
+      "grade": "PMS",
+      "qty": 6000.0,
+      "sup_truck": "KDL 369T",
+      "cus_truck": "KDM 130W",
+      "supplier": "VITALAC INTERNATIONAL  LIMITED",
+      "customer": "BOLD",
+      "buy": 1227000.0,
+      "sell": 2003000.0,
+      "margin": 776000.0
+    }
+  ],
+  "still_unmatched_sup": [
+    {
+      "partner": "RAAD ENERGY LIMITED",
+      "date": "2026-08-03",
+      "truck": "KBK 308Q",
+      "grade": "AGO",
+      "qty": 16000.0,
+      "price": 195.0,
+      "sp": 3120000.0,
+      "debit": 3120000.0,
+      "credit": 0.0,
+      "inv": ""
+    },
+    {
+      "partner": "VITALAC INTERNATIONAL  LIMITED",
+      "date": "2026-08-03",
+      "truck": "KCC 166U",
+      "grade": "PMS",
+      "qty": 10000.0,
+      "price": 198.0,
+      "sp": 1980000.0,
+      "debit": 0.0,
+      "credit": 1980000.0,
+      "inv": ""
+    },
+    {
+      "partner": "VITALAC INTERNATIONAL  LIMITED",
+      "date": "2026-08-04",
+      "truck": "KAV 369B",
+      "grade": "PMS",
+      "qty": 6000.0,
+      "price": 198.0,
+      "sp": 1980000.0,
+      "debit": 0.0,
+      "credit": 1980000.0,
+      "inv": ""
+    },
+    {
+      "partner": "VITALAC INTERNATIONAL  LIMITED",
+      "date": "2026-08-04",
+      "truck": "KAV 369B",
+      "grade": "AGO",
+      "qty": 4000.0,
+      "price": 198.0,
+      "sp": 1980000.0,
+      "debit": 0.0,
+      "credit": 1980000.0,
+      "inv": ""
+    },
+    {
+      "partner": "VITALAC INTERNATIONAL  LIMITED",
+      "date": "2026-08-04",
+      "truck": "KDM 130W",
+      "grade": "PMS",
+      "qty": 6000.0,
+      "price": 200.0,
+      "sp": 2000000.0,
+      "debit": 0.0,
+      "credit": 2000000.0,
+      "inv": ""
+    },
+    {
+      "partner": "VITALAC INTERNATIONAL  LIMITED",
+      "date": "2026-08-04",
+      "truck": "KDM 130W",
+      "grade": "AGO",
+      "qty": 4000.0,
+      "price": 200.0,
+      "sp": 2000000.0,
+      "debit": 0.0,
+      "credit": 2000000.0,
+      "inv": ""
+    },
+    {
+      "partner": "VITALAC INTERNATIONAL  LIMITED",
+      "date": "2026-08-05",
+      "truck": "KCR 924W",
+      "grade": "PMS",
+      "qty": 10000.0,
+      "price": 200.0,
+      "sp": 2000000.0,
+      "debit": 0.0,
+      "credit": 2000000.0,
+      "inv": ""
+    },
+    {
+      "partner": "FOSSIL SUPPLIES  LIMITED",
+      "date": "2026-08-10",
+      "truck": "KCN 025A",
+      "grade": "PMS",
+      "qty": 6000.0,
+      "price": 205.0,
+      "sp": 1230000.0,
+      "debit": 1230000.0,
+      "credit": 0.0,
+      "inv": ""
+    },
+    {
+      "partner": "OIL HUB ENERGY LIIMITED",
+      "date": "2026-08-10",
+      "truck": "KBF 520W",
+      "grade": "AGO",
+      "qty": 10000.0,
+      "price": 199.0,
+      "sp": 1990000.0,
+      "debit": 1990000.0,
+      "credit": 0.0,
+      "inv": ""
+    }
+  ],
+  "still_unmatched_cus": [
+    {
+      "partner": "PETROL KIM",
+      "date": "2026-08-01",
+      "truck": "KCR 924W",
+      "grade": "AGO",
+      "qty": 10000.0,
+      "price": 199.3,
+      "sp": 1993000.0,
+      "debit": 1993000.0,
+      "credit": 0.0,
+      "inv": ""
+    },
+    {
+      "partner": "PETROL KIM",
+      "date": "2026-08-01",
+      "truck": "KBB 038G",
+      "grade": "PMS",
+      "qty": 10000.0,
+      "price": 199.3,
+      "sp": 1993000.0,
+      "debit": 1993000.0,
+      "credit": 0.0,
+      "inv": ""
+    },
+    {
+      "partner": "PETROL KIM",
+      "date": "2026-08-01",
+      "truck": "KBS 311L",
+      "grade": "PMS",
+      "qty": 10000.0,
+      "price": 199.3,
+      "sp": 1993000.0,
+      "debit": 1993000.0,
+      "credit": 0.0,
+      "inv": ""
+    },
+    {
+      "partner": "HASHAM",
+      "date": "2026-08-04",
+      "truck": "KBK 308Q",
+      "grade": "AGO",
+      "qty": 16000.0,
+      "price": 197.5,
+      "sp": 3160000.0,
+      "debit": 3160000.0,
+      "credit": 0.0,
+      "inv": ""
+    },
+    {
+      "partner": "MOHAMED",
+      "date": "2026-08-04",
+      "truck": "KCC 166U",
+      "grade": "PMS",
+      "qty": 10000.0,
+      "price": 199.0,
+      "sp": 1990000.0,
+      "debit": 1990000.0,
+      "credit": 0.0,
+      "inv": ""
+    },
+    {
+      "partner": "BOLD",
+      "date": "2026-08-05",
+      "truck": "KDM 130W",
+      "grade": "AGO",
+      "qty": 4000.0,
+      "price": 200.3,
+      "sp": 2003000.0,
+      "debit": 2003000.0,
+      "credit": 0.0,
+      "inv": ""
+    },
+    {
+      "partner": "PETROL KIM",
+      "date": "2026-08-06",
+      "truck": "KCR 924W",
+      "grade": "PMS",
+      "qty": 10000.0,
+      "price": 202.3,
+      "sp": 2023000.0,
+      "debit": 2023000.0,
+      "credit": 0.0,
+      "inv": ""
+    },
+    {
+      "partner": "ARABIYA",
+      "date": "2026-08-07",
+      "truck": "KAV 369B",
+      "grade": "PMS",
+      "qty": 6000.0,
+      "price": 201.5,
+      "sp": 2023000.0,
+      "debit": 2023000.0,
+      "credit": 0.0,
+      "inv": ""
+    },
+    {
+      "partner": "ARABIYA",
+      "date": "2026-08-07",
+      "truck": "KAV 369B",
+      "grade": "AGO",
+      "qty": 4000.0,
+      "price": 203.5,
+      "sp": 2023000.0,
+      "debit": 2023000.0,
+      "credit": 0.0,
+      "inv": ""
+    }
+  ]
+}
