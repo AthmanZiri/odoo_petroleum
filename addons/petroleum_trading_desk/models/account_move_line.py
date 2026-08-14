@@ -44,3 +44,21 @@ class AccountMoveLine(models.Model):
             if move.move_type == 'out_refund':
                 margin = -margin
             line.petro_margin = margin
+
+    def _petro_write_purchase_link(self, vals):
+        """Set purchase_line_id (and optional product) on a vendor bill line.
+
+        Does not change quantity, price, or taxes — only the PO link used by
+        qty_invoiced / invoice_ids. Posted moves are reset to draft and
+        re-posted so Odoo allows the write.
+        """
+        for line in self:
+            move = line.move_id
+            if move.payment_state in ('paid', 'in_payment', 'reversed'):
+                continue
+            was_posted = move.state == 'posted'
+            if was_posted:
+                move.button_draft()
+            line.write(vals)
+            if was_posted:
+                move.action_post()

@@ -361,15 +361,12 @@ class PetroleumDailyPositionLine(models.Model):
             lambda m: m.state == 'draft' and m.move_type == 'in_invoice')
         if bills:
             invoice_date = po.daily_position_date or fields.Date.context_today(self)
-            bill_vals = {
+            bills.write({
                 'invoice_date': invoice_date,
                 # Bill Reference / Source Document → PO number (e.g. P00099).
                 'ref': po.name,
                 'invoice_origin': po.name,
-            }
-            if 'purchase_id' in bills._fields:
-                bill_vals['purchase_id'] = po.id
-            bills.write(bill_vals)
+            })
             bills.action_post()
 
     def action_sync_purchase_orders(self):
@@ -678,10 +675,15 @@ class PetroleumDailyPositionLine(models.Model):
 
         product = self.product_id
         po = self.purchase_order_id
+        po_line = self.purchase_order_line_id
+        if not po_line and po:
+            po_line = po.order_line.filtered(
+                lambda line: not line.display_type
+                and line.product_id == product)[:1]
         # Prefer tax from the linked PO line when available.
         taxes = self.env['account.tax']
-        if self.purchase_order_line_id and self.purchase_order_line_id.tax_ids:
-            taxes = self.purchase_order_line_id.tax_ids
+        if po_line and po_line.tax_ids:
+            taxes = po_line.tax_ids
         elif product.supplier_taxes_id:
             taxes = product.supplier_taxes_id.filtered(
                 lambda t: t.company_id == self.company_id)
@@ -721,17 +723,20 @@ class PetroleumDailyPositionLine(models.Model):
                      direction=direction, product=product.display_name,
                      old=old_price, new=new_price),
             'invoice_origin': po.name if po else self.display_name,
-            'invoice_line_ids': [fields.Command.create({
-                'product_id': product.id,
-                'name': line_name,
-                'quantity': quantity,
-                'price_unit': unit_adjustment,
-                'tax_ids': [fields.Command.set(taxes.ids)],
-                'product_uom_id': product.uom_id.id,
-            })],
         }
-        if 'purchase_id' in self.env['account.move']._fields and po:
-            move_vals['purchase_id'] = po.id
+        line_vals = {
+            'product_id': product.id,
+            'name': line_name,
+            'quantity': quantity,
+            'price_unit': unit_adjustment,
+            'tax_ids': [fields.Command.set(taxes.ids)],
+            'product_uom_id': product.uom_id.id,
+        }
+        if po_line:
+            # Stored PO link in Odoo 19 is purchase_line_id. qty_invoiced
+            # ignores supplier_buy moves so this does not reverse litres.
+            line_vals['purchase_line_id'] = po_line.id
+        move_vals['invoice_line_ids'] = [fields.Command.create(line_vals)]
         return self.env['account.move'].create(move_vals)
 
     def action_create_sold_price_adjustments(
@@ -806,14 +811,11 @@ class PetroleumDailyPositionLine(models.Model):
             bills = po.invoice_ids.filtered(
                 lambda m: m.state == 'draft' and m.move_type == 'in_invoice')
             if bills:
-                bill_vals = {
+                bills.write({
                     'invoice_date': today,
                     'ref': po.name,
                     'invoice_origin': po.name,
-                }
-                if 'purchase_id' in bills._fields:
-                    bill_vals['purchase_id'] = po.id
-                bills.write(bill_vals)
+                })
         bills = pos.invoice_ids.filtered(lambda m: m.state == 'draft')
         if bills:
             bills.action_post()
