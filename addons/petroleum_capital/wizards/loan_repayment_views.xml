@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_loan_repayment_form" model="ir.ui.view">
+        <field name="name">petroleum.loan.repayment.form</field>
+        <field name="model">petroleum.loan.repayment</field>
+        <field name="arch" type="xml">
+            <form string="Receive Loan Repayment">
+                <group>
+                    <group>
+                        <field name="loan_issued_id" options="{'no_create': True}"/>
+                        <field name="partner_id" readonly="1"/>
+                        <field name="amount_outstanding" readonly="1"/>
+                        <field name="company_id" groups="base.group_multi_company"/>
+                    </group>
+                    <group>
+                        <field name="payment_date"/>
+                        <field name="amount"/>
+                        <field name="interest_amount"/>
+                        <field name="interest_account_id"
+                               options="{'no_create': True}"
+                               invisible="interest_amount &lt;= 0"
+                               required="interest_amount &gt; 0"/>
+                        <field name="bank_journal_id" options="{'no_create': True}"/>
+                        <field name="memo" placeholder="e.g. August 2026 repayment — Muhidin"/>
+                    </group>
+                </group>
+                <div class="alert alert-info" role="alert">
+                    This posts <strong>Dr Bank / Cr Loans Issued</strong> for principal.
+                    Optional interest is <strong>Cr Interest Income</strong> and does not
+                    reduce the outstanding loan.
+                </div>
+                <field name="currency_id" invisible="1"/>
+                <field name="move_id" invisible="1"/>
+                <footer>
+                    <button name="action_confirm" type="object" string="Receive Repayment"
+                            class="btn-primary"/>
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_loan_repayment" model="ir.actions.act_window">
+        <field name="name">Receive Loan Repayment</field>
+        <field name="res_model">petroleum.loan.repayment</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

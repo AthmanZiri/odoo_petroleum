@@ -65,6 +65,14 @@ class PetroleumCapitalMixin(models.AbstractModel):
             'asset_current',
         )
 
+    def _ensure_loan_interest_account(self, company):
+        return self._ensure_account(
+            company,
+            'Loan Interest Income',
+            'INCLN',
+            'income',
+        )
+
     def _ensure_capital_journal(self, company):
         """Dedicated general journal — not the default Miscellaneous Operations."""
         Journal = self.env['account.journal']

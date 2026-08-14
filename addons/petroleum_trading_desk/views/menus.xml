@@ -93,6 +93,12 @@
               action="petroleum_capital.action_roi_payment"
               sequence="30"/>
 
+    <menuitem id="menu_trading_desk_loan_repayment"
+              name="Receive Loan Repayment"
+              parent="menu_trading_desk_capital"
+              action="petroleum_capital.action_loan_repayment"
+              sequence="40"/>
+
     <menuitem id="menu_trading_desk_statements"
               name="Send Statements"
               parent="menu_trading_desk_root"

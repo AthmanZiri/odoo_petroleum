@@ -9,6 +9,8 @@
                 <field name="partner_id"/>
                 <field name="date"/>
                 <field name="amount" sum="Total Loans"/>
+                <field name="amount_repaid" sum="Total Repaid" optional="show"/>
+                <field name="amount_outstanding" sum="Outstanding" optional="show"/>
                 <field name="state"
                          decoration-info="state == 'draft'"
                          decoration-success="state == 'posted'"
@@ -28,6 +30,10 @@
                             string="Post Opening"
                             class="btn-primary"
                             invisible="state != 'draft'"/>
+                    <button name="action_receive_repayment" type="object"
+                            string="Receive Repayment"
+                            class="btn-primary"
+                            invisible="state != 'posted' or amount_outstanding &lt;= 0"/>
                     <button name="action_open_opening_move" type="object"
                             string="Opening Entry"
                             invisible="not opening_move_id"/>
@@ -35,6 +41,13 @@
                              statusbar_visible="draft,posted"/>
                 </header>
                 <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_repayment_moves" type="object"
+                                class="oe_stat_button" icon="fa-money"
+                                invisible="not repayment_count">
+                            <field name="repayment_count" widget="statinfo" string="Repayments"/>
+                        </button>
+                    </div>
                     <div class="oe_title">
                         <label for="name"/>
                         <h1><field name="name" readonly="1"/></h1>
@@ -44,6 +57,8 @@
                             <field name="partner_id" readonly="state == 'posted'"/>
                             <field name="date" readonly="state == 'posted'"/>
                             <field name="amount" readonly="state == 'posted'"/>
+                            <field name="amount_repaid" readonly="1"/>
+                            <field name="amount_outstanding" readonly="1"/>
                             <field name="company_id" groups="base.group_multi_company"
                                       readonly="state == 'posted'"/>
                         </group>
@@ -62,8 +77,11 @@
                     <div class="alert alert-info" role="alert">
                         Opening posts Loans Issued under Current Assets via the
                         Capital &amp; Loans journal (not Miscellaneous Operations).
+                        Repayment posts Dr Bank / Cr Loans Issued through the selected
+                        bank or cash journal. It does not appear in P&amp;L Expenses.
                     </div>
                     <field name="currency_id" invisible="1"/>
+                    <field name="repayment_move_ids" invisible="1"/>
                 </sheet>
                 <chatter/>
             </form>
@@ -77,6 +95,9 @@
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Record loans issued openings (e.g. Muhidin KES 9,676,340.17).
+            </p>
+            <p>
+                After posting, receive principal (and optional interest) with Receive Repayment.
             </p>
         </field>
     </record>

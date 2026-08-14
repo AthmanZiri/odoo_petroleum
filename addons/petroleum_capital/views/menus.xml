@@ -23,4 +23,10 @@
               parent="menu_petroleum_capital_root"
               action="action_roi_payment"
               sequence="30"/>
+
+    <menuitem id="menu_loan_repayment"
+              name="Receive Loan Repayment"
+              parent="menu_petroleum_capital_root"
+              action="action_loan_repayment"
+              sequence="40"/>
 </odoo>

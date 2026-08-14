@@ -38,11 +38,52 @@ class PetroleumLoanIssued(models.Model):
         'account.journal', string='Capital Journal', readonly=True)
     opening_move_id = fields.Many2one(
         'account.move', string='Opening Entry', readonly=True, copy=False)
+    repayment_move_ids = fields.Many2many(
+        'account.move', 'petroleum_loan_issued_repayment_rel',
+        'loan_id', 'move_id', string='Repayment Entries',
+        copy=False, readonly=True)
+    amount_repaid = fields.Monetary(
+        string='Repaid', compute='_compute_repayment_amounts', store=True)
+    amount_outstanding = fields.Monetary(
+        string='Outstanding', compute='_compute_repayment_amounts', store=True)
+    repayment_count = fields.Integer(
+        compute='_compute_repayment_count')
     state = fields.Selection([
         ('draft', 'Draft'),
         ('posted', 'Posted'),
     ], default='draft', required=True, tracking=True, copy=False)
     note = fields.Text()
+
+    @api.depends(
+        'amount', 'asset_account_id',
+        'repayment_move_ids.state',
+        'repayment_move_ids.line_ids.debit',
+        'repayment_move_ids.line_ids.credit',
+        'repayment_move_ids.line_ids.account_id',
+    )
+    def _compute_repayment_amounts(self):
+        for rec in self:
+            currency = rec.currency_id
+            repaid = 0.0
+            moves = rec.repayment_move_ids.filtered(lambda m: m.state == 'posted')
+            asset = rec.asset_account_id
+            if asset:
+                for line in moves.line_ids:
+                    if line.account_id == asset:
+                        repaid += line.credit - line.debit
+            repaid = currency.round(repaid) if currency else repaid
+            outstanding = (rec.amount or 0.0) - repaid
+            if currency:
+                outstanding = currency.round(outstanding)
+                if currency.compare_amounts(outstanding, 0.0) < 0:
+                    outstanding = 0.0
+            rec.amount_repaid = repaid
+            rec.amount_outstanding = outstanding
+
+    @api.depends('repayment_move_ids')
+    def _compute_repayment_count(self):
+        for rec in self:
+            rec.repayment_count = len(rec.repayment_move_ids)
 
     @api.model
     def default_get(self, fields_list):
@@ -109,6 +150,29 @@ class PetroleumLoanIssued(models.Model):
             })
         return True
 
+    def action_receive_repayment(self):
+        self.ensure_one()
+        if self.state != 'posted':
+            raise UserError(_('Post the loan opening before receiving a repayment.'))
+        if self.currency_id.compare_amounts(self.amount_outstanding, 0.0) <= 0:
+            raise UserError(_('This loan is already fully repaid.'))
+        context = {
+            'default_loan_issued_id': self.id,
+            'default_partner_id': self.partner_id.id,
+            'default_amount': self.amount_outstanding,
+            'default_company_id': self.company_id.id,
+        }
+        if self.bank_journal_id:
+            context['default_bank_journal_id'] = self.bank_journal_id.id
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Receive Loan Repayment'),
+            'res_model': 'petroleum.loan.repayment',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': context,
+        }
+
     def action_open_opening_move(self):
         self.ensure_one()
         if not self.opening_move_id:
@@ -121,3 +185,25 @@ class PetroleumLoanIssued(models.Model):
             'view_mode': 'form',
             'target': 'current',
         }
+
+    def action_open_repayment_moves(self):
+        self.ensure_one()
+        if not self.repayment_move_ids:
+            raise UserError(_('No repayment entries yet.'))
+        action = {
+            'type': 'ir.actions.act_window',
+            'name': _('Repayment Entries'),
+            'res_model': 'account.move',
+            'target': 'current',
+        }
+        if len(self.repayment_move_ids) == 1:
+            action.update({
+                'res_id': self.repayment_move_ids.id,
+                'view_mode': 'form',
+            })
+        else:
+            action.update({
+                'view_mode': 'list,form',
+                'domain': [('id', 'in', self.repayment_move_ids.ids)],
+            })
+        return action
