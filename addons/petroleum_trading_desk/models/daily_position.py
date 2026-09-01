@@ -337,6 +337,7 @@ class PetroleumDailyPositionLine(models.Model):
             'petroleum_position_line_id': self.id,
         }
         if po_line:
+            po._prepare_daily_position_qty_decrease(po_line, self.qty_bought)
             po_line.write(vals)
         else:
             po_line = self.env['purchase.order.line'].create({
@@ -351,29 +352,23 @@ class PetroleumDailyPositionLine(models.Model):
 
     @api.model
     def _complete_daily_position_po(self, po):
-        """Confirm the bulk PO, validate receipt, and post the vendor bill."""
+        """Confirm the bulk PO, validate receipt, and keep vendor bills aligned.
+
+        Re-sync after qty_bought / buy_price changes rewrites the unpaid bill
+        or posts a delta bill/refund when the original can no longer be edited.
+        """
         if po.state in ('draft', 'sent'):
             po.button_confirm()
         # Idempotent for already-confirmed POs that missed receipt/bill.
         po._auto_validate_receipt()
-        po._auto_create_vendor_bill()
-        bills = po.invoice_ids.filtered(
-            lambda m: m.state == 'draft' and m.move_type == 'in_invoice')
-        if bills:
-            invoice_date = po.daily_position_date or fields.Date.context_today(self)
-            bills.write({
-                'invoice_date': invoice_date,
-                # Bill Reference / Source Document → PO number (e.g. P00099).
-                'ref': po.name,
-                'invoice_origin': po.name,
-            })
-            bills.action_post()
+        po._sync_daily_position_vendor_bills()
 
     def action_sync_purchase_orders(self):
         """Create or update bulk POs for selected lines, or all of today from the list.
 
-        Each sync confirms the PO, validates the goods receipt, and posts the
-        supplier bill so the morning position is fully booked in one step.
+        Each sync confirms the PO, validates the goods receipt, and keeps the
+        supplier bill in line with Bought Today (rewrite unpaid bills, or post
+        a delta bill/refund when the original is paid or locked).
         """
         if self:
             lines = self.filtered(lambda line: line.qty_bought > 0)
@@ -797,34 +792,25 @@ class PetroleumDailyPositionLine(models.Model):
         return moves
 
     def action_create_supplier_bills(self):
-        """Post vendor bills for today's synced bulk purchase orders."""
+        """Align and post vendor bills for today's synced bulk purchase orders."""
         today = fields.Date.context_today(self)
         pos = self.env['purchase.order'].search([
             ('is_daily_position_po', '=', True),
             ('daily_position_date', '=', today),
-            ('invoice_status', '=', 'to invoice'),
         ])
         if not pos:
             raise UserError(_('No bulk purchase orders ready to bill for today.'))
-        for po in pos:
-            po.action_create_invoice()
-            bills = po.invoice_ids.filtered(
-                lambda m: m.state == 'draft' and m.move_type == 'in_invoice')
-            if bills:
-                bills.write({
-                    'invoice_date': today,
-                    'ref': po.name,
-                    'invoice_origin': po.name,
-                })
-        bills = pos.invoice_ids.filtered(lambda m: m.state == 'draft')
-        if bills:
-            bills.action_post()
+        pos._sync_daily_position_vendor_bills()
+        bills = pos.invoice_ids.filtered(
+            lambda move: move.state == 'posted'
+            and move.move_type in ('in_invoice', 'in_refund')
+            and not move.petro_price_adjustment)
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
             'params': {
                 'title': _('Supplier bills posted'),
-                'message': _('%d vendor bill(s) created for today\'s bulk buys.') % len(bills),
+                'message': _('%d vendor bill(s) aligned for today\'s bulk buys.') % len(bills),
                 'type': 'success',
                 'sticky': False,
             },

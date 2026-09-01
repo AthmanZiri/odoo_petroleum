@@ -1,4 +1,5 @@
-from odoo import api, fields, models
+from odoo import api, fields, models, _
+from odoo.exceptions import UserError, ValidationError
 from odoo.tools.float_utils import float_compare
 
 
@@ -195,6 +196,233 @@ class PurchaseOrder(models.Model):
             if open_lines:
                 lines = open_lines
         return lines[:1]
+
+    def _daily_position_quantity_bills(self):
+        """Vendor bills/refunds that represent litres, not price-only CN/DN."""
+        self.ensure_one()
+        return self.invoice_ids.filtered(
+            lambda move: move.move_type in ('in_invoice', 'in_refund')
+            and move.state != 'cancel'
+            and not move.petro_price_adjustment
+        )
+
+    def _daily_position_rewritable_bill(self):
+        """Single unpaid quantity bill that can still be rewritten in place.
+
+        Paid, locked, reversed, or already-corrected (extra bills / refunds /
+        supplier price CN/DN) documents are left alone; the caller posts a
+        delta bill instead.
+        """
+        self.ensure_one()
+        qty_bills = self._daily_position_quantity_bills()
+        invoices = qty_bills.filtered(lambda move: move.move_type == 'in_invoice')
+        refunds = qty_bills.filtered(lambda move: move.move_type == 'in_refund')
+        if refunds or len(invoices) != 1:
+            return self.env['account.move']
+        if self.invoice_ids.filtered(
+                lambda move: move.petro_price_adjustment == 'supplier_buy'
+                and move.state != 'cancel'):
+            return self.env['account.move']
+        bill = invoices
+        if bill.state == 'draft':
+            return bill
+        if bill.state != 'posted':
+            return self.env['account.move']
+        if bill.payment_state not in ('not_paid',):
+            return self.env['account.move']
+        return bill
+
+    def _daily_position_bill_matches_po(self, bill):
+        """True when the bill's product lines match PO qty and unit price."""
+        self.ensure_one()
+        if not bill:
+            return False
+        precision = self.currency_id.decimal_places or 2
+        po_lines = self.order_line.filtered(lambda line: not line.display_type)
+        billed_lines = bill.invoice_line_ids.filtered(
+            lambda line: line.display_type == 'product')
+        extra = billed_lines.filtered(
+            lambda line: line.purchase_line_id and line.purchase_line_id not in po_lines)
+        if extra:
+            return False
+        for po_line in po_lines:
+            rounding = po_line.product_uom_id.rounding or 0.01
+            matches = billed_lines.filtered(
+                lambda line: line.purchase_line_id == po_line
+                or (not line.purchase_line_id and line.product_id == po_line.product_id))
+            billed_qty = sum(matches.mapped('quantity'))
+            if float_compare(
+                    billed_qty, po_line.product_qty,
+                    precision_rounding=rounding) != 0:
+                return False
+            if po_line.product_qty and not matches:
+                return False
+            if matches and float_compare(
+                    matches[0].price_unit, po_line.price_unit,
+                    precision_digits=precision) != 0:
+                return False
+        return True
+
+    def _stamp_daily_position_bill(self, bills):
+        self.ensure_one()
+        if not bills:
+            return
+        invoice_date = self.daily_position_date or fields.Date.context_today(self)
+        bills.write({
+            'invoice_date': invoice_date,
+            'ref': self.name,
+            'invoice_origin': self.name,
+        })
+
+    def _reset_vendor_bill_to_draft(self, bill):
+        """Reset a posted bill to draft, or False when lock/payment blocks it."""
+        if bill.state == 'draft':
+            return True
+        try:
+            with self.env.cr.savepoint():
+                bill.button_draft()
+                if bill.state != 'draft':
+                    raise UserError(_('Vendor bill could not be reset to draft.'))
+        except (UserError, ValidationError):
+            return False
+        return bill.state == 'draft'
+
+    def _rewrite_daily_position_bill(self, bill):
+        """Replace the bill's product lines so they match current PO lines."""
+        self.ensure_one()
+        if not self._reset_vendor_bill_to_draft(bill):
+            return self._post_daily_position_delta_bills()
+        product_lines = bill.invoice_line_ids.filtered(
+            lambda line: line.display_type == 'product')
+        used = self.env['account.move.line']
+        commands = []
+        for po_line in self.order_line.filtered(lambda line: not line.display_type):
+            rounding = po_line.product_uom_id.rounding or 0.01
+            if float_compare(po_line.product_qty, 0.0, precision_rounding=rounding) <= 0:
+                continue
+            vals = po_line.with_context(
+                auto_bill_on_confirm=True)._prepare_account_move_line(bill)
+            vals['quantity'] = po_line.product_qty
+            vals['price_unit'] = po_line.price_unit
+            match = product_lines.filtered(
+                lambda line: line.purchase_line_id == po_line)[:1]
+            if not match:
+                match = product_lines.filtered(
+                    lambda line: line.product_id == po_line.product_id
+                    and line not in used)[:1]
+            if match:
+                match.write({
+                    'product_id': po_line.product_id.id,
+                    'name': vals.get('name') or po_line.name,
+                    'quantity': po_line.product_qty,
+                    'price_unit': po_line.price_unit,
+                    'purchase_line_id': po_line.id,
+                    'product_uom_id': po_line.product_uom_id.id,
+                    'tax_ids': vals.get('tax_ids') or [
+                        fields.Command.set(po_line.tax_ids.ids)],
+                })
+                used |= match
+            else:
+                commands.append(fields.Command.create(vals))
+        leftover = product_lines - used
+        line_commands = [
+            fields.Command.delete(line.id) for line in leftover
+        ] + commands
+        if line_commands:
+            bill.write({'invoice_line_ids': line_commands})
+        self._stamp_daily_position_bill(bill)
+        bill.action_post()
+        return bill
+
+    def _post_daily_position_delta_bills(self):
+        """Bill remaining qty_to_invoice (extra litres) or refund over-billing."""
+        self.ensure_one()
+        self.order_line._compute_qty_invoiced()
+        open_lines = self.order_line.filtered(
+            lambda line: not line.display_type and float_compare(
+                line.qty_to_invoice, 0.0,
+                precision_rounding=line.product_uom_id.rounding or 0.01) != 0)
+        if not open_lines:
+            return self.env['account.move']
+        drafts = self.invoice_ids.filtered(
+            lambda move: move.state == 'draft'
+            and move.move_type in ('in_invoice', 'in_refund')
+            and not move.petro_price_adjustment)
+        if not drafts:
+            self.with_context(auto_bill_on_confirm=True).action_create_invoice()
+            drafts = self.invoice_ids.filtered(
+                lambda move: move.state == 'draft'
+                and move.move_type in ('in_invoice', 'in_refund')
+                and not move.petro_price_adjustment)
+        if drafts:
+            self._stamp_daily_position_bill(drafts)
+            drafts.action_post()
+        return drafts
+
+    def _create_daily_position_qty_refund(self, po_line, quantity):
+        """Post a quantity credit note so billed litres can fall with the PO."""
+        self.ensure_one()
+        rounding = po_line.product_uom_id.rounding or 0.01
+        if float_compare(quantity, 0.0, precision_rounding=rounding) <= 0:
+            return self.env['account.move']
+        vals = po_line.with_context(
+            auto_bill_on_confirm=True)._prepare_account_move_line()
+        vals['quantity'] = quantity
+        vals['price_unit'] = po_line.price_unit
+        refund = self.env['account.move'].create({
+            'move_type': 'in_refund',
+            'partner_id': self.partner_id.id,
+            'company_id': self.company_id.id,
+            'invoice_date': self.daily_position_date or fields.Date.context_today(self),
+            'invoice_line_ids': [fields.Command.create(vals)],
+        })
+        self._stamp_daily_position_bill(refund)
+        refund.action_post()
+        return refund
+
+    def _prepare_daily_position_qty_decrease(self, po_line, new_qty):
+        """Drop billed litres before the PO qty write when it would go below invoiced.
+
+        Unpaid single bills are reset to draft (qty_invoiced ignores drafts).
+        Paid or locked bills get a quantity refund first so Odoo allows the
+        lower ordered qty.
+        """
+        self.ensure_one()
+        rounding = po_line.product_uom_id.rounding or 0.01
+        po_line._compute_qty_invoiced()
+        invoiced = po_line.qty_invoiced
+        if float_compare(new_qty, invoiced, precision_rounding=rounding) >= 0:
+            return
+        rewritable = self._daily_position_rewritable_bill()
+        if rewritable and self._reset_vendor_bill_to_draft(rewritable):
+            po_line.invalidate_recordset(['qty_invoiced', 'qty_to_invoice'])
+            po_line._compute_qty_invoiced()
+            return
+        self._create_daily_position_qty_refund(po_line, invoiced - new_qty)
+        po_line.invalidate_recordset(['qty_invoiced', 'qty_to_invoice'])
+        po_line._compute_qty_invoiced()
+
+    def _sync_daily_position_vendor_bills(self):
+        """Keep daily-position vendor bills aligned with the current PO lines.
+
+        Unpaid single bills are rewritten in place so the morning bulk buy
+        stays one document per supplier. Paid, locked, or price-adjusted POs
+        get a delta vendor bill or refund for the quantity gap instead.
+        Idempotent: matching bills are left untouched (draft ones are posted).
+        """
+        for order in self.filtered('is_daily_position_po'):
+            qty_bills = order._daily_position_quantity_bills()
+            if not qty_bills:
+                order._auto_create_vendor_bill()
+            rewritable = order._daily_position_rewritable_bill()
+            if rewritable:
+                if not order._daily_position_bill_matches_po(rewritable):
+                    order._rewrite_daily_position_bill(rewritable)
+                elif rewritable.state == 'draft':
+                    order._stamp_daily_position_bill(rewritable)
+                    rewritable.action_post()
+            else:
+                order._post_daily_position_delta_bills()
 
 
 class PurchaseOrderLine(models.Model):
