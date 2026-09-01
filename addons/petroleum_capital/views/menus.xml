@@ -29,4 +29,10 @@
               parent="menu_petroleum_capital_root"
               action="action_loan_repayment"
               sequence="40"/>
+
+    <menuitem id="menu_loan_partner_repayment"
+              name="Receive Partner Repayment"
+              parent="menu_petroleum_capital_root"
+              action="action_loan_partner_repayment"
+              sequence="45"/>
 </odoo>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_loan_partner_repayment_form" model="ir.ui.view">
+        <field name="name">petroleum.loan.partner.repayment.form</field>
+        <field name="model">petroleum.loan.partner.repayment</field>
+        <field name="arch" type="xml">
+            <form string="Receive Partner Repayment">
+                <group>
+                    <group>
+                        <field name="partner_id" options="{'no_create': True}"/>
+                        <field name="amount_outstanding_total" readonly="1"/>
+                        <field name="company_id" groups="base.group_multi_company"/>
+                    </group>
+                    <group>
+                        <field name="payment_date"/>
+                        <field name="amount"/>
+                        <field name="interest_amount"/>
+                        <field name="interest_account_id"
+                               options="{'no_create': True}"
+                               invisible="interest_amount &lt;= 0"
+                               required="interest_amount &gt; 0"/>
+                        <field name="bank_journal_id" options="{'no_create': True}"/>
+                        <field name="memo" placeholder="e.g. August 2026 repayment — Muhidin"/>
+                    </group>
+                </group>
+                <group>
+                    <field name="amount_unallocated" readonly="1"/>
+                </group>
+                <div class="alert alert-info" role="alert">
+                    Principal is applied <strong>oldest loan first</strong> (opening date,
+                    then id). Posts one bank receipt: <strong>Dr Bank / Cr Loans Issued</strong>.
+                    Optional interest is <strong>Cr Interest Income</strong> and does not
+                    reduce outstanding.
+                </div>
+                <div class="alert alert-warning" role="alert"
+                     invisible="allocation_balanced">
+                    Allocated principal does not match the amount received.
+                    Adjust the lines or reset to FIFO.
+                </div>
+                <field name="allocation_ids" nolabel="1">
+                    <list editable="bottom" create="false" delete="false">
+                        <field name="loan_issued_id" readonly="1" force_save="1"
+                               options="{'no_open': True}"/>
+                        <field name="loan_date"/>
+                        <field name="amount_outstanding"/>
+                        <field name="amount_allocated"/>
+                        <field name="amount_remaining"/>
+                        <field name="currency_id" column_invisible="1"/>
+                    </list>
+                </field>
+                <field name="currency_id" invisible="1"/>
+                <field name="allocation_balanced" invisible="1"/>
+                <field name="move_id" invisible="1"/>
+                <footer>
+                    <button name="action_confirm" type="object" string="Receive Repayment"
+                            class="btn-primary"/>
+                    <button name="action_reset_fifo" type="object" string="Reset to FIFO"
+                            class="btn-secondary"/>
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_loan_partner_repayment" model="ir.actions.act_window">
+        <field name="name">Receive Partner Repayment</field>
+        <field name="res_model">petroleum.loan.partner.repayment</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

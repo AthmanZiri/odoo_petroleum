@@ -5,6 +5,10 @@
         <field name="model">petroleum.loan.issued</field>
         <field name="arch" type="xml">
             <list string="Loans Issued">
+                <header>
+                    <button name="action_receive_partner_repayment" type="object"
+                            string="Repay Partner"/>
+                </header>
                 <field name="name"/>
                 <field name="partner_id"/>
                 <field name="date"/>
@@ -33,6 +37,9 @@
                     <button name="action_receive_repayment" type="object"
                             string="Receive Repayment"
                             class="btn-primary"
+                            invisible="state != 'posted' or amount_outstanding &lt;= 0"/>
+                    <button name="action_receive_partner_repayment" type="object"
+                            string="Repay Partner"
                             invisible="state != 'posted' or amount_outstanding &lt;= 0"/>
                     <button name="action_open_opening_move" type="object"
                             string="Opening Entry"
@@ -74,6 +81,18 @@
                     <group>
                         <field name="note" placeholder="Notes…"/>
                     </group>
+                    <notebook>
+                        <page string="Repayment Allocations">
+                            <field name="repayment_allocation_ids" readonly="1">
+                                <list>
+                                    <field name="date"/>
+                                    <field name="move_id"/>
+                                    <field name="amount" sum="Allocated"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
                     <div class="alert alert-info" role="alert">
                         Opening posts Loans Issued under Current Assets via the
                         Capital &amp; Loans journal (not Miscellaneous Operations).
@@ -97,7 +116,9 @@
                 Record loans issued openings (e.g. Muhidin KES 9,676,340.17).
             </p>
             <p>
-                After posting, receive principal (and optional interest) with Receive Repayment.
+                After posting, receive principal (and optional interest) with Receive
+                Repayment (one loan) or Receive Partner Repayment (FIFO across the
+                borrower's loans).
             </p>
         </field>
     </record>

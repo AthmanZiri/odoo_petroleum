@@ -137,7 +137,7 @@ class PetroleumLoanRepayment(models.TransientModel):
         })
         move.action_post()
         self.move_id = move.id
-        loan.repayment_move_ids = [Command.link(move.id)]
+        loan._register_repayment(move, self.amount)
         return {
             'type': 'ir.actions.act_window',
             'name': _('Loan Repayment'),

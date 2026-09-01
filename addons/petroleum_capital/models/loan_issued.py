@@ -1,5 +1,6 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
+from odoo.fields import Command
 
 
 class PetroleumLoanIssued(models.Model):
@@ -42,6 +43,9 @@ class PetroleumLoanIssued(models.Model):
         'account.move', 'petroleum_loan_issued_repayment_rel',
         'loan_id', 'move_id', string='Repayment Entries',
         copy=False, readonly=True)
+    repayment_allocation_ids = fields.One2many(
+        'petroleum.loan.repayment.allocation', 'loan_issued_id',
+        string='Repayment Allocations', copy=False, readonly=True)
     amount_repaid = fields.Monetary(
         string='Repaid', compute='_compute_repayment_amounts', store=True)
     amount_outstanding = fields.Monetary(
@@ -60,15 +64,25 @@ class PetroleumLoanIssued(models.Model):
         'repayment_move_ids.line_ids.debit',
         'repayment_move_ids.line_ids.credit',
         'repayment_move_ids.line_ids.account_id',
+        'repayment_allocation_ids.amount',
+        'repayment_allocation_ids.move_id',
+        'repayment_allocation_ids.move_id.state',
     )
     def _compute_repayment_amounts(self):
         for rec in self:
             currency = rec.currency_id
             repaid = 0.0
-            moves = rec.repayment_move_ids.filtered(lambda m: m.state == 'posted')
+            allocated_moves = rec.repayment_allocation_ids.move_id
+            for alloc in rec.repayment_allocation_ids:
+                if alloc.move_id.state == 'posted':
+                    repaid += alloc.amount or 0.0
+            # Pre-allocation receipts: scan linked moves not covered by a row.
+            legacy_moves = rec.repayment_move_ids.filtered(
+                lambda m: m.state == 'posted' and m not in allocated_moves
+            )
             asset = rec.asset_account_id
             if asset:
-                for line in moves.line_ids:
+                for line in legacy_moves.line_ids:
                     if line.account_id == asset:
                         repaid += line.credit - line.debit
             repaid = currency.round(repaid) if currency else repaid
@@ -150,6 +164,27 @@ class PetroleumLoanIssued(models.Model):
             })
         return True
 
+    def _register_repayment(self, move, amount):
+        """Link a posted receipt to this loan and store the principal slice."""
+        self.ensure_one()
+        self.repayment_move_ids = [Command.link(move.id)]
+        self.env['petroleum.loan.repayment.allocation'].create({
+            'loan_issued_id': self.id,
+            'move_id': move.id,
+            'amount': amount,
+        })
+        return True
+
+    @api.model
+    def _search_outstanding_fifo(self, partner, company):
+        """Posted loans with a balance, oldest opening date first (then id)."""
+        return self.search([
+            ('partner_id', '=', partner.id),
+            ('company_id', '=', company.id),
+            ('state', '=', 'posted'),
+            ('amount_outstanding', '>', 0),
+        ], order='date asc, id asc')
+
     def action_receive_repayment(self):
         self.ensure_one()
         if self.state != 'posted':
@@ -168,6 +203,30 @@ class PetroleumLoanIssued(models.Model):
             'type': 'ir.actions.act_window',
             'name': _('Receive Loan Repayment'),
             'res_model': 'petroleum.loan.repayment',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': context,
+        }
+
+    def action_receive_partner_repayment(self):
+        partners = self.mapped('partner_id')
+        if len(partners) > 1:
+            raise UserError(_('Partner repayment must be for a single borrower.'))
+        companies = self.mapped('company_id')
+        context = {
+            'default_company_id': (
+                companies[:1].id if companies else self.env.company.id
+            ),
+        }
+        if partners:
+            context['default_partner_id'] = partners.id
+        journals = self.mapped('bank_journal_id')
+        if len(journals) == 1:
+            context['default_bank_journal_id'] = journals.id
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Receive Partner Repayment'),
+            'res_model': 'petroleum.loan.partner.repayment',
             'view_mode': 'form',
             'target': 'new',
             'context': context,
