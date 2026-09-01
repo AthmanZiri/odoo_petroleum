@@ -1,6 +1,6 @@
 {
     'name': 'Petroleum Data Import',
-    'version': '19.0.1.0.1',
+    'version': '19.0.1.1.0',
     'category': 'Accounting',
     'summary': 'Import Jameel customer/supplier Excel ledgers: opening balances + transactions',
     'description': """
@@ -32,6 +32,7 @@ REFUND rows and multi-section (payable + receivable) tabs.
     'data': [
         'security/ir.model.access.csv',
         'data/data_import_cron.xml',
+        'data/ar_ap_offset_cron.xml',
         'views/import_wizard_views.xml',
         'views/data_import_job_views.xml',
         'views/ledger_reconcile_views.xml',

@@ -4,18 +4,24 @@
         <field name="name">petroleum.ledger.reconcile.form</field>
         <field name="model">petroleum.ledger.reconcile</field>
         <field name="arch" type="xml">
-            <form string="Reconcile Imported Ledgers">
+            <form string="Auto-Offset Invoices &amp; Payments">
+                <div class="alert alert-info" role="alert" invisible="state != 'draft'">
+                    Customers and vendors are not asked to allocate payments. This job
+                    FIFO-offsets open invoices, bills, credit notes and payments in the
+                    background so statements and aging show the net residual.
+                </div>
                 <group invisible="state != 'draft'">
                     <field name="company_id" groups="base.group_multi_company"/>
                     <field name="reconcile_customers"/>
                     <field name="reconcile_suppliers"/>
+                    <field name="partner_ids" widget="many2many_tags"/>
                     <field name="only_imported"/>
                     <field name="dry_run"/>
                 </group>
                 <field name="result_html" invisible="state == 'draft'"/>
                 <field name="state" invisible="1"/>
                 <footer invisible="state != 'draft'">
-                    <button name="action_reconcile" type="object" string="Run FIFO Reconciliation"
+                    <button name="action_reconcile" type="object" string="Run AR/AP Auto-Offset"
                             class="btn-primary"/>
                     <button string="Cancel" special="cancel" class="btn-secondary"/>
                 </footer>
@@ -27,7 +33,7 @@
     </record>
 
     <record id="action_ledger_reconcile" model="ir.actions.act_window">
-        <field name="name">Reconcile Imported Ledgers</field>
+        <field name="name">Auto-Offset Invoices &amp; Payments</field>
         <field name="res_model">petroleum.ledger.reconcile</field>
         <field name="view_mode">form</field>
         <field name="target">new</field>

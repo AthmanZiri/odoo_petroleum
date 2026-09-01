@@ -336,7 +336,9 @@ class PetroleumDeskBulkPayment(models.TransientModel):
     def _create_partner_payment(self, partner, pay_amount, alloc_lines):
         payment_type = 'inbound' if self.payment_side == 'customer' else 'outbound'
         partner_type = 'customer' if self.payment_side == 'customer' else 'supplier'
-        payment = self.env['account.payment'].create({
+        payment = self.env['account.payment'].with_context(
+            petro_skip_auto_offset=True,
+        ).create({
             'payment_type': payment_type,
             'partner_type': partner_type,
             'partner_id': partner.id,
@@ -348,6 +350,9 @@ class PetroleumDeskBulkPayment(models.TransientModel):
         })
         payment.action_post()
         self._sequential_reconcile(payment, alloc_lines)
+        payment.move_id.with_context(
+            petro_skip_auto_offset=False,
+        )._petro_auto_offset_moves()
         return payment
 
     def _register_single_allocation(self, partner, alloc_line):

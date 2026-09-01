@@ -52,5 +52,5 @@ Dashboard bank cards: **N to reconcile**, **To Review**, gear **Invalid Statemen
 
 ## False friends
 
-* Trading Desk **Reconcile Imported Ledgers** = partner ledger FIFO, not bank recon
+* Trading Desk **Auto-Offset Invoices & Payments** = partner ledger FIFO, not bank recon
 * Partner **Send Statements** = SoA PDFs

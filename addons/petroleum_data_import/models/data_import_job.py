@@ -163,3 +163,9 @@ class PetroleumDataImportJob(models.Model):
         wizards = self.env['petroleum.data.import'].search([('job_id', '=', self.id)])
         if wizards:
             wizards.write({'state': 'done', 'result_html': html})
+        try:
+            self.env['account.move.line']._petro_cron_auto_offset(
+                batch_size=500, company_ids=self.company_id.ids)
+        except Exception:  # noqa: BLE001
+            _logger.exception(
+                'AR/AP auto-offset after ledger import job %s failed', self.id)
