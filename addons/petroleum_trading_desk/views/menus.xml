@@ -99,6 +99,12 @@
               action="petroleum_capital.action_loan_repayment"
               sequence="40"/>
 
+    <menuitem id="menu_trading_desk_loan_partner_repayment"
+              name="Receive Partner Repayment"
+              parent="menu_trading_desk_capital"
+              action="petroleum_capital.action_loan_partner_repayment"
+              sequence="45"/>
+
     <menuitem id="menu_trading_desk_statements"
               name="Send Statements"
               parent="menu_trading_desk_root"
@@ -134,7 +140,7 @@
               sequence="12"/>
 
     <menuitem id="menu_trading_desk_reconcile"
-              name="Reconcile Imported Ledgers"
+              name="Auto-Offset Invoices &amp; Payments"
               parent="menu_trading_desk_config"
               action="petroleum_data_import.action_ledger_reconcile"
               sequence="20"/>
