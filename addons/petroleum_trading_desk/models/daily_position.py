@@ -806,10 +806,114 @@ class PetroleumDailyPositionLine(models.Model):
         move_vals['invoice_line_ids'] = [fields.Command.create(line_vals)]
         return self.env['account.move'].create(move_vals)
 
-    def action_create_sold_price_adjustments(
-            self, new_buy_price, quantity, note=''):
-        """Create deal-linked supplier CN/DN documents for sold allocations."""
+    def _recommend_sold_allocation_quantities(self, allocations, target):
+        """Pick complete deals that sum to ``target``, splitting one deal only if needed.
+
+        Groups active allocations by deal. Prefers an exact subset of whole
+        deals (fewest deals, then largest deals). If no exact match exists,
+        takes the closest complete-deal subset that does not exceed the target
+        and splits one remaining deal for the leftover litres.
+        """
         self.ensure_one()
+        rounding = self._qty_rounding()
+        if float_compare(target, 0.0, precision_rounding=rounding) <= 0:
+            return []
+        groups = []
+        for deal in allocations.mapped('deal_id'):
+            deal_allocs = allocations.filtered(
+                lambda alloc, deal=deal: alloc.deal_id == deal).sorted('id')
+            groups.append({
+                'deal': deal,
+                'qty': sum(deal_allocs.mapped('quantity')),
+                'allocations': deal_allocs,
+            })
+        if not groups:
+            return []
+
+        def _cmp(first, second):
+            return float_compare(first, second, precision_rounding=rounding)
+
+        def _subset_qty(indices):
+            return sum(groups[i]['qty'] for i in indices)
+
+        def _expand(indices, extra=None):
+            """Turn deal indices (and an optional split) into allocation qtys."""
+            pairs = []
+            for index in indices:
+                for alloc in groups[index]['allocations']:
+                    pairs.append((alloc, alloc.quantity))
+            if extra:
+                split_index, leftover = extra
+                left = leftover
+                for alloc in groups[split_index]['allocations']:
+                    if _cmp(left, 0.0) <= 0:
+                        break
+                    take = min(left, alloc.quantity)
+                    if _cmp(take, 0.0) > 0:
+                        pairs.append((alloc, take))
+                        left -= take
+            return pairs
+
+        n = len(groups)
+        best_exact = None
+        best_exact_key = None
+        best_partial = None
+        best_partial_key = None
+        for mask in range(1 << n):
+            indices = [i for i in range(n) if mask & (1 << i)]
+            complete_qty = _subset_qty(indices)
+            complete_key = (
+                len(indices),
+                tuple(-groups[i]['qty'] for i in sorted(
+                    indices, key=lambda i: -groups[i]['qty'])),
+            )
+            if _cmp(complete_qty, target) == 0:
+                if best_exact is None or complete_key < best_exact_key:
+                    best_exact = indices
+                    best_exact_key = complete_key
+                continue
+            if _cmp(complete_qty, target) >= 0:
+                continue
+            leftover = target - complete_qty
+            for split_index in range(n):
+                if mask & (1 << split_index):
+                    continue
+                split_qty = groups[split_index]['qty']
+                if _cmp(split_qty, leftover) <= 0:
+                    continue
+                partial_key = (
+                    -complete_qty,
+                    len(indices),
+                    tuple(-groups[i]['qty'] for i in sorted(
+                        indices, key=lambda i: -groups[i]['qty'])),
+                    split_qty,
+                    split_index,
+                )
+                if best_partial is None or partial_key < best_partial_key:
+                    best_partial = (indices, split_index, leftover)
+                    best_partial_key = partial_key
+
+        if best_exact is not None:
+            return _expand(best_exact)
+        if best_partial is not None:
+            indices, split_index, leftover = best_partial
+            return _expand(indices, extra=(split_index, leftover))
+        raise UserError(_(
+            'Cannot cover %(qty)s L with complete deals plus at most one split '
+            'on this lot.',
+            qty=target,
+        ))
+
+    def action_create_sold_price_adjustments(
+            self, new_buy_price, quantity, note='', allocation_quantities=None):
+        """Create deal-linked supplier CN/DN documents for sold allocations.
+
+        When ``allocation_quantities`` is omitted, complete deals whose litres
+        sum to ``quantity`` are preferred over walking allocations oldest-first
+        and cutting the last deal.
+        """
+        self.ensure_one()
+        rounding = self._qty_rounding()
         quantity = float(quantity)
         if quantity <= 0 or quantity > self.qty_sold:
             raise UserError(_(
@@ -826,17 +930,39 @@ class PetroleumDailyPositionLine(models.Model):
                 'Only %(qty)s sold litres still carry a different buy price.',
                 qty=adjustable,
             ))
-        left = quantity
+        if allocation_quantities:
+            pairs = []
+            for alloc_id, affected in allocation_quantities.items():
+                allocation = allocations.filtered(
+                    lambda alloc, alloc_id=alloc_id: alloc.id == alloc_id)[:1]
+                if not allocation:
+                    raise UserError(_(
+                        'Selected deal is not an adjustable sold allocation on this lot.'))
+                if float_compare(affected, 0.0, precision_rounding=rounding) <= 0:
+                    continue
+                if float_compare(affected, allocation.quantity, precision_rounding=rounding) > 0:
+                    raise UserError(_(
+                        'Affected litres on %(deal)s cannot exceed %(qty)s L.',
+                        deal=allocation.deal_id.display_name,
+                        qty=allocation.quantity,
+                    ))
+                pairs.append((allocation, affected))
+        else:
+            pairs = self._recommend_sold_allocation_quantities(
+                allocations, quantity)
+        assigned = sum(qty for _alloc, qty in pairs)
+        if float_compare(assigned, quantity, precision_rounding=rounding) != 0:
+            raise UserError(_(
+                'Selected deals total %(assigned)s L, not the requested %(qty)s L.',
+                assigned=assigned, qty=quantity,
+            ))
         moves = self.env['account.move']
-        for allocation in allocations:
-            if left <= 0:
-                break
-            affected = min(left, allocation.quantity)
+        for allocation, affected in pairs:
             move = self._create_supplier_price_adjustment(
                 allocation.buy_price, new_buy_price, affected, note,
                 deal=allocation.deal_id, scope='sold')
             moves |= move
-            if affected < allocation.quantity:
+            if float_compare(affected, allocation.quantity, precision_rounding=rounding) < 0:
                 allocation.write({
                     'quantity': allocation.quantity - affected,
                 })
@@ -850,13 +976,6 @@ class PetroleumDailyPositionLine(models.Model):
                 })
             else:
                 allocation.write({'buy_price': new_buy_price})
-            left -= affected
-        if left > 0:
-            raise UserError(_(
-                'Only %(allocated)s L of the sold volume is linked to active deals; '
-                '%(missing)s L could not be assigned.',
-                allocated=quantity - left, missing=left,
-            ))
         self._log_buy_price_change(
             self.buy_price, new_buy_price, reason='revision',
             note=_('%(note)s — %(qty)s sold litres adjusted through CN/DN.',
