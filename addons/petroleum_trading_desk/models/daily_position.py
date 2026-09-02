@@ -63,6 +63,10 @@ class PetroleumDailyPositionLine(models.Model):
         currency = self.currency_id or self.env.company.currency_id
         return currency.decimal_places if currency else 2
 
+    def _qty_rounding(self):
+        self.ensure_one()
+        return self.product_id.uom_id.rounding or 0.01
+
     def _same_buy_price(self, other_price):
         """Compare buy prices using currency rounding."""
         self.ensure_one()
@@ -555,46 +559,100 @@ class PetroleumDailyPositionLine(models.Model):
         ])
         return candidates.filtered(lambda l: l._same_buy_price(new_buy_price))[:1]
 
-    def _transfer_remaining_to(self, target):
-        """Move remaining litres onto ``target`` as opening stock; keep sold history here."""
+    def _peel_remaining(self, quantity):
+        """Reduce this lot's remaining stock by ``quantity``.
+
+        Opening is reduced first, then bought today. Sold allocations stay
+        on this line. Returns ``(reduce_opening, reduce_bought)``.
+        """
+        self.ensure_one()
+        rounding = self._qty_rounding()
+        remaining = self.qty_remaining
+        if float_compare(quantity, 0.0, precision_rounding=rounding) <= 0:
+            return 0.0, 0.0
+        if float_compare(quantity, remaining, precision_rounding=rounding) > 0:
+            raise UserError(_(
+                'Cannot move %(qty)s L; only %(remaining)s L remain on this lot.',
+                qty=quantity, remaining=remaining,
+            ))
+        reduce_opening = min(self.qty_opening, quantity)
+        reduce_bought = quantity - reduce_opening
+        self.write({
+            'qty_opening': self.qty_opening - reduce_opening,
+            'qty_bought': self.qty_bought - reduce_bought,
+        })
+        return reduce_opening, reduce_bought
+
+    def _transfer_remaining_to(self, target, quantity=None):
+        """Move remaining litres onto ``target`` as opening stock; keep sold history here.
+
+        When ``quantity`` is omitted the full remaining lot is moved and draft
+        / proforma deal lines are re-pointed to ``target``. A partial move
+        leaves those deals on this lot at the original buy price.
+        """
         self.ensure_one()
         target.ensure_one()
         remaining = self.qty_remaining
         if remaining <= 0:
             return 0.0
-        reduce_opening = min(self.qty_opening, remaining)
-        reduce_bought = remaining - reduce_opening
-        self.write({
-            'qty_opening': self.qty_opening - reduce_opening,
-            'qty_bought': self.qty_bought - reduce_bought,
+        rounding = self._qty_rounding()
+        qty = remaining if quantity is None else float(quantity)
+        if float_compare(qty, 0.0, precision_rounding=rounding) <= 0:
+            return 0.0
+        reduce_opening, reduce_bought = self._peel_remaining(qty)
+        moved = reduce_opening + reduce_bought
+        # Land as opening so the target's bought / PO quantity is unchanged.
+        target.write({'qty_opening': target.qty_opening + moved})
+        if float_compare(qty, remaining, precision_rounding=rounding) == 0:
+            draft_lines = self.env['petroleum.deal.line'].search([
+                ('position_line_id', '=', self.id),
+                ('deal_id.state', 'in', ('draft', 'proforma')),
+            ])
+            if draft_lines:
+                draft_lines.write({
+                    'position_line_id': target.id,
+                    'buy_price': target.buy_price,
+                })
+        return moved
+
+    def _split_remaining_lot(self, quantity, new_price):
+        """Peel ``quantity`` remaining litres onto a new lot at ``new_price``."""
+        self.ensure_one()
+        reduce_opening, reduce_bought = self._peel_remaining(quantity)
+        return self.create({
+            'date': self.date,
+            'product_id': self.product_id.id,
+            'supplier_id': self.supplier_id.id,
+            'depot_id': self.depot_id.id,
+            'company_id': self.company_id.id,
+            'currency_id': self.currency_id.id,
+            'qty_opening': reduce_opening,
+            'qty_bought': reduce_bought,
+            'buy_price': new_price,
+            'sell_price': self.sell_price,
+            'purchase_order_id': self.purchase_order_id.id,
+            'purchase_order_line_id': self.purchase_order_line_id.id,
+            'note': self.note,
         })
-        target.write({'qty_opening': target.qty_opening + remaining})
-        # Re-point open (not yet confirmed) deal lines to the surviving lot.
-        draft_lines = self.env['petroleum.deal.line'].search([
-            ('position_line_id', '=', self.id),
-            ('deal_id.state', 'in', ('draft', 'proforma')),
-        ])
-        if draft_lines:
-            draft_lines.write({
-                'position_line_id': target.id,
-                'buy_price': target.buy_price,
-            })
-        return remaining
 
     def action_revise_buy_price(
             self, new_buy_price, note='', merge_into_matching=True,
-            create_credit_note=True):
+            create_credit_note=True, affected_quantity=None):
         """Revise remaining stock cost after a supplier price reduction.
 
         - Logs price history.
-        - If a same-day lot already exists at ``new_buy_price``, merges remaining
-          litres into it (sold allocations stay on this line for audit).
-        - Otherwise updates this line's buy price.
-        - Optionally creates a draft vendor credit note for the price drop on
-          remaining litres.
+        - A partial ``affected_quantity`` leaves the unrevised remainder on
+          this lot at the original buy price.
+        - If a same-day lot already exists at ``new_buy_price``, merges the
+          revised litres into it (sold allocations stay on this line).
+        - Otherwise a full revision updates this line's buy price; a partial
+          revision creates a new lot at the new price.
+        - Optionally creates a draft vendor credit note for the price change
+          on the affected litres.
         """
         self.ensure_one()
         precision = self._price_precision()
+        rounding = self._qty_rounding()
         new_price = float(new_buy_price)
         if float_compare(new_price, 0.0, precision_digits=precision) < 0:
             raise UserError(_('New buy price cannot be negative.'))
@@ -603,6 +661,15 @@ class PetroleumDailyPositionLine(models.Model):
         remaining = self.qty_remaining
         if remaining <= 0:
             raise UserError(_('No remaining volume to revise on this lot.'))
+        qty = remaining if affected_quantity is None else float(affected_quantity)
+        if float_compare(qty, 0.0, precision_rounding=rounding) <= 0:
+            raise UserError(_('Affected litres must be greater than zero.'))
+        if float_compare(qty, remaining, precision_rounding=rounding) > 0:
+            raise UserError(_(
+                'Affected litres cannot exceed the remaining lot (%s L).',
+                remaining,
+            ))
+        is_partial = float_compare(qty, remaining, precision_rounding=rounding) < 0
 
         old_price = self.buy_price
         history_reason = (
@@ -612,26 +679,35 @@ class PetroleumDailyPositionLine(models.Model):
         merge_target = self._find_merge_target(new_price)
         credit_note = self.env['account.move']
         transferred = 0.0
+        merged = False
 
-        if merge_into_matching and merge_target:
-            self._log_buy_price_change(
-                old_price, new_price, reason=history_reason,
-                note=_('%(note)s — merged %(qty)s L into lot @ %(price)s.',
-                       note=note, qty=remaining, price=new_price))
-            transferred = self._transfer_remaining_to(merge_target)
-            surviving = merge_target
-        elif merge_target and not merge_into_matching:
+        if merge_target and not merge_into_matching:
             raise UserError(_(
                 'A position lot already exists at buy price %(price)s. '
                 'Enable “Merge into matching lot” or pick a different price.',
                 price=new_price,
             ))
+
+        if merge_into_matching and merge_target:
+            self._log_buy_price_change(
+                old_price, new_price, reason=history_reason,
+                note=_('%(note)s — merged %(qty)s L into lot @ %(price)s.',
+                       note=note, qty=qty, price=new_price))
+            transferred = self._transfer_remaining_to(merge_target, quantity=qty)
+            surviving = merge_target
+            merged = True
+        elif is_partial:
+            self._log_buy_price_change(
+                old_price, new_price, reason=history_reason,
+                note=_('%(note)s — %(qty)s L split to a new lot @ %(price)s.',
+                       note=note, qty=qty, price=new_price))
+            surviving = self._split_remaining_lot(qty, new_price)
+            transferred = qty
         else:
             self.with_context(
                 buy_price_log_reason=history_reason,
                 buy_price_log_note=note,
             ).write({'buy_price': new_price})
-            # Refresh draft deals still pointing at this lot.
             draft_lines = self.env['petroleum.deal.line'].search([
                 ('position_line_id', '=', self.id),
                 ('deal_id.state', 'in', ('draft', 'proforma')),
@@ -642,19 +718,15 @@ class PetroleumDailyPositionLine(models.Model):
             transferred = remaining
 
         if create_credit_note and float_compare(
-                old_price, new_price, precision_digits=precision) > 0:
+                old_price, new_price, precision_digits=precision) != 0:
             credit_note = self._create_supplier_price_adjustment(
-                old_price, new_price, transferred or remaining, note)
-        elif create_credit_note and float_compare(
-                old_price, new_price, precision_digits=precision) < 0:
-            credit_note = self._create_supplier_price_adjustment(
-                old_price, new_price, transferred or remaining, note)
+                old_price, new_price, transferred or qty, note)
 
         return {
             'surviving_line': surviving,
             'credit_note': credit_note,
-            'transferred_qty': transferred or remaining,
-            'merged': bool(merge_into_matching and merge_target),
+            'transferred_qty': transferred or qty,
+            'merged': merged,
             'old_price': old_price,
             'new_price': new_price,
         }

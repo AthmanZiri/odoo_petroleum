@@ -142,17 +142,12 @@ class PetroleumDailyPositionRevisePrice(models.TransientModel):
                 'target': 'current',
             }
 
-        if self.affected_quantity != self.qty_remaining:
-            raise UserError(_(
-                'Remaining-stock revisions currently apply to the full remaining '
-                'lot (%s L). Use the sold-volume option for a partial adjustment.',
-                self.qty_remaining,
-            ))
         result = line.action_revise_buy_price(
             new_buy_price=self.new_buy_price,
             note=self.note,
             merge_into_matching=self.merge_into_matching,
             create_credit_note=self.create_credit_note,
+            affected_quantity=self.affected_quantity,
         )
         credit = result['credit_note']
         if credit:
