@@ -47,6 +47,113 @@ class PetroleumDailyPositionRevisePrice(models.TransientModel):
     note = fields.Char(
         string='Reason / Note', required=True,
         default='Supplier price reduction on remaining stock')
+    recommendation_note = fields.Char(string='Deal Recommendation', readonly=True)
+    line_ids = fields.One2many(
+        'petroleum.daily.position.revise.price.line', 'wizard_id',
+        string='Sold Deals')
+
+    def _qty_rounding(self):
+        self.ensure_one()
+        if self.position_line_id:
+            return self.position_line_id._qty_rounding()
+        return 0.01
+
+    def _selected_sold_quantity(self):
+        self.ensure_one()
+        return sum(
+            line.affected_quantity
+            for line in self.line_ids
+            if line.selected and line.affected_quantity > 0)
+
+    def _sold_lines_are_default_all(self):
+        self.ensure_one()
+        if not self.line_ids:
+            return True
+        rounding = self._qty_rounding()
+        for line in self.line_ids:
+            if not line.selected:
+                return False
+            if float_compare(
+                    line.affected_quantity, line.allocated_quantity,
+                    precision_rounding=rounding) != 0:
+                return False
+        return True
+
+    def _populate_sold_lines(self):
+        self.ensure_one()
+        self.line_ids = [fields.Command.clear()]
+        self.recommendation_note = False
+        if self.volume_scope != 'sold' or not self.position_line_id:
+            return
+        commands = []
+        allocations = self.position_line_id.allocation_ids.filtered(
+            lambda allocation: allocation.state == 'active').sorted('id')
+        for allocation in allocations:
+            commands.append(fields.Command.create({
+                'allocation_id': allocation.id,
+                'selected': True,
+                'affected_quantity': allocation.quantity,
+            }))
+        self.line_ids = commands
+        self.recommendation_note = _(
+            'All sold deals on this lot (%s L). Uncheck deals or type a '
+            'target volume to recommend complete deals.',
+            self.qty_sold,
+        )
+
+    def _apply_sold_recommendation(self):
+        self.ensure_one()
+        if self.volume_scope != 'sold' or not self.position_line_id:
+            return
+        if not self.line_ids:
+            self._populate_sold_lines()
+        rounding = self._qty_rounding()
+        target = self.affected_quantity
+        allocations = self.line_ids.mapped('allocation_id').filtered(
+            lambda allocation: allocation.state == 'active'
+            and not self.position_line_id._same_price_values(
+                allocation.buy_price, self.new_buy_price))
+        if not allocations:
+            allocations = self.line_ids.mapped('allocation_id').filtered(
+                lambda allocation: allocation.state == 'active')
+        try:
+            pairs = self.position_line_id._recommend_sold_allocation_quantities(
+                allocations, target)
+        except UserError as error:
+            self.recommendation_note = error.args[0] if error.args else str(error)
+            return
+        qty_by_alloc = {alloc.id: qty for alloc, qty in pairs}
+        split_names = []
+        selected_names = []
+        for line in self.line_ids:
+            qty = qty_by_alloc.get(line.allocation_id.id, 0.0)
+            line.selected = float_compare(qty, 0.0, precision_rounding=rounding) > 0
+            line.affected_quantity = qty
+            if line.selected:
+                selected_names.append(line.deal_id.display_name)
+                if float_compare(
+                        qty, line.allocated_quantity,
+                        precision_rounding=rounding) < 0:
+                    split_names.append(_(
+                        '%(qty)s of %(total)s L on %(deal)s',
+                        qty=qty, total=line.allocated_quantity,
+                        deal=line.deal_id.display_name,
+                    ))
+        assigned = sum(qty_by_alloc.values())
+        if split_names:
+            self.recommendation_note = _(
+                'No exact complete-deal match for %(qty)s L. Recommended '
+                '%(deals)s, including split: %(split)s.',
+                qty=assigned,
+                deals=', '.join(selected_names),
+                split='; '.join(split_names),
+            )
+        else:
+            self.recommendation_note = _(
+                'Recommended complete deals totaling %(qty)s L: %(deals)s.',
+                qty=assigned,
+                deals=', '.join(selected_names) or '-',
+            )
 
     @api.onchange('position_line_id', 'volume_scope')
     def _onchange_volume_scope(self):
@@ -54,6 +161,30 @@ class PetroleumDailyPositionRevisePrice(models.TransientModel):
             return
         self.affected_quantity = (
             self.qty_sold if self.volume_scope == 'sold' else self.qty_remaining)
+        if self.volume_scope == 'sold':
+            self._populate_sold_lines()
+        else:
+            self.line_ids = [fields.Command.clear()]
+            self.recommendation_note = False
+
+    @api.onchange('affected_quantity', 'new_buy_price')
+    def _onchange_affected_quantity(self):
+        if self.volume_scope != 'sold' or not self.line_ids:
+            return
+        rounding = self._qty_rounding()
+        if float_compare(
+                self._selected_sold_quantity(), self.affected_quantity,
+                precision_rounding=rounding) == 0:
+            return
+        self._apply_sold_recommendation()
+
+    @api.onchange('line_ids')
+    def _onchange_line_ids(self):
+        if self.volume_scope != 'sold':
+            return
+        selected_qty = self._selected_sold_quantity()
+        if selected_qty:
+            self.affected_quantity = selected_qty
 
     @api.depends('position_line_id', 'new_buy_price')
     def _compute_matching_lot(self):
@@ -66,30 +197,41 @@ class PetroleumDailyPositionRevisePrice(models.TransientModel):
 
     @api.depends(
         'current_buy_price', 'new_buy_price', 'affected_quantity', 'currency_id',
-        'volume_scope', 'position_line_id.allocation_ids.quantity',
+        'volume_scope', 'line_ids.selected', 'line_ids.affected_quantity',
+        'line_ids.buy_price',
+        'position_line_id.allocation_ids.quantity',
         'position_line_id.allocation_ids.buy_price',
         'position_line_id.allocation_ids.state')
     def _compute_credit(self):
         for wiz in self:
             if wiz.volume_scope == 'sold' and wiz.position_line_id:
-                left = wiz.affected_quantity
                 amount = 0.0
-                allocations = wiz.position_line_id.allocation_ids.filtered(
-                    lambda allocation: allocation.state == 'active'
-                    and not wiz.position_line_id._same_price_values(
-                        allocation.buy_price, wiz.new_buy_price)
-                ).sorted('id')
-                for allocation in allocations:
-                    if left <= 0:
-                        break
-                    affected = min(left, allocation.quantity)
-                    amount += abs(
-                        allocation.buy_price - wiz.new_buy_price) * affected
-                    left -= affected
+                affected = 0.0
+                if wiz.line_ids:
+                    for line in wiz.line_ids.filtered(
+                            lambda row: row.selected and row.affected_quantity > 0):
+                        if wiz.position_line_id._same_price_values(
+                                line.buy_price, wiz.new_buy_price):
+                            continue
+                        amount += abs(line.buy_price - wiz.new_buy_price) * line.affected_quantity
+                        affected += line.affected_quantity
+                else:
+                    left = wiz.affected_quantity
+                    allocations = wiz.position_line_id.allocation_ids.filtered(
+                        lambda allocation: allocation.state == 'active'
+                        and not wiz.position_line_id._same_price_values(
+                            allocation.buy_price, wiz.new_buy_price)
+                    ).sorted('id')
+                    try:
+                        pairs = wiz.position_line_id._recommend_sold_allocation_quantities(
+                            allocations, left)
+                    except UserError:
+                        pairs = []
+                    for allocation, qty in pairs:
+                        amount += abs(allocation.buy_price - wiz.new_buy_price) * qty
+                        affected += qty
                 wiz.credit_amount = amount
-                wiz.price_drop = (
-                    amount / wiz.affected_quantity
-                    if wiz.affected_quantity else 0.0)
+                wiz.price_drop = amount / affected if affected else 0.0
                 continue
             change = abs(wiz.current_buy_price - wiz.new_buy_price)
             wiz.price_drop = change
@@ -115,6 +257,7 @@ class PetroleumDailyPositionRevisePrice(models.TransientModel):
         line = self.position_line_id
         if not line:
             raise UserError(_('Select a position lot to revise.'))
+        rounding = self._qty_rounding()
         available = self.qty_sold if self.volume_scope == 'sold' else self.qty_remaining
         if self.affected_quantity <= 0 or self.affected_quantity > available:
             raise UserError(_(
@@ -122,8 +265,27 @@ class PetroleumDailyPositionRevisePrice(models.TransientModel):
                 available,
             ))
         if self.volume_scope == 'sold':
+            if not self.line_ids:
+                self._populate_sold_lines()
+            if (
+                self._sold_lines_are_default_all()
+                and float_compare(
+                    self.affected_quantity, self.qty_sold,
+                    precision_rounding=rounding) < 0
+            ):
+                self._apply_sold_recommendation()
+            selected = self.line_ids.filtered(
+                lambda row: row.selected and row.affected_quantity > 0
+                and not line._same_price_values(
+                    row.buy_price, self.new_buy_price))
+            if not selected:
+                raise UserError(_('Select at least one deal to revise.'))
+            allocation_quantities = {
+                row.allocation_id.id: row.affected_quantity for row in selected}
+            quantity = sum(allocation_quantities.values())
             moves = line.action_create_sold_price_adjustments(
-                self.new_buy_price, self.affected_quantity, self.note)
+                self.new_buy_price, quantity, self.note,
+                allocation_quantities=allocation_quantities)
             if len(moves) == 1:
                 return {
                     'type': 'ir.actions.act_window',
@@ -193,3 +355,53 @@ class PetroleumDailyPositionRevisePrice(models.TransientModel):
                 },
             },
         }
+
+
+class PetroleumDailyPositionRevisePriceLine(models.TransientModel):
+    _name = 'petroleum.daily.position.revise.price.line'
+    _description = 'Revise Buy Price Sold Deal'
+    _order = 'deal_id, id'
+
+    wizard_id = fields.Many2one(
+        'petroleum.daily.position.revise.price', required=True, ondelete='cascade')
+    allocation_id = fields.Many2one(
+        'petroleum.daily.position.allocation', required=True, ondelete='cascade')
+    deal_id = fields.Many2one(related='allocation_id.deal_id', store=True)
+    partner_id = fields.Many2one(
+        related='deal_id.partner_id', string='Client')
+    allocated_quantity = fields.Float(
+        related='allocation_id.quantity', string='Deal Litres')
+    buy_price = fields.Float(related='allocation_id.buy_price', string='Buy Price')
+    selected = fields.Boolean(string='Revise', default=True)
+    affected_quantity = fields.Float(
+        string='Affected Litres', digits='Product Unit of Measure')
+    split_hint = fields.Char(compute='_compute_split_hint')
+    is_split = fields.Boolean(compute='_compute_split_hint')
+
+    @api.depends('selected', 'affected_quantity', 'allocated_quantity', 'deal_id')
+    def _compute_split_hint(self):
+        for line in self:
+            rounding = (
+                line.allocation_id.product_id.uom_id.rounding
+                if line.allocation_id.product_id.uom_id else 0.01)
+            is_split = bool(
+                line.selected
+                and float_compare(
+                    line.affected_quantity, 0.0, precision_rounding=rounding) > 0
+                and float_compare(
+                    line.affected_quantity, line.allocated_quantity,
+                    precision_rounding=rounding) < 0)
+            line.is_split = is_split
+            if is_split:
+                line.split_hint = _(
+                    '%(qty)s of %(total)s L',
+                    qty=line.affected_quantity, total=line.allocated_quantity)
+            else:
+                line.split_hint = False
+
+    @api.onchange('selected')
+    def _onchange_selected(self):
+        if self.selected and self.affected_quantity <= 0:
+            self.affected_quantity = self.allocated_quantity
+        if not self.selected:
+            self.affected_quantity = 0.0

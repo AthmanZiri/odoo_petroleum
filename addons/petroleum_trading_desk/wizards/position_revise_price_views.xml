@@ -31,6 +31,23 @@
                         <field name="note" placeholder="e.g. Supplier agreed today rate"/>
                     </group>
                 </group>
+                <group string="Sold Deals" invisible="volume_scope != 'sold'">
+                    <field name="recommendation_note" nolabel="1" colspan="2"/>
+                    <field name="line_ids" nolabel="1" colspan="2">
+                        <list editable="bottom" create="0" delete="0"
+                              decoration-warning="is_split">
+                            <field name="selected"/>
+                            <field name="deal_id" readonly="1"/>
+                            <field name="partner_id" readonly="1"/>
+                            <field name="allocated_quantity" readonly="1" sum="Deal Litres"/>
+                            <field name="affected_quantity" sum="Affected"/>
+                            <field name="buy_price" readonly="1"/>
+                            <field name="split_hint" readonly="1" optional="show"/>
+                            <field name="is_split" column_invisible="1"/>
+                            <field name="allocation_id" column_invisible="1"/>
+                        </list>
+                    </field>
+                </group>
                 <footer>
                     <button name="action_confirm" type="object" string="Apply Revision"
                             class="btn-primary"/>
