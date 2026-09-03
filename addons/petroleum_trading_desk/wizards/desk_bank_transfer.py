@@ -11,15 +11,82 @@ class PetroleumDeskBankTransfer(models.TransientModel):
     currency_id = fields.Many2one(related='company_id.currency_id')
     journal_from_id = fields.Many2one(
         'account.journal', string='From Bank / Cash', required=True,
-        domain="[('type', 'in', ('bank', 'cash')), ('company_id', '=', company_id)]")
+        domain="[('type', 'in', ('bank', 'cash')), "
+               "('company_id', '=', company_id), "
+               "('default_account_id', '!=', False)]")
     journal_to_id = fields.Many2one(
         'account.journal', string='To Bank / Cash', required=True,
-        domain="[('type', 'in', ('bank', 'cash')), ('company_id', '=', company_id)]")
+        domain="[('type', 'in', ('bank', 'cash')), "
+               "('company_id', '=', company_id), "
+               "('default_account_id', '!=', False)]")
     amount = fields.Monetary(required=True)
     transfer_date = fields.Date(
         string='Date', required=True, default=fields.Date.context_today)
     memo = fields.Char(string='Reference')
     move_id = fields.Many2one('account.move', readonly=True, copy=False)
+    missing_journal_warning = fields.Char(
+        compute='_compute_missing_journal_warning')
+
+    @api.depends('company_id')
+    def _compute_missing_journal_warning(self):
+        Account = self.env['account.account']
+        Journal = self.env['account.journal']
+        for wiz in self:
+            company = wiz.company_id or self.env.company
+            cash_accounts = Account.search([
+                ('account_type', '=', 'asset_cash'),
+                ('company_ids', 'in', company.id),
+                ('active', '=', True),
+            ])
+            linked = Journal.with_context(active_test=False).search([
+                ('company_id', '=', company.id),
+                ('type', 'in', ('bank', 'cash')),
+                ('default_account_id', 'in', cash_accounts.ids),
+            ]).mapped('default_account_id')
+            orphans = cash_accounts - linked
+            if orphans:
+                wiz.missing_journal_warning = _(
+                    'These Bank and Cash ledger accounts have no cash book '
+                    '(Bank/Cash journal): %s. Use Create Missing Bank Journals.'
+                ) % ', '.join(orphans.mapped('display_name'))
+            else:
+                wiz.missing_journal_warning = False
+
+    def action_create_missing_journals(self):
+        self.ensure_one()
+        company = self.company_id or self.env.company
+        accounts = self.env['account.account'].search([
+            ('account_type', '=', 'asset_cash'),
+            ('company_ids', 'in', company.id),
+            ('active', '=', True),
+        ])
+        created = accounts._petroleum_ensure_bank_journals()
+        self._compute_missing_journal_warning()
+        if not created:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('Bank Journals'),
+                    'message': _(
+                        'Every Bank and Cash account already has a cash book.'
+                    ),
+                    'type': 'success',
+                    'sticky': False,
+                },
+            }
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Bank Journals Created'),
+                'message': _(
+                    'Opened cash books for: %s. They now appear in From / To.'
+                ) % ', '.join(created.mapped('name')),
+                'type': 'success',
+                'sticky': True,
+            },
+        }
 
     @api.constrains('journal_from_id', 'journal_to_id')
     def _check_distinct_journals(self):

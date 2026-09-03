@@ -1,6 +1,6 @@
 {
     'name': 'Petroleum Trading Desk',
-    'version': '19.0.1.0.40',
+    'version': '19.0.1.0.41',
     'category': 'Sales',
     'summary': 'Single-screen trading desk: one Deal per truck load drives sale, purchase, trip, invoice and payment',
     'description': """
@@ -65,6 +65,7 @@ A single place for the trader to run the whole buy-and-sell flow.
             'petroleum_trading_desk/static/src/dashboard/dashboard_action.js',
         ],
     },
+    'post_init_hook': 'post_init_hook',
     'installable': True,
     'application': True,
 }

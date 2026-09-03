@@ -5,6 +5,15 @@
         <field name="model">petroleum.desk.bank.transfer</field>
         <field name="arch" type="xml">
             <form string="Inter-Bank Transfer">
+                <div class="alert alert-warning" role="alert"
+                     invisible="not missing_journal_warning">
+                    <field name="missing_journal_warning" nolabel="1"/>
+                    <div>
+                        <button name="action_create_missing_journals" type="object"
+                                string="Create Missing Bank Journals"
+                                class="btn-secondary"/>
+                    </div>
+                </div>
                 <group>
                     <group>
                         <field name="company_id" groups="base.group_multi_company"/>
@@ -17,6 +26,11 @@
                         <field name="memo" placeholder="e.g. Float top-up"/>
                     </group>
                 </group>
+                <div class="alert alert-info" role="alert">
+                    From / To lists <strong>Bank and Cash journals</strong> (cash books),
+                    not Chart of Accounts lines. A new bank GL of type Bank and Cash
+                    gets a matching journal automatically.
+                </div>
                 <field name="currency_id" invisible="1"/>
                 <field name="move_id" invisible="1"/>
                 <footer>
