@@ -20,7 +20,8 @@
                     </group>
                 </group>
                 <div class="alert alert-warning" role="alert">
-                    This posts <strong>Dr ROI Expense / Cr Bank</strong> only.
+                    Select a <strong>posted</strong> investor capital. This posts
+                    <strong>Dr ROI Expense / Cr Bank</strong> only.
                     Invested equity capital is not reduced.
                 </div>
                 <field name="currency_id" invisible="1"/>

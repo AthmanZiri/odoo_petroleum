@@ -141,6 +141,9 @@ class PetroleumInvestorCapital(models.Model):
                 'default_amount': self.monthly_roi_amount,
                 'default_expense_account_id': self.roi_expense_account_id.id,
                 'default_company_id': self.company_id.id,
+                'default_bank_journal_id': (
+                    self.bank_journal_id.id if self.bank_journal_id else False
+                ),
             },
         }
 
