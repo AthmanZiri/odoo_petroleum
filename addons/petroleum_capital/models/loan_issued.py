@@ -167,6 +167,14 @@ class PetroleumLoanIssued(models.Model):
     def _register_repayment(self, move, amount):
         """Link a posted receipt to this loan and store the principal slice."""
         self.ensure_one()
+        if move.state != 'posted':
+            raise UserError(_('Allocate only posted journal entries.'))
+        existing = self.repayment_allocation_ids.filtered(
+            lambda a: a.move_id == move)
+        if existing:
+            raise UserError(_(
+                'Journal entry %s is already allocated to loan %s.'
+            ) % (move.display_name, self.display_name))
         self.repayment_move_ids = [Command.link(move.id)]
         self.env['petroleum.loan.repayment.allocation'].create({
             'loan_issued_id': self.id,
@@ -174,6 +182,44 @@ class PetroleumLoanIssued(models.Model):
             'amount': amount,
         })
         return True
+
+    def action_link_opening_move(self):
+        self.ensure_one()
+        if self.state == 'posted' and self.opening_move_id:
+            raise UserError(_(
+                'This loan already has opening entry %s.'
+            ) % self.opening_move_id.display_name)
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Register Loan from Journal Entry'),
+            'res_model': 'petroleum.loan.journal.issue',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_loan_issued_id': self.id,
+                'default_partner_id': self.partner_id.id,
+                'default_company_id': self.company_id.id,
+                'default_asset_account_id': self.asset_account_id.id,
+                'default_amount': self.amount,
+            },
+        }
+
+    def action_allocate_journal_repayment(self):
+        self.ensure_one()
+        if self.state != 'posted':
+            raise UserError(_('Post or register the loan opening first.'))
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Allocate Journal Repayment'),
+            'res_model': 'petroleum.loan.journal.repay',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_loan_issued_id': self.id,
+                'default_partner_id': self.partner_id.id,
+                'default_company_id': self.company_id.id,
+            },
+        }
 
     @api.model
     def _search_outstanding_fifo(self, partner, company):

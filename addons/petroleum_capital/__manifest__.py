@@ -1,6 +1,6 @@
 {
     'name': 'Petroleum Capital & Loans',
-    'version': '19.0.1.2.0',
+    'version': '19.0.1.3.0',
     'category': 'Accounting',
     'summary': 'Investor equity openings, monthly ROI expense, loans issued, and loan repayments',
     'description': """
@@ -30,9 +30,12 @@ selected bank/cash journal.
         'data/sequence.xml',
         'views/investor_capital_views.xml',
         'views/loan_issued_views.xml',
+        'views/account_move_views.xml',
         'wizards/roi_payment_views.xml',
         'wizards/loan_repayment_views.xml',
         'wizards/loan_partner_repayment_views.xml',
+        'wizards/loan_journal_issue_views.xml',
+        'wizards/loan_journal_repay_views.xml',
         'views/menus.xml',
     ],
     'installable': True,

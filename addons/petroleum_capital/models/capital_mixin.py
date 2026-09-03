@@ -1,4 +1,4 @@
-from odoo import _, models
+from odoo import _, api, models
 from odoo.exceptions import UserError
 from odoo.fields import Command
 
@@ -64,6 +64,20 @@ class PetroleumCapitalMixin(models.AbstractModel):
             'ASTLN',
             'asset_current',
         )
+
+    @api.model
+    def _loans_issued_accounts(self, company):
+        """Existing Loans Issued GLs — do not create accounts from here."""
+        accounts = self.env['petroleum.loan.issued'].search([
+            ('company_id', '=', company.id),
+        ]).mapped('asset_account_id')
+        named = self.env['account.account'].search([
+            ('company_ids', 'in', company.id),
+            '|',
+            ('name', '=', 'Loans Issued'),
+            ('code', '=like', 'ASTLN%'),
+        ])
+        return accounts | named
 
     def _ensure_loan_interest_account(self, company):
         return self._ensure_account(

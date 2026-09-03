@@ -41,6 +41,12 @@
                     <button name="action_receive_partner_repayment" type="object"
                             string="Repay Partner"
                             invisible="state != 'posted' or amount_outstanding &lt;= 0"/>
+                    <button name="action_link_opening_move" type="object"
+                            string="Link Journal Entry"
+                            invisible="state == 'posted' and opening_move_id"/>
+                    <button name="action_allocate_journal_repayment" type="object"
+                            string="Allocate Journal Repayment"
+                            invisible="state != 'posted'"/>
                     <button name="action_open_opening_move" type="object"
                             string="Opening Entry"
                             invisible="not opening_move_id"/>
@@ -96,8 +102,11 @@
                     <div class="alert alert-info" role="alert">
                         Opening posts Loans Issued under Current Assets via the
                         Capital &amp; Loans journal (not Miscellaneous Operations).
-                        Repayment posts Dr Bank / Cr Loans Issued through the selected
-                        bank or cash journal. It does not appear in P&amp;L Expenses.
+                        To raise a loan from a journal entry instead: post
+                        <strong>Dr Loans Issued / Cr Bank</strong> (borrower on the
+                        debit line), then Link Journal Entry. Repayment is
+                        Dr Bank / Cr Loans Issued — Allocate Journal Repayment
+                        if you posted the entry yourself. Principal is not an expense.
                     </div>
                     <field name="currency_id" invisible="1"/>
                     <field name="repayment_move_ids" invisible="1"/>

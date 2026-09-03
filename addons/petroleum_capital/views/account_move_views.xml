@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_move_form_loan_register" model="ir.ui.view">
+        <field name="name">account.move.form.petroleum.loan</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_petroleum_register_loan_issue" type="object"
+                        string="Register as Loan Issued"
+                        class="btn-primary"
+                        groups="account.group_account_invoice"
+                        invisible="not petroleum_loan_issue_unregistered"/>
+                <button name="action_petroleum_allocate_loan_repayment" type="object"
+                        string="Allocate to Loan"
+                        class="btn-primary"
+                        groups="account.group_account_invoice"
+                        invisible="not petroleum_loan_repay_unallocated"/>
+            </xpath>
+            <xpath expr="//header" position="after">
+                <div class="alert alert-warning" role="alert"
+                     invisible="not petroleum_loan_needs_double_entry">
+                    A loan issue must be double-entry:
+                    <strong>Dr Loans Issued / Cr Bank</strong>
+                    (or Opening Balance Equity). A single-sided line cannot be posted.
+                    Set the borrower on the Loans Issued line.
+                </div>
+            </xpath>
+            <xpath expr="//field[@name='ref']" position="after">
+                <field name="petroleum_loan_issue_unregistered" invisible="1"/>
+                <field name="petroleum_loan_repay_unallocated" invisible="1"/>
+                <field name="petroleum_loan_needs_double_entry" invisible="1"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

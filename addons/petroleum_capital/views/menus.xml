@@ -35,4 +35,16 @@
               parent="menu_petroleum_capital_root"
               action="action_loan_partner_repayment"
               sequence="45"/>
+
+    <menuitem id="menu_loan_journal_issue"
+              name="Register Loan from Journal"
+              parent="menu_petroleum_capital_root"
+              action="action_loan_journal_issue"
+              sequence="50"/>
+
+    <menuitem id="menu_loan_journal_repay"
+              name="Allocate Journal Repayment"
+              parent="menu_petroleum_capital_root"
+              action="action_loan_journal_repay"
+              sequence="55"/>
 </odoo>
