@@ -1,6 +1,6 @@
 {
     'name': 'Sale Order Trip Management',
-    'version': '19.0.0.0.1',
+    'version': '19.0.0.1.0',
     'category': 'Sales/Transportation',
     'author': 'Yunus Abdulaziz',
     'summary': 'Manage trips and fuel for sales orders',
@@ -34,6 +34,7 @@
     ],
     'demo': [],
 
+    'post_init_hook': 'post_init_hook',
     'installable': True,
     'application': True,
     'auto_install': False,

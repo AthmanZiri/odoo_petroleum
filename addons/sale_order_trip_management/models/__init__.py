@@ -7,6 +7,9 @@ from . import purchase_order
 from . import product
 from . import trip_sale
 from . import expense
+from . import res_company
+from . import res_config_settings
+from . import hr_expense_post_wizard
 
 from . import trip_sale_expense
 from . import account_move
