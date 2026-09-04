@@ -104,9 +104,11 @@
                         Capital &amp; Loans journal (not Miscellaneous Operations).
                         To raise a loan from a journal entry instead: post
                         <strong>Dr Loans Issued / Cr Bank</strong> (borrower on the
-                        debit line), then Link Journal Entry. Repayment is
-                        Dr Bank / Cr Loans Issued — Allocate Journal Repayment
-                        if you posted the entry yourself. Principal is not an expense.
+                        debit line), then Link Journal Entry.
+                        To test repayment without live receipts: post
+                        <strong>Dr Bank / Cr Loans Issued</strong> with the borrower
+                        on the credit line, then Allocate Journal Repayment.
+                        Principal is not an expense.
                     </div>
                     <field name="currency_id" invisible="1"/>
                     <field name="repayment_move_ids" invisible="1"/>

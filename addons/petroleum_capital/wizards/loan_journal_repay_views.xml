@@ -25,10 +25,14 @@
                     </list>
                 </field>
                 <div class="alert alert-info" role="alert">
-                    The entry must already credit Loans Issued (principal).
-                    Allocation is oldest loan first. Interest credits do not reduce principal.
-                    This does not post a second entry.
+                    The entry must already credit Loans Issued (principal), with the
+                    <strong>borrower on that credit line</strong>.
+                    To test without live receipts: open a posted loan, create a
+                    miscellaneous entry <strong>Dr Bank / Cr Loans Issued</strong>
+                    for a small principal, post it, then Allocate here (oldest loan first).
+                    Interest credits do not reduce principal. This does not post a second entry.
                 </div>
+                <field name="company_id" invisible="1"/>
                 <field name="currency_id" invisible="1"/>
                 <footer>
                     <button name="action_confirm" type="object" string="Allocate"

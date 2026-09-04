@@ -29,6 +29,7 @@
                     Optional interest is <strong>Cr Interest Income</strong> and does not
                     reduce the outstanding loan.
                 </div>
+                <field name="company_id" invisible="1"/>
                 <field name="currency_id" invisible="1"/>
                 <field name="move_id" invisible="1"/>
                 <footer>

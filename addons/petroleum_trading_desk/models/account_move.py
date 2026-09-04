@@ -40,6 +40,35 @@ class AccountMove(models.Model):
     petro_margin_total = fields.Monetary(
         string='Margin', compute='_compute_petro_margin_total', store=True,
         currency_field='currency_id')
+    petroleum_expense_debtor_warning = fields.Char(
+        compute='_compute_petroleum_expense_debtor_warning')
+
+    @api.depends(
+        'move_type', 'state',
+        'line_ids.account_id', 'line_ids.account_id.account_type',
+        'line_ids.partner_id', 'line_ids.display_type',
+    )
+    def _compute_petroleum_expense_debtor_warning(self):
+        for move in self:
+            move.petroleum_expense_debtor_warning = False
+            if move.move_type != 'entry' or move.state == 'posted':
+                continue
+            lines = move.line_ids.filtered(
+                lambda l: l.display_type not in _SKIP_INVOICE_LINE_DISPLAY)
+            expense = lines.filtered(
+                lambda l: l.account_id.account_type in (
+                    'expense', 'expense_direct_cost'))
+            receivable = lines.filtered(
+                lambda l: l.account_id.account_type == 'asset_receivable')
+            if not expense or not receivable:
+                continue
+            if not receivable.partner_id:
+                move.petroleum_expense_debtor_warning = _(
+                    'Expense ↔ Debtor: set the Customer on the receivable '
+                    '(debtor) line, or use Trading Desk → Accounting → '
+                    'Expense ↔ Customer. Without a partner this will not hit '
+                    'the customer statement.'
+                )
 
     @api.depends(
         'invoice_line_ids.petro_margin',

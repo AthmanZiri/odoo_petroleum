@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_desk_customer_expense_form" model="ir.ui.view">
+        <field name="name">petroleum.desk.customer.expense.form</field>
+        <field name="model">petroleum.desk.customer.expense</field>
+        <field name="arch" type="xml">
+            <form string="Expense ↔ Customer">
+                <group>
+                    <group>
+                        <field name="partner_id"/>
+                        <field name="expense_account_id" options="{'no_create': True}"/>
+                        <field name="receivable_account_id" options="{'no_create': True}"/>
+                        <field name="company_id" groups="base.group_multi_company"/>
+                    </group>
+                    <group>
+                        <field name="direction" widget="radio"/>
+                        <field name="amount"/>
+                        <field name="entry_date"/>
+                        <field name="journal_id" options="{'no_create': True}"/>
+                        <field name="analytic_distribution" widget="analytic_distribution"/>
+                        <field name="analytic_precision" invisible="1"/>
+                        <field name="memo" placeholder="e.g. Demurrage rebate — ABC Ltd"/>
+                    </group>
+                </group>
+                <div class="alert alert-info" role="alert">
+                    Customer-to-customer journals already work. This posts
+                    <strong>expense against the debtor</strong> on a miscellaneous
+                    journal, with the customer on the receivable line so it hits
+                    the statement. If VAT/eTIMS applies, use a customer invoice
+                    or credit note instead of this journal.
+                </div>
+                <field name="company_id" invisible="1"/>
+                <field name="currency_id" invisible="1"/>
+                <field name="move_id" invisible="1"/>
+                <footer>
+                    <button name="action_confirm" type="object" string="Post"
+                            class="btn-primary"/>
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_desk_customer_expense" model="ir.actions.act_window">
+        <field name="name">Expense ↔ Customer</field>
+        <field name="res_model">petroleum.desk.customer.expense</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

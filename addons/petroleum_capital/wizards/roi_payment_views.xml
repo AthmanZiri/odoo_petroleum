@@ -5,10 +5,14 @@
         <field name="model">petroleum.roi.payment</field>
         <field name="arch" type="xml">
             <form string="Pay Investor ROI">
+                <div class="alert alert-danger" role="alert"
+                     invisible="not setup_warning">
+                    <field name="setup_warning" nolabel="1"/>
+                </div>
                 <group>
                     <group>
                         <field name="investor_capital_id" options="{'no_create': True}"/>
-                        <field name="partner_id" readonly="1"/>
+                        <field name="partner_id"/>
                         <field name="company_id" groups="base.group_multi_company"/>
                     </group>
                     <group>
@@ -16,14 +20,18 @@
                         <field name="amount"/>
                         <field name="expense_account_id" options="{'no_create': True}"/>
                         <field name="bank_journal_id" options="{'no_create': True}"/>
+                        <field name="analytic_distribution" widget="analytic_distribution"/>
+                        <field name="analytic_precision" invisible="1"/>
                         <field name="memo" placeholder="e.g. July 2026 ROI — Zaynu"/>
                     </group>
                 </group>
                 <div class="alert alert-warning" role="alert">
-                    Select a <strong>posted</strong> investor capital. This posts
-                    <strong>Dr ROI Expense / Cr Bank</strong> only.
-                    Invested equity capital is not reduced.
+                    Select a <strong>posted</strong> investor capital and a Bank/Cash
+                    journal (cash book), not a Chart of Accounts line.
+                    Posts <strong>Dr ROI Expense / Cr Bank</strong> only —
+                    invested equity is not reduced. Set analytic if expenses require it.
                 </div>
+                <field name="company_id" invisible="1"/>
                 <field name="currency_id" invisible="1"/>
                 <field name="move_id" invisible="1"/>
                 <footer>

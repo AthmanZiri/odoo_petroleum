@@ -34,7 +34,6 @@ class TestRoiAndJournalLoans(AccountTestInvoicingCommon):
     def test_roi_defaults_and_does_not_touch_equity(self):
         wiz = self.env['petroleum.roi.payment'].create({
             'investor_capital_id': self.capital.id,
-            'partner_id': self.investor.id,
             'company_id': self.env.company.id,
             'amount': 250000.0,
             'expense_account_id': self.capital.roi_expense_account_id.id,
@@ -63,7 +62,6 @@ class TestRoiAndJournalLoans(AccountTestInvoicingCommon):
     def test_roi_zero_amount_refused(self):
         wiz = self.env['petroleum.roi.payment'].create({
             'investor_capital_id': self.capital.id,
-            'partner_id': self.investor.id,
             'company_id': self.env.company.id,
             'amount': 0.0,
             'expense_account_id': self.capital.roi_expense_account_id.id,
@@ -72,6 +70,21 @@ class TestRoiAndJournalLoans(AccountTestInvoicingCommon):
         })
         with self.assertRaises(UserError):
             wiz.action_confirm()
+
+    def test_roi_partner_comes_from_capital(self):
+        wiz = self.env['petroleum.roi.payment'].create({
+            'investor_capital_id': self.capital.id,
+            'company_id': self.env.company.id,
+            'amount': 1000.0,
+            'expense_account_id': self.capital.roi_expense_account_id.id,
+            'bank_journal_id': self.bank_journal.id,
+            'payment_date': fields.Date.today(),
+        })
+        self.assertEqual(wiz.partner_id, self.investor)
+        action = wiz.action_confirm()
+        move = self.env['account.move'].browse(action['res_id'])
+        self.assertTrue(all(
+            line.partner_id == self.investor for line in move.line_ids))
 
     def test_loan_issue_from_general_journal(self):
         loans_account = self._loans_account()

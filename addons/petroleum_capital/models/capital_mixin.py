@@ -120,6 +120,22 @@ class PetroleumCapitalMixin(models.AbstractModel):
             return bank_journal.default_account_id
         return self._ensure_opening_clearing_account(company)
 
+    @api.model
+    def _analytic_distribution_for(self, account, partner=None, company=None):
+        """Prefill analytic from distribution models (expense lines often require it)."""
+        if not account:
+            return False
+        company = company or self.env.company
+        partner = partner or self.env['res.partner']
+        return self.env['account.analytic.distribution.model']._get_distribution({
+            'product_id': False,
+            'product_categ_id': False,
+            'partner_id': partner.id if partner else False,
+            'partner_category_id': partner.category_id.ids if partner else [],
+            'account_prefix': account.code,
+            'company_id': company.id,
+        }) or False
+
     def _post_balanced_entry(
         self, company, journal, date, ref, debit_account, credit_account,
         amount, partner=None, line_name=None,

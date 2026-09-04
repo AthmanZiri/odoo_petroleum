@@ -1,6 +1,6 @@
 {
     'name': 'Petroleum Capital & Loans',
-    'version': '19.0.1.3.0',
+    'version': '19.0.1.4.0',
     'category': 'Accounting',
     'summary': 'Investor equity openings, monthly ROI expense, loans issued, and loan repayments',
     'description': """

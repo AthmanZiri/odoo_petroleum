@@ -70,6 +70,19 @@
               action="action_desk_bank_transfer"
               sequence="26"/>
 
+    <menuitem id="menu_trading_desk_customer_expense"
+              name="Expense ↔ Customer"
+              parent="menu_trading_desk_accounting"
+              action="action_desk_customer_expense"
+              sequence="25"/>
+
+    <menuitem id="menu_accounting_customer_expense"
+              name="Expense ↔ Customer"
+              parent="account.menu_finance_entries"
+              action="action_desk_customer_expense"
+              sequence="56"
+              groups="account.group_account_invoice"/>
+
     <menuitem id="menu_trading_desk_capital"
               name="Capital &amp; Loans"
               parent="menu_trading_desk_root"
