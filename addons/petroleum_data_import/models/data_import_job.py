@@ -101,7 +101,7 @@ class PetroleumDataImportJob(models.Model):
         st = wizard._init_st()
         recon = list(self.recon_data or [])
         counters = dict(self.counters or {
-            'opening': 0, 'invoice': 0, 'bill': 0, 'payment': 0,
+            'opening': 0, 'invoice': 0, 'bill': 0, 'payment': 0, 'adjust': 0,
         })
         errors = []
         if self.error_log:
@@ -137,15 +137,19 @@ class PetroleumDataImportJob(models.Model):
 
     def _finish(self, errors=None):
         self.ensure_one()
-        wizard = self.env['petroleum.data.import'].new(self._wizard_vals())
+        wizard = self.env['petroleum.data.import'].with_context(**IMPORT_CTX).new(
+            self._wizard_vals())
+        st = wizard._init_st()
+        st['counters'] = dict(self.counters or {})
+        lock_date = wizard._lock_workbook_closes(st, self.recon_data or [])
+        counters = dict(st['counters'])
         recon_tuples = []
         for row in self.recon_data or []:
             partner = self.env['res.partner'].browse(row['partner_id'])
             account = self.env['account.account'].browse(row['account_id'])
             recon_tuples.append((
                 row['name'], row['side'], row['wb_final'], partner, account))
-        counters = self.counters or {}
-        html = wizard._build_report(recon_tuples, counters)
+        html = wizard._build_report(recon_tuples, counters, as_of=lock_date)
 
         if errors is None:
             errors = []
