@@ -93,6 +93,32 @@ class TestDealConfirmPosition(AccountTestInvoicingCommon):
         again = self.env['petroleum.depot'].create({'name': 'kprl-test'})
         self.assertEqual(again, self.depot_kprl)
 
+    def test_left_shows_remaining_without_explicit_lot(self):
+        lot = self._position(self.depot_kprl, qty=11000.0, price=200.0)
+        self._position(self.depot_kprl, qty=20000.0, price=198.0)
+        deal = self._deal(self.depot_kprl_dup, qty=4000.0, price=200.0)
+        self.assertFalse(deal.line_ids.position_line_id)
+        self.assertEqual(deal.line_ids.position_qty_available, lot.qty_remaining)
+
+    def test_selected_buy_lot_survives_save(self):
+        """Form save rewrites product/supplier/depot; the chosen lot must stick."""
+        lot = self._position(self.depot_kprl, qty=11000.0, price=200.0)
+        self._position(self.depot_kprl, qty=20000.0, price=198.0)
+        deal = self._deal(self.depot_kprl_dup, qty=4000.0, price=200.0)
+        line = deal.line_ids
+        line.write({
+            'product_id': line.product_id.id,
+            'supplier_id': line.supplier_id.id,
+            'position_line_id': lot.id,
+            'buy_price': 200.0,
+        })
+        deal.write({'depot_id': deal.depot_id.id, 'date': deal.date})
+        self.assertEqual(line.position_line_id, lot)
+        self.assertEqual(line.position_qty_available, 11000.0)
+        deal.action_confirm()
+        self.assertEqual(deal.state, 'confirmed')
+        self.assertEqual(line.position_line_id, lot)
+
 
 @tagged('post_install', '-at_install')
 class TestDepotDuplicateMerge(AccountTestInvoicingCommon):
