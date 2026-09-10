@@ -14,19 +14,20 @@
             <field name="ref" position="after">
                 <field name="deal_id" readonly="1"
                        invisible="not deal_id"/>
+                <field name="petro_price_adjustment" invisible="1"/>
                 <field name="petroleum_expense_debtor_warning" invisible="1"/>
             </field>
             <xpath expr="//field[@name='invoice_line_ids']/list/field[@name='price_subtotal']"
                    position="after">
                 <field name="petro_margin" string="Margin" sum="Margin"
                        optional="show"
-                       column_invisible="parent.move_type not in ('out_invoice', 'out_refund')"
+                       column_invisible="parent.move_type not in ('out_invoice', 'out_refund') and not parent.petro_price_adjustment"
                        decoration-success="petro_margin &gt; 0"
                        decoration-danger="petro_margin &lt; 0"/>
             </xpath>
             <xpath expr="//field[@name='tax_totals']" position="before">
                 <field name="petro_margin_total"
-                       invisible="move_type not in ('out_invoice', 'out_refund')"
+                       invisible="move_type not in ('out_invoice', 'out_refund') and not petro_price_adjustment"
                        decoration-success="petro_margin_total &gt; 0"
                        decoration-danger="petro_margin_total &lt; 0"/>
             </xpath>

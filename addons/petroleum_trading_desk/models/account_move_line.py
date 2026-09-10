@@ -20,6 +20,17 @@ class AccountMoveLine(models.Model):
             if move.petro_price_adjustment == 'customer_sell':
                 # A price-only customer adjustment changes revenue, not cost.
                 margin = line.price_unit * line.quantity
+            elif move.petro_price_adjustment == 'supplier_buy':
+                # Vendor CN (buy-price drop) improves margin; vendor DN
+                # (buy-price rise) reduces it. Use entered price × qty, not
+                # tax totals. Remaining-scope notes still store this document
+                # effect so Accounting lists are not 0.00; dashboards skip
+                # them so the revised lot cost is not counted twice.
+                margin = line.price_unit * line.quantity
+                if move.move_type != 'in_refund':
+                    margin = -margin
+                line.petro_margin = margin
+                continue
             else:
                 sale_lines = line.sale_line_ids
                 sale_qty = sum(sale_lines.mapped('product_uom_qty'))
