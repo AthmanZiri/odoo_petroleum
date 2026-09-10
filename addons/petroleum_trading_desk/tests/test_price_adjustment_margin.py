@@ -94,6 +94,8 @@ class TestPriceAdjustmentMargin(AccountTestInvoicingCommon):
 
         dashboard = self.env['petroleum.desk.dashboard']
         self.assertEqual(customer_debit.petro_margin_total, 100.0)
+        self.assertEqual(supplier_credit.petro_margin_total, 50.0)
+        self.assertEqual(supplier_debit.petro_margin_total, -25.0)
         self.assertEqual(
             dashboard._supplier_adjustment_margin(supplier_credit), 50.0)
         self.assertEqual(
@@ -103,6 +105,7 @@ class TestPriceAdjustmentMargin(AccountTestInvoicingCommon):
         remaining_credit = self._create_move(
             'in_refund', self.partner_b, price=0.5,
             adjustment='supplier_buy', scope='remaining')
+        self.assertEqual(remaining_credit.petro_margin_total, 50.0)
         adjustments = self.env[
             'petroleum.desk.dashboard'
         ]._get_supplier_margin_adjustments(self._filters())

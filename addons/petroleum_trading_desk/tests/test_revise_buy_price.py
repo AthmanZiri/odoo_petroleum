@@ -214,3 +214,110 @@ class TestReviseBuyPrice(AccountTestInvoicingCommon):
                 create_credit_note=False,
                 affected_quantity=25001.0,
             )
+
+    def _sold_out_lot(self, qty=20000.0, buy=200.0):
+        """Fully allocated lot like P00220: bought = sold, remaining 0."""
+        position = self.env['petroleum.daily.position.line'].create({
+            'date': fields.Date.today(),
+            'product_id': self.product_a.id,
+            'supplier_id': self.partner_b.id,
+            'qty_bought': qty,
+            'buy_price': buy,
+        })
+        deal = self._deal(self.partner_a, qty, buy=buy)
+        self.env['petroleum.daily.position.allocation'].create({
+            'position_line_id': position.id,
+            'deal_id': deal.id,
+            'deal_line_id': deal.line_ids.id,
+            'quantity': qty,
+            'buy_price': buy,
+        })
+        self.assertEqual(position.qty_remaining, 0.0)
+        self.assertEqual(position.qty_sold, qty)
+        return position, deal
+
+    def test_sold_out_lot_opens_sold_revision_wizard(self):
+        position, _deal = self._sold_out_lot()
+        action = position.action_open_revise_buy_price()
+        self.assertEqual(action['res_model'], 'petroleum.daily.position.revise.price')
+        self.assertEqual(action['context']['default_volume_scope'], 'sold')
+        self.assertEqual(action['context']['default_affected_quantity'], 20000.0)
+
+        wizard = self.env['petroleum.daily.position.revise.price'].create({
+            'position_line_id': position.id,
+            'volume_scope': 'remaining',
+            'affected_quantity': 0.0,
+            'new_buy_price': 199.0,
+            'note': 'Sold-out lot',
+        })
+        wizard._onchange_volume_scope()
+        self.assertEqual(wizard.volume_scope, 'sold')
+        self.assertEqual(wizard.affected_quantity, 20000.0)
+        self.assertTrue(wizard.line_ids)
+
+    def test_sold_out_revision_credit_stores_margin(self):
+        position, deal = self._sold_out_lot(qty=20000.0, buy=200.0)
+        wizard = self.env['petroleum.daily.position.revise.price'].create({
+            'position_line_id': position.id,
+            'volume_scope': 'sold',
+            'affected_quantity': 20000.0,
+            'new_buy_price': 199.0,
+            'note': 'Supplier price reduction',
+        })
+        wizard._populate_sold_lines()
+        action = wizard.action_confirm()
+        credit = self.env['account.move'].browse(action['res_id'])
+        self.assertEqual(credit.move_type, 'in_refund')
+        self.assertEqual(credit.deal_id, deal)
+        self.assertEqual(credit.petro_price_adjustment, 'supplier_buy')
+        self.assertEqual(credit.petro_adjustment_scope, 'sold')
+        # 20,000 L × 1.00 buy-price drop — Accounting Margin must not stay 0.
+        self.assertAlmostEqual(credit.petro_margin_total, 20000.0, places=2)
+
+        credit.action_post()
+        deal.invalidate_recordset()
+        deal._compute_amounts()
+        self.assertAlmostEqual(deal.adjustment_margin_total, 20000.0, places=2)
+        dashboard = self.env['petroleum.desk.dashboard']
+        today = fields.Date.today()
+        filters = {
+            'date_from': today,
+            'date_to': today,
+            'product_id': False,
+            'partner_id': False,
+            'supplier_id': False,
+            'deal_state': '',
+        }
+        adjustments = dashboard._get_supplier_margin_adjustments(filters)
+        self.assertIn(credit, adjustments)
+        self.assertAlmostEqual(
+            dashboard._supplier_adjustment_margin(credit), 20000.0, places=2)
+
+    def test_remaining_revision_credit_not_double_counted(self):
+        position = self.env['petroleum.daily.position.line'].create({
+            'date': fields.Date.today(),
+            'product_id': self.product_a.id,
+            'supplier_id': self.partner_b.id,
+            'qty_bought': 25000.0,
+            'buy_price': 202.0,
+        })
+        result = position.action_revise_buy_price(
+            new_buy_price=201.0,
+            note='Supplier price reduction on remaining stock',
+        )
+        credit = result['credit_note']
+        self.assertEqual(credit.petro_adjustment_scope, 'remaining')
+        self.assertFalse(credit.deal_id)
+        self.assertEqual(credit.petro_margin_total, 25000.0)
+        credit.action_post()
+        dashboard = self.env['petroleum.desk.dashboard']
+        today = fields.Date.today()
+        adjustments = dashboard._get_supplier_margin_adjustments({
+            'date_from': today,
+            'date_to': today,
+            'product_id': False,
+            'partner_id': False,
+            'supplier_id': False,
+            'deal_state': '',
+        })
+        self.assertNotIn(credit, adjustments)
