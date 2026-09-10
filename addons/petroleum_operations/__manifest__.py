@@ -1,6 +1,6 @@
 {
     'name': 'Petroleum Operations',
-    'version': '19.0.1.0.4',
+    'version': '19.0.1.0.5',
     'category': 'Sales',
     'summary': 'Back-to-back supplier sourcing, margins, depots and loading details for bulk fuel trading',
     'description': """
