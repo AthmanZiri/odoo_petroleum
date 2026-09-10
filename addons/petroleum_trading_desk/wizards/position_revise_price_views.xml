@@ -17,7 +17,8 @@
                         <field name="currency_id" invisible="1"/>
                     </group>
                     <group string="Revision">
-                        <field name="volume_scope"/>
+                        <field name="volume_scope"
+                               readonly="qty_remaining &lt;= 0"/>
                         <field name="affected_quantity"/>
                         <field name="new_buy_price"/>
                         <field name="price_drop"/>

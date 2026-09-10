@@ -159,6 +159,8 @@ class PetroleumDailyPositionRevisePrice(models.TransientModel):
     def _onchange_volume_scope(self):
         if not self.position_line_id:
             return
+        if self.qty_remaining <= 0:
+            self.volume_scope = 'sold'
         self.affected_quantity = (
             self.qty_sold if self.volume_scope == 'sold' else self.qty_remaining)
         if self.volume_scope == 'sold':
