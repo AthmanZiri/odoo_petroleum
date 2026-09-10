@@ -65,7 +65,7 @@
                             <field name="partner_id"/>
                             <field name="is_not_sold" invisible="1"/>
                             <field name="date"/>
-                            <field name="depot_id"/>
+                            <field name="depot_id" options="{'no_quick_create': True}"/>
                             <field name="ledger_link_state" widget="badge"
                                    decoration-success="ledger_link_state == 'full'"
                                    decoration-warning="ledger_link_state == 'partial'"

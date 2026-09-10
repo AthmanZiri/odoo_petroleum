@@ -81,27 +81,26 @@ class PetroleumDeal(models.Model):
                 continue
             for line in deal.line_ids:
                 candidates = PositionLine.candidates_for_deal_line(line)
-                if len(candidates) > 1 and not line.position_line_id:
-                    prices = ', '.join(
-                        '%s (%s L)' % (c.buy_price, c.qty_remaining) for c in candidates)
-                    raise UserError(_(
-                        'Multiple buy lots for %(product)s from %(supplier)s on %(date)s:\n'
-                        '%(lots)s\n'
-                        'Select the Buy Lot on the deal line before confirming.',
-                        product=line.product_id.display_name,
-                        supplier=line.supplier_id.display_name,
-                        date=deal.date,
-                        lots=prices,
-                    ))
                 pos_line = PositionLine.find_for_deal_line(line)
                 if not pos_line:
-                    raise UserError(_(
-                        'No daily position for %(product)s from %(supplier)s on %(date)s. '
-                        'Open Daily Position and record the morning bulk buy first.',
-                        product=line.product_id.display_name,
-                        supplier=line.supplier_id.display_name,
-                        date=deal.date,
-                    ))
+                    raise UserError(deal._missing_daily_position_message(line))
+                if len(candidates) > 1 and not line.position_line_id:
+                    priced = candidates.filtered(
+                        lambda c, price=line.buy_price: price and c._same_buy_price(price)
+                    )
+                    if len(priced) != 1:
+                        prices = ', '.join(
+                            '%s (%s L)' % (c.buy_price, c.qty_remaining)
+                            for c in candidates)
+                        raise UserError(_(
+                            'Multiple buy lots for %(product)s from %(supplier)s on %(date)s:\n'
+                            '%(lots)s\n'
+                            'Select the Buy Lot on the deal line before confirming.',
+                            product=line.product_id.display_name,
+                            supplier=line.supplier_id.display_name,
+                            date=deal.date,
+                            lots=prices,
+                        ))
                 if pos_line.qty_remaining < line.quantity:
                     same_lots = candidates or PositionLine.search(PositionLine._line_domain(
                         deal.date, line.product_id, line.supplier_id,
@@ -133,6 +132,37 @@ class PetroleumDeal(models.Model):
                     line_vals['buy_price'] = pos_line.buy_price
                 if line_vals:
                     line.write(line_vals)
+
+    def _missing_daily_position_message(self, line):
+        """Explain a failed lot match, including stock sitting on another depot."""
+        self.ensure_one()
+        PositionLine = self.env['petroleum.daily.position.line']
+        other = PositionLine.search([
+            ('date', '=', self.date),
+            ('product_id', '=', line.product_id.id),
+            ('supplier_id', '=', line.supplier_id.id),
+            ('company_id', '=', self.company_id.id),
+        ])
+        if other:
+            depots = ', '.join(sorted({
+                lot.depot_id.display_name or _('no depot') for lot in other
+            }))
+            return _(
+                'No daily position for %(product)s from %(supplier)s on %(date)s '
+                'at depot %(depot)s. Stock for that supplier is recorded at: %(other)s.',
+                product=line.product_id.display_name,
+                supplier=line.supplier_id.display_name,
+                date=self.date,
+                depot=self.depot_id.display_name or _('none'),
+                other=depots,
+            )
+        return _(
+            'No daily position for %(product)s from %(supplier)s on %(date)s. '
+            'Open Daily Position and record the morning bulk buy first.',
+            product=line.product_id.display_name,
+            supplier=line.supplier_id.display_name,
+            date=self.date,
+        )
 
     def _release_position_allocations(self):
         self.env['petroleum.daily.position.allocation'].search([
@@ -692,9 +722,13 @@ class PetroleumDealLine(models.Model):
             return False
         if lot.date != deal.date or lot.company_id != deal.company_id:
             return False
-        # Soft depot match: empty deal depot accepts any lot; otherwise same or empty.
+        # Soft depot match: empty deal depot accepts any lot; same record or
+        # same name (duplicate KPRL rows) also match; otherwise reject.
         if deal.depot_id and lot.depot_id and lot.depot_id != deal.depot_id:
-            return False
+            deal_name = (deal.depot_id.name or '').strip().lower()
+            lot_name = (lot.depot_id.name or '').strip().lower()
+            if deal_name != lot_name:
+                return False
         return True
 
     def _apply_price_defaults_onchange(self, force_sell=False):

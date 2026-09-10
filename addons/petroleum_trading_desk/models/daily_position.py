@@ -202,6 +202,30 @@ class PetroleumDailyPositionLine(models.Model):
         return res
 
     @api.model
+    def _compatible_depot_ids(self, depot):
+        """IDs that should match this depot for deal allocation.
+
+        Same record, lots with no depot, and duplicate depot rows that share
+        the same name (quick-create often produces a second 'KPRL').
+        """
+        if not depot:
+            return None
+        depot_id = depot.id if hasattr(depot, 'id') else depot
+        if not depot_id:
+            return None
+        name = depot.name if hasattr(depot, 'name') else False
+        if not name:
+            name = self.env['petroleum.depot'].browse(depot_id).name
+        ids = [depot_id, False]
+        name = (name or '').strip()
+        if name:
+            twins = self.env['petroleum.depot'].with_context(active_test=False).search([
+                ('name', '=ilike', name),
+            ])
+            ids = list(dict.fromkeys(list(twins.ids) + [False]))
+        return ids
+
+    @api.model
     def _line_domain(self, date, product, supplier, depot, company):
         return [
             ('date', '=', date),
@@ -247,9 +271,10 @@ class PetroleumDailyPositionLine(models.Model):
     def candidates_for_deal_line(self, deal_line):
         """All same-day lots that could supply this deal line.
 
-        Depot is soft-matched: if the deal has a depot, prefer that depot (and
-        lots with no depot). If the deal has no depot, every depot matches so
-        traders can still pick Buy Lots from KPRL / GAPCO, etc.
+        Depot is soft-matched: if the deal has a depot, match that record, lots
+        with no depot, and other depot rows with the same name (quick-create
+        duplicates). If the deal has no depot, every depot matches so traders
+        can still pick Buy Lots from KPRL / GAPCO, etc.
         """
         deal = deal_line.deal_id
         if not (deal and deal_line.product_id and deal_line.supplier_id and deal.date):
@@ -260,8 +285,9 @@ class PetroleumDailyPositionLine(models.Model):
             ('supplier_id', '=', deal_line.supplier_id.id),
             ('company_id', '=', deal.company_id.id),
         ]
-        if deal.depot_id:
-            domain.append(('depot_id', 'in', [deal.depot_id.id, False]))
+        depot_ids = self._compatible_depot_ids(deal.depot_id)
+        if depot_ids is not None:
+            domain.append(('depot_id', 'in', depot_ids))
         return self.search(domain, order='buy_price, id')
 
     def _get_linked_purchase_order(self):
