@@ -85,6 +85,7 @@
                             <field name="product_id"/>
                             <field name="quantity" sum="Litres"/>
                             <field name="supplier_id"/>
+                            <field name="position_line_domain" column_invisible="1"/>
                             <field name="position_line_id" string="Buy Lot"
                                    context="{'deal_position_lot_name': True}"
                                    options="{'no_create': True, 'no_open': True}"

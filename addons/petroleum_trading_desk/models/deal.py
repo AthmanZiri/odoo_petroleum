@@ -271,10 +271,18 @@ class PetroleumDeal(models.Model):
         return super().create(vals_list)
 
     def write(self, vals):
+        old = {deal.id: (deal.depot_id.id, deal.date) for deal in self}
         res = super().write(vals)
-        if any(k in vals for k in ('depot_id', 'date')):
-            # Refresh lot matches after date/depot change; never wipe sell prices.
-            self.line_ids._apply_price_defaults(force_sell=False)
+        if 'depot_id' not in vals and 'date' not in vals:
+            return res
+        changed = self.browse()
+        for deal in self:
+            old_depot, old_date = old[deal.id]
+            if deal.depot_id.id != old_depot or deal.date != old_date:
+                changed |= deal
+        if changed:
+            # Refresh lot matches only when date/depot actually changed.
+            changed.line_ids._apply_price_defaults(force_sell=False)
         return res
 
     # ------------------------------------------------------------------
@@ -639,21 +647,40 @@ class PetroleumDealLine(models.Model):
         'res.partner', string='Supplier', domain="[('supplier_rank', '>', 0)]")
     position_line_id = fields.Many2one(
         'petroleum.daily.position.line', string='Buy Lot',
-        domain="""[
-            ('date', '=', parent.date),
-            ('company_id', '=', parent.company_id),
-            ('product_id', '=', product_id),
-            ('supplier_id', '=', supplier_id),
-            ('qty_remaining', '>', 0),
-        ]""",
+        domain="position_line_domain",
         help='When the same product/supplier was bought at several prices today, '
              'pick which lot this sale takes litres from.')
+    position_line_domain = fields.Binary(compute='_compute_position_line_domain')
     currency_id = fields.Many2one(related='deal_id.currency_id')
     price_subtotal = fields.Monetary(compute='_compute_subtotals', store=True, string='Sell Subtotal')
     cost_subtotal = fields.Monetary(compute='_compute_subtotals', store=True, string='Buy Subtotal')
     margin = fields.Monetary(compute='_compute_subtotals', store=True, string='Margin')
     position_qty_available = fields.Float(
         string='Position Left', compute='_compute_position_qty_available', digits='Product Unit of Measure')
+
+    @api.depends(
+        'product_id', 'supplier_id',
+        'deal_id.date', 'deal_id.depot_id', 'deal_id.company_id',
+    )
+    def _compute_position_line_domain(self):
+        """Same lot pool as Confirm / Left: date, supplier, and compatible depots."""
+        PositionLine = self.env['petroleum.daily.position.line']
+        for line in self:
+            deal = line.deal_id
+            if not (deal.date and deal.company_id and line.product_id and line.supplier_id):
+                line.position_line_domain = [('id', '=', False)]
+                continue
+            domain = [
+                ('date', '=', deal.date),
+                ('company_id', '=', deal.company_id.id),
+                ('product_id', '=', line.product_id.id),
+                ('supplier_id', '=', line.supplier_id.id),
+                ('qty_remaining', '>', 0),
+            ]
+            depot_ids = PositionLine._compatible_depot_ids(deal.depot_id)
+            if depot_ids is not None:
+                domain.append(('depot_id', 'in', depot_ids))
+            line.position_line_domain = domain
 
     @api.depends(
         'product_id', 'supplier_id', 'quantity', 'buy_price', 'position_line_id',
@@ -748,17 +775,23 @@ class PetroleumDealLine(models.Model):
         if defaults.get('sell_price') and (force_sell or not self.sell_price):
             self.sell_price = defaults['sell_price']
 
-    def _apply_price_defaults(self, force_sell=False, update_buy=True):
+    def _apply_price_defaults(self, force_sell=False, update_buy=True, keep_buy_lot=False):
         """Fill empty buy/sell from position or daily board — never clobber user input.
 
         ``force_sell`` may refresh sell after product/supplier change only.
-        Explicit Buy Lot selection is kept unless product/supplier/date no longer match.
+        Explicit Buy Lot selection is kept unless product/supplier/date no longer
+        match. ``keep_buy_lot`` skips that clear so a Save of the chosen lot
+        cannot wipe it.
         """
         for line in self:
             defaults = line._get_price_defaults()
             vals = {}
             candidates = self.env['petroleum.daily.position.line'].candidates_for_deal_line(line)
-            if line.position_line_id and not line._position_lot_still_valid(line.position_line_id):
+            if (
+                not keep_buy_lot
+                and line.position_line_id
+                and not line._position_lot_still_valid(line.position_line_id)
+            ):
                 vals['position_line_id'] = False
                 line.position_line_id = False
                 defaults = line._get_price_defaults()
@@ -819,21 +852,39 @@ class PetroleumDealLine(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         lines = super().create(vals_list)
-        # Do not overwrite sell_price / Buy Lot passed in create vals.
-        lines._apply_price_defaults(force_sell=False)
+        # Keep an explicit Buy Lot from the form; filling prices must not wipe it.
+        lines._apply_price_defaults(force_sell=False, keep_buy_lot=True)
         lines._sync_daily_price()
         return lines
 
     def write(self, vals):
-        res = super().write(vals)
         if self.env.context.get('skip_deal_line_price_defaults'):
-            return res
-        # Buy Lot change → refresh buy from that lot only; never force-overwrite sell.
-        if 'position_line_id' in vals and not any(
-                k in vals for k in ('product_id', 'supplier_id')):
-            self._apply_price_defaults(force_sell=False, update_buy=True)
-        elif any(k in vals for k in ('product_id', 'supplier_id')):
-            self._apply_price_defaults(force_sell='sell_price' not in vals)
+            return super().write(vals)
+        before = {
+            rec.id: (
+                rec.product_id.id,
+                rec.supplier_id.id,
+                rec.position_line_id.id,
+            )
+            for rec in self
+        }
+        res = super().write(vals)
+        refresh_product = self.browse()
+        refresh_lot = self.browse()
+        for rec in self:
+            old_product, old_supplier, old_lot = before[rec.id]
+            product_changed = rec.product_id.id != old_product
+            supplier_changed = rec.supplier_id.id != old_supplier
+            lot_changed = rec.position_line_id.id != old_lot
+            if product_changed or supplier_changed:
+                refresh_product |= rec
+            elif lot_changed:
+                refresh_lot |= rec
+        if refresh_product:
+            refresh_product._apply_price_defaults(force_sell='sell_price' not in vals)
+        if refresh_lot:
+            refresh_lot._apply_price_defaults(
+                force_sell=False, update_buy=True, keep_buy_lot=True)
         if any(k in vals for k in ('buy_price', 'sell_price', 'product_id', 'supplier_id')):
             self._sync_daily_price()
         return res
