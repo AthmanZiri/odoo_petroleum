@@ -800,22 +800,7 @@ class PetroleumDailyPositionLine(models.Model):
                 'Corrected litres are the same as the current remaining volume.'))
         note = (note or '').strip() or _('Lot quantity correction.')
 
-        bought_delta = 0.0
-        if delta > 0:
-            if self.purchase_order_line_id or self.qty_bought > 0:
-                self.write({'qty_bought': self.qty_bought + delta})
-                bought_delta = delta
-            else:
-                self.write({'qty_opening': self.qty_opening + delta})
-        else:
-            reduction = -delta
-            reduce_bought = min(self.qty_bought, reduction)
-            reduce_opening = reduction - reduce_bought
-            self.write({
-                'qty_bought': self.qty_bought - reduce_bought,
-                'qty_opening': self.qty_opening - reduce_opening,
-            })
-            bought_delta = -reduce_bought
+        bought_delta = self._shift_lot_quantity(delta)
 
         self._log_quantity_change(
             old_remaining, new_remaining,
@@ -841,6 +826,57 @@ class PetroleumDailyPositionLine(models.Model):
             'new_remaining': new_remaining,
             'delta': delta,
         }
+
+    def _shift_lot_quantity(self, delta):
+        """Apply a litres delta to this lot's opening / bought buckets.
+
+        Increases land on Bought Today when the lot has (or will get) a
+        purchase order, otherwise on Opening. Decreases peel Bought Today
+        first, then Opening. Returns the signed part applied to Bought Today.
+        """
+        self.ensure_one()
+        if delta > 0:
+            if self.purchase_order_line_id or self.qty_bought > 0:
+                self.write({'qty_bought': self.qty_bought + delta})
+                return delta
+            self.write({'qty_opening': self.qty_opening + delta})
+            return 0.0
+        reduction = -delta
+        reduce_bought = min(self.qty_bought, reduction)
+        reduce_opening = reduction - reduce_bought
+        self.write({
+            'qty_bought': self.qty_bought - reduce_bought,
+            'qty_opening': self.qty_opening - reduce_opening,
+        })
+        return -reduce_bought
+
+    def _petro_apply_external_qty_delta(self, delta, note):
+        """Reflect an externally posted vendor CN/DN on this lot's litres.
+
+        The posted document is the supplier paperwork, so no extra CN/DN is
+        drafted and no bill rewrite happens — only the lot buckets and the
+        linked PO line quantity are aligned, and the change is logged.
+        """
+        self.ensure_one()
+        rounding = self._qty_rounding()
+        if float_compare(delta, 0.0, precision_rounding=rounding) == 0:
+            return
+        if delta < 0 and float_compare(
+                -delta, self.qty_remaining, precision_rounding=rounding) > 0:
+            raise UserError(_(
+                'Cannot post this supplier document: it removes %(qty)s L '
+                'from %(lot)s but only %(remaining)s L remain unsold. Revise '
+                'the affected deals first (Daily Position → Revise → Already '
+                'Sold / Invoiced).',
+                qty=-delta, lot=self.display_name,
+                remaining=self.qty_remaining))
+        old_remaining = self.qty_remaining
+        bought_delta = self._shift_lot_quantity(delta)
+        po_line = self.purchase_order_line_id
+        if bought_delta and po_line:
+            po_line.write({
+                'product_qty': max(po_line.product_qty + bought_delta, 0.0)})
+        self._log_quantity_change(old_remaining, self.qty_remaining, note=note)
 
     def _sync_po_after_qty_change(self):
         """Re-align the daily-position PO and vendor bill after a qty change."""
