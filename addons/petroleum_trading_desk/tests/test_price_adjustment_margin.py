@@ -81,6 +81,39 @@ class TestPriceAdjustmentMargin(AccountTestInvoicingCommon):
         self.assertEqual(sell, 900.0)
         self.assertEqual(volume['PMS'], 100.0)
 
+    def test_break_even_invoice_reports_zero_margin(self):
+        """A deal sold at cost must not fall back to sell - 0 (100% margin)."""
+        invoice = self._create_move(
+            'out_invoice', self.partner_a, price=10.0, buy=10.0)
+
+        self.assertEqual(invoice.petro_margin_total, 0.0)
+        dashboard = self.env['petroleum.desk.dashboard']
+        self.assertEqual(
+            dashboard._invoice_margin(invoice, self._filters()), 0.0)
+
+    def test_break_even_refund_reports_zero_margin(self):
+        """Refund of a break-even invoice resolves margin via the original."""
+        invoice = self._create_move(
+            'out_invoice', self.partner_a, price=10.0, buy=10.0)
+        refund = self.env['account.move'].create({
+            'move_type': 'out_refund',
+            'partner_id': self.partner_a.id,
+            'invoice_date': fields.Date.today(),
+            'deal_id': self.deal.id,
+            'petro_original_move_id': invoice.id,
+            'invoice_line_ids': [self._prepare_invoice_line(
+                product_id=self.product_a,
+                quantity=100.0,
+                price_unit=10.0,
+                tax_ids=self.env['account.tax'],
+            )],
+        })
+        refund.action_post()
+
+        dashboard = self.env['petroleum.desk.dashboard']
+        self.assertEqual(
+            dashboard._invoice_margin(refund, self._filters()), 0.0)
+
     def test_customer_debit_and_supplier_notes_have_correct_signs(self):
         customer_debit = self._create_move(
             'out_invoice', self.partner_a, price=1.0,
