@@ -69,6 +69,14 @@ class PetroleumDeal(models.Model):
                         # affect the deal they are linked to.
                         if move.deal_id and move.deal_id != deal:
                             continue
+                        # Quantity documents already moved their litres onto
+                        # the deal lines (revision wizard or posting-time
+                        # propagation); counting them again would double the
+                        # sell/margin reduction.
+                        if not move.petro_price_adjustment and (
+                                move.petro_qty_propagated
+                                or move.petro_adjustment_quantity):
+                            continue
                         effect += move.petro_margin_total
                         sell_effect += (
                             -entered if move.move_type == 'out_refund' else entered)
