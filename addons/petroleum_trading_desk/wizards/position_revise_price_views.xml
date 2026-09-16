@@ -4,7 +4,7 @@
         <field name="name">petroleum.daily.position.revise.price.form</field>
         <field name="model">petroleum.daily.position.revise.price</field>
         <field name="arch" type="xml">
-            <form string="Revise Buy Price">
+            <form string="Revise Buy Price / Quantity">
                 <group>
                     <group string="Lot">
                         <field name="position_line_id" readonly="1"/>
@@ -21,6 +21,11 @@
                                readonly="qty_remaining &lt;= 0"/>
                         <field name="affected_quantity"/>
                         <field name="new_buy_price"/>
+                        <field name="revise_lot_quantity"
+                               invisible="volume_scope != 'remaining'"/>
+                        <field name="new_lot_quantity"
+                               invisible="volume_scope != 'remaining' or not revise_lot_quantity"
+                               required="revise_lot_quantity"/>
                         <field name="price_drop"/>
                         <field name="credit_amount"/>
                         <field name="matching_lot_id" readonly="1"
@@ -41,6 +46,7 @@
                             <field name="deal_id" readonly="1"/>
                             <field name="partner_id" readonly="1"/>
                             <field name="allocated_quantity" readonly="1" sum="Deal Litres"/>
+                            <field name="new_quantity" sum="New Litres"/>
                             <field name="affected_quantity" sum="Affected"/>
                             <field name="buy_price" readonly="1"/>
                             <field name="split_hint" readonly="1" optional="show"/>

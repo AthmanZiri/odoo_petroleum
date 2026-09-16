@@ -29,8 +29,8 @@
                 <field name="margin" decoration-success="margin &gt; 0" decoration-danger="margin &lt; 0"/>
                 <field name="purchase_order_id" optional="show" readonly="1"/>
                 <button name="action_open_revise_buy_price" type="object"
-                        string="Revise Price" icon="fa-pencil"
-                        title="Supplier price reduction / revise buy price"
+                        string="Revise" icon="fa-pencil"
+                        title="Revise supplier buy price or correct litres"
                         invisible="qty_remaining &lt;= 0 and qty_sold &lt;= 0"/>
                 <field name="currency_id" column_invisible="1"/>
                 <field name="company_id" column_invisible="1" groups="base.group_multi_company"/>
@@ -46,7 +46,7 @@
             <form string="Daily Position">
                 <header>
                     <button name="action_open_revise_buy_price" type="object"
-                            string="Revise Buy Price" class="btn-primary"
+                            string="Revise Price / Quantity" class="btn-primary"
                             invisible="qty_remaining &lt;= 0 and qty_sold &lt;= 0"/>
                     <button name="action_sync_purchase_orders" type="object"
                             string="Sync Purchase Orders" class="btn-secondary"/>
@@ -86,13 +86,15 @@
                                 </list>
                             </field>
                         </page>
-                        <page string="Buy Price History">
+                        <page string="Revision History">
                             <field name="price_history_ids" readonly="1">
                                 <list>
                                     <field name="create_date"/>
                                     <field name="date"/>
                                     <field name="old_buy_price"/>
                                     <field name="new_buy_price"/>
+                                    <field name="old_quantity" optional="show"/>
+                                    <field name="new_quantity" optional="show"/>
                                     <field name="reason"/>
                                     <field name="user_id"/>
                                     <field name="note"/>
