@@ -1,0 +1,11 @@
+date,payment_ref,partner,amount,label,proposed_action,confidence,notes
+2026-08-31,FT26243WYT03 | 254713959058 jami / Mobi 522522 MPESA,,250000.00,254713959058 jami / Mobi 522522 MPESA,exception,low,Inflow — identify partner from narration
+2026-08-31,FT262435DHR5 | UHVDD4HUB8 254713959058 jami / Transfer Fuel payment Fuel payment,,152500.00,UHVDD4HUB8 254713959058 jami / Transfer Fuel payment Fuel payment,exception,low,Inflow — identify partner from narration
+2026-08-31,FT26243F05MS | PETROLKIM LTD,PETROL KIM,6000000.00,PETROLKIM LTD,register payment then match,med,Customer receipt candidate
+2026-08-31,FT26243BQMRQ | Transfer Charge AC-1332628346 Transfer JAMEEL PINOIL PINOIL,PINOIL ENERGY LIMITED,-57.50,Transfer Charge AC-1332628346 Transfer JAMEEL PINOIL PINOIL,fee,high,Bank charges / excise → expense via recon model or MISC
+2026-08-31,FT26243BQMRQ | ENERGY LIMITED Transfer TRANSFER FUEL,,-7364000.00,ENERGY LIMITED Transfer TRANSFER FUEL,exception,low,Outflow — identify purpose
+2026-08-31,FT26243MY7T3 | PURCHASE ZAHIRA HAGEYO KORI Cash Deposit OMAR KHALIF NOOR,,2004000.00,PURCHASE ZAHIRA HAGEYO KORI Cash Deposit OMAR KHALIF NOOR,exception,low,Inflow — identify partner from narration
+2026-08-31,TT26243CNPY3 AT-MLNDI Transfer 115000 115000 SAKATII,SAKATII,70000.00,TT26243CNPY3 AT-MLNDI Transfer 115000 115000 SAKATII,register payment then match,med,Customer receipt candidate
+2026-08-31,FT26243RQQYR | FILLING STATION,,115000.00,FILLING STATION,exception,low,Inflow — identify partner from narration
+2026-08-31,FT26243W5Y3S | Transfer Charge AC-PL52044 Transfer Biashara Club Subscription,,-213.00,Transfer Charge AC-PL52044 Transfer Biashara Club Subscription,fee,high,Bank charges / excise → expense via recon model or MISC
+2026-08-31,FT26243W5Y3S | Fee,,-1065.00,Fee,fee,high,Bank charges / excise → expense via recon model or MISC

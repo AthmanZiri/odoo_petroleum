@@ -1,0 +1,41 @@
+date,payment_ref,partner,amount,label,proposed_action,confidence,notes
+2026-08-28,85320828000100270534 | ABSA FEE,,-25.00,ABSA FEE,fee,high,Bank charges / excise → expense via recon model or MISC
+2026-08-28,85320828000100270534 | EXCISE DUTY FOR THE FEE FUND TRANSFER WITHIN,,-3.75,EXCISE DUTY FOR THE FEE FUND TRANSFER WITHIN,fee,high,Bank charges / excise → expense via recon model or MISC
+2026-08-28,85320828000100270803 | JAMEEL VITALAC NAKURU,VITALAC INTERNATIONAL LIMITED,-2030000.00,JAMEEL VITALAC NAKURU,interbank_or_supplier,med,Outflow to related entity / other bank — confirm Vitalac vs interbank
+2026-08-28,85320828000100271156 | JAMEEL VITALAC,VITALAC INTERNATIONAL LIMITED,-5000000.00,JAMEEL VITALAC,interbank_or_supplier,med,Outflow to related entity / other bank — confirm Vitalac vs interbank
+2026-08-28,85320828000100271157 | ABSA FEE,,-25.00,ABSA FEE,fee,high,Bank charges / excise → expense via recon model or MISC
+2026-08-28,85320828000100271157 | EXCISE DUTY FOR THE FEE FUND TRANSFER WITHIN,,-3.75,EXCISE DUTY FOR THE FEE FUND TRANSFER WITHIN,fee,high,Bank charges / excise → expense via recon model or MISC
+2026-08-29,85320831000100170652 | 908184808544494,,784000.00,908184808544494,exception,low,Inflow — identify partner from narration
+2026-08-29,85320831000100334136 | PURCHASES 001100032026082,,380950.00,PURCHASES 001100032026082,exception,low,Inflow — identify partner from narration
+2026-08-29,85320831000100341107 | REEM JAMEEL,REEM VENTURES,2500000.00,REEM JAMEEL,register payment then match,med,Customer receipt candidate
+2026-08-29,85320831000100389998 | 5M3 AGO ZAYNU,ZAYNU,999000.00,5M3 AGO ZAYNU,register payment then match,med,Customer receipt candidate
+2026-08-29,85320831000100425496 | PETRONET JAMEEL,PETRONET,3448000.00,PETRONET JAMEEL,register payment then match,med,Customer receipt candidate
+2026-08-29,000000004705 | CHEQUE,,808000.00,CHEQUE,exception,low,Inflow — identify partner from narration
+2026-08-29,85320831000100444382 | JAMEEL VITALAC 2047175790:ABSA,VITALAC INTERNATIONAL LIMITED,-8920000.00,JAMEEL VITALAC 2047175790:ABSA,interbank_or_supplier,med,Outflow to related entity / other bank — confirm Vitalac vs interbank
+2026-08-29,85320831000100444385 | ABSA FEE,,-25.00,ABSA FEE,fee,high,Bank charges / excise → expense via recon model or MISC
+2026-08-29,85320831000100444385 | EXCISE DUTY FOR THE FEE FUND TRANSFER WITHIN,,-3.75,EXCISE DUTY FOR THE FEE FUND TRANSFER WITHIN,fee,high,Bank charges / excise → expense via recon model or MISC
+2026-08-29,000000004701 | CHEQUE,,673000.00,CHEQUE,exception,low,Inflow — identify partner from narration
+2026-08-29,85320831000100669020 | PETRONET JAMEEL 2047175790:ABSA,PETRONET,1092000.00,PETRONET JAMEEL 2047175790:ABSA,register payment then match,med,Customer receipt candidate
+2026-08-29,85320831000100830387 | BILL//IB BP:MPESAB2C-11/2,,-79008.00,BILL//IB BP:MPESAB2C-11/2,exception,low,Outflow — identify purpose
+2026-08-29,85320831000100830398 | FEE :254704259588//,,-78.55,FEE :254704259588//,fee,high,Bank charges / excise → expense via recon model or MISC
+2026-08-30,85320831000100946272 | 259588;20451305 36 BILL PAYMENT LOAD MPESA,,90000.00,259588;20451305 36 BILL PAYMENT LOAD MPESA,exception,low,Inflow — identify partner from narration
+2026-08-30,85320831000100963440 | PETRONET JAMEEL UHUI84V07K;0704,PETRONET,7865000.00,PETRONET JAMEEL UHUI84V07K;0704,register payment then match,med,Customer receipt candidate
+2026-08-31,85320831000100039768 | LTD,,1985000.00,LTD,exception,low,Inflow — identify partner from narration
+2026-08-31,85320831000100199282 | JAMEEL VITALAC RTGS IN;MALUINI VENTURES,MALUINI VENTURES LTD,-11625000.00,JAMEEL VITALAC RTGS IN;MALUINI VENTURES,interbank_or_supplier,med,Outflow to related entity / other bank — confirm Vitalac vs interbank
+2026-08-31,85320831000100217878 | REEM JAMEEL,REEM VENTURES,2000000.00,REEM JAMEEL,register payment then match,med,Customer receipt candidate
+2026-08-31,85320831000100268461 | LIMITED,,1007500.00,LIMITED,exception,low,Inflow — identify partner from narration
+2026-08-31,85320831000100400480 | JAMEEL VITALAC RTGS IN;ELYAAS ENERGY,ELYAAS ENERGY LTD,-3008000.00,JAMEEL VITALAC RTGS IN;ELYAAS ENERGY,interbank_or_supplier,med,Outflow to related entity / other bank — confirm Vitalac vs interbank
+2026-08-31,85320831000100400482 | ABSA FEE,,-25.00,ABSA FEE,fee,high,Bank charges / excise → expense via recon model or MISC
+2026-08-31,85320831000100400482 | EXCISE DUTY FOR THE FEE FUND TRANSFER WITHIN,,-3.75,EXCISE DUTY FOR THE FEE FUND TRANSFER WITHIN,fee,high,Bank charges / excise → expense via recon model or MISC
+2026-08-31,248912026083100490125 | S TRANSFER,,950000.00,S TRANSFER,exception,low,Inflow — identify partner from narration
+2026-08-31,85320831000100719521 | 204894;20451305 36 2046208474:FUND,,100000.00,204894;20451305 36 2046208474:FUND,exception,low,Inflow — identify partner from narration
+2026-08-31,220152026083135672825 | LA UHVJJ4J44N;0700,,28000.00,LA UHVJJ4J44N;0700,exception,low,Inflow — identify partner from narration
+2026-08-31,85320831000100957676 | REEM JAMEEL UHVL44L5Q8 - 25472****301 -,REEM VENTURES,934000.00,REEM JAMEEL UHVL44L5Q8 - 25472****301 -,register payment then match,med,Customer receipt candidate
+2026-08-31,85320831000100964052 | 292703;20451305 36,,70000.00,292703;20451305 36,exception,low,Inflow — identify partner from narration
+2026-08-31,85320831000100969511 | JAMEEL PREMIUM UHVNT4XL2M;0727,,-2030000.00,JAMEEL PREMIUM UHVNT4XL2M;0727,interbank_or_supplier,med,Outflow to related entity / other bank — confirm Vitalac vs interbank
+2026-08-31,85320831000100969517 | ABSA FEE,,-25.00,ABSA FEE,fee,high,Bank charges / excise → expense via recon model or MISC
+2026-08-31,85320831000100969517 | EXCISE DUTY FOR THE FEE FUND TRANSFER WITHIN,,-3.75,EXCISE DUTY FOR THE FEE FUND TRANSFER WITHIN,fee,high,Bank charges / excise → expense via recon model or MISC
+2026-08-31,85320831000100073419 | 117531826175003,,900000.00,117531826175003,exception,low,Inflow — identify partner from narration
+2026-08-31,85320831000100073298 | 117531926174916 001100032026083,,950000.00,117531926174916 001100032026083,exception,low,Inflow — identify partner from narration
+2026-08-31,85320831000100073440 | 117532126175106 001100032026083,,151000.00,117532126175106 001100032026083,exception,low,Inflow — identify partner from narration
+2026-08-31,85320831000100406093 | PETRONET JAMEEL 001100032026083,PETRONET,7100000.00,PETRONET JAMEEL 001100032026083,register payment then match,med,Customer receipt candidate

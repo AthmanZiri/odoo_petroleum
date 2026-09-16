@@ -1,0 +1,70 @@
+                                                                              Account Statement
+                                                 EQUITY BANK ACCOUNT FOR CASH AND LIQUIDITY MGT SYSTEM
+
+Account Number:         0460282055255
+
+
+Account Name:           JAMEEL PETROLEUM LIMITED
+
+
+Currency:               KES
+
+From Date:              31/08/2026 To 01/09/2026
+
+
+Report generated on:    2026-09-01          by MUHIDIN MOHAMED                                                                                                 Total Count:11
+                        07:51:31
+Transaction                                                                            Transaction
+            Value Date                            Narrative                                                        Debit                      Credit               Running Balance
+   Date                                                                                 Reference
+ 31/08/2026     30/08/2026
+                             APP/KHADIJA ABDULKADIR MJAHIDI/                            54358727                   0.00                    116,500.00                   116,870.17
+
+ 31/08/2026     31/08/2026
+                             APP/GREENFIELD PETROLEUM LIMITED/                          54448643                   0.00                    200,000.00                   316,870.17
+
+ 31/08/2026     31/08/2026
+                             APP/WARRAB INVESTMENTS LIMITED/                            54525652                   0.00                    980,000.00                   1,296,870.17
+
+ 31/08/2026     31/08/2026
+                             APP/WARRAB INVESTMENTS LIMITED/                            54526255                   0.00                    720,000.00                   2,016,870.17
+
+ 31/08/2026     31/08/2026
+                             APP/WARRAB INVESTMENTS LIMITED/                            54527874                   0.00                    300,000.00                   2,316,870.17
+
+ 31/08/2026     31/08/2026 EOB TRSF VITALAC INTERNATIONAL LIMITED
+                                                                                        54542530               2,316,000.00                    0.00                       870.17
+                           TB26083100
+ 31/08/2026     31/08/2026
+                             CHARGES ACCOUNT TO ACCOUNT THIRD PARTY                     54542530                   57.50                       0.00                       812.67
+
+ 31/08/2026     31/08/2026 EAZZY-FUNDS TRNSF FRM ALII ABASS ALII &
+                                                                                       S56480308                   0.00                    1,000,000.00                 1,000,812.67
+                           ISSACK HAJ
+ 31/08/2026     31/08/2026 EAZZY-FUNDS TRNSF FRM ALII ABASS ALII &
+                                                                                       S56483814                   0.00                    1,000,000.00                 2,000,812.67
+                           ISSACK HAJ
+ 31/08/2026     31/08/2026 EOB TRSF VITALAC INTERNATIONAL LIMITED
+                                                                                        54712734               2,000,000.00                    0.00                       812.67
+                           TB26083100
+ 31/08/2026     31/08/2026
+                             CHARGES ACCOUNT TO ACCOUNT THIRD PARTY                     54712734                   57.50                       0.00                       755.17
+
+                                                                               ----- End of Statement -----
+Summary
+
+
+                  Opening Balance                                   Total Debits                               Total Credits                              Closing Balance
+
+                       370.17                                       4,316,115.00                               4,316,500.00                                    755.17
+
+
+
+
+ IMPORTANT NOTICE- Please examine your statement carefully. If we dont hear from you within 28 days, we shall assume the details shown on your Account Statement are correct. If, however,
+ you have any query about any transaction on your Account Statement. Please contact the Equity Contact Centre on info@equitybank.co.ke
+
+ This statement has been generated from Equity Internet Banking
+
+                                                                                                                                                                             Page 1 of 1
+

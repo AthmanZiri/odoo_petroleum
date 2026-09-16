@@ -1,0 +1,6 @@
+pdf,bank,account_no,period,opening,closing,lines,odoo_journal,notes
+1788237847633.pdf,Absa Bank Kenya,2045130536,2026-08-28 to 2026-09-01 (filter 31/08-01/09; txn from 28/08),7030219.95,9153439.65,40,ABSA Bank / ABSA,Newest-first PDF; amounts reconstructed from running balance. Header says 40 txns.
+Account_statementTB26090100210205.pdf,Equity Bank,0460282055255,2026-08-31 to 2026-09-01,370.17,755.17,11,Equity Bank / EQTY,Cash & Liquidity MGT account
+accountTransactionHistory - 2026-09-01T074413.520.pdf,KCB Bank,1312387386,Last Month (2026-08-01 to ~2026-09-01),115368.29,2188492.04,279,KCB Bank / KCB,Full August history. Available bal 2620992.04 > period end 2188492.04. Aug31-only CSV also produced (10 lines).
+GetBankAccountStatementReport (58).pdf,Premier Bank Kenya,0018867601,2026-08-31 to 2026-09-01,113975.19,2000.0,10,Premier Bank / PREM,"PDF summary Opening/Closing wrongly show 0; reconstructed open 113,975.19 close 2,000.00. Internal float accounts 0019491401/1403 → 0018867601."
+SOA- 0900441501-2026-09-01 07.45.55.pdf,Gulf African Bank,0900441501,2026-08-31 to 2026-09-01,717.63,-1488.97,13,Gulf African Bank / GULF,"Gulf African Bank (gab.co.ke), NOT KCB. PDF labels opening 717.63 DR but running-balance math only closes if opening is +717.63; closing 1,488.97 DR is overdrawn."

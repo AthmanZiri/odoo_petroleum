@@ -1,0 +1,11 @@
+date,payment_ref,partner,amount,label,proposed_action,confidence,notes
+2026-08-31,Internal Acc Trans.- From 0019491401 #20197788 Petrol,,318794.00,Internal Acc Trans.- From 0019491401 #20197788 Petrol,interbank transfer,high,bal=432769.19
+2026-08-31,Cash Deposit #579694 SAID KIFALU,SAID KIFALU,260665.00,Cash Deposit #579694 SAID KIFALU,register payment then match,med,bal=693434.19
+2026-08-31,Cash Deposit #579722 SAID KIFALU,SAID KIFALU,156125.00,Cash Deposit #579722 SAID KIFALU,register payment then match,med,bal=849559.19
+2026-08-31,Internal Acc Trans.- From 0019491403 #20203486 PETROL,,129883.00,Internal Acc Trans.- From 0019491403 #20203486 PETROL,interbank transfer,high,bal=979442.19
+2026-08-31,Cash Deposit #579730 SAID KIFALU,SAID KIFALU,104835.00,Cash Deposit #579730 SAID KIFALU,register payment then match,med,bal=1084277.19
+2026-08-31,Internal Acc Trans.- To 0018149301 #20205910 FUND TRANSFER,,-295000.00,Internal Acc Trans.- To 0018149301 #20205910 FUND TRANSFER,interbank transfer,high,bal=789277.19
+2026-08-31,RTGS Transfer #20205981 Txn 2262117680,Identify RTGS beneficiary,-786000.00,RTGS Transfer #20205981 Txn 2262117680,exception,low,bal=3277.19
+2026-08-31,RTGS fee #20205981,,-500.00,RTGS fee #20205981,fee,high,bal=2777.19
+2026-08-31,Acc maintenance fee,,-200.00,Acc maintenance fee,fee,high,bal=2577.19
+2026-08-31,Acc maintenance fee,,-577.19,Acc maintenance fee,fee,high,bal=2000.0

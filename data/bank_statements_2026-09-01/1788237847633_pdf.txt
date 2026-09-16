@@ -1,0 +1,124 @@
+                   CASA Account Details
+                                                                              2045130536 - Absa One Biashara Account KES
+                    Account Number
+                                                                              9,153,439.65 available
+                    Account Nickname
+                    IBAN
+                    Description                                               Absa One Biashara Account
+                    Primary Account Holder                                    JAMEEL PETROLEUM LIMITED
+                    For Date Ranging From                                     31/08/2026 To 01/09/2026
+                    For Amount Ranging from                                   0.00 To 0.00
+                                                                              All
+                    Transaction Type
+
+
+
+
+                      40                            Total Transactions
+
+
+                                            Reference / Cheque                                                                                                    Credit                 Balance
+                        Date                                                            Transaction Particulars                           Debit (KES)
+                                            Number                                                                                                                (KES)                  (KES)
+                        31/08/2026 85320831000100406093                                 PETRONET JAMEEL                                                           7,100,000.00             9,153,439.65
+                                                                                        001100032026083
+                        31/08/2026 85320831000100073440                                                                                                              151,000.00            2,053,439.65
+                                                                                        117532126175106
+                                                                                        001100032026083
+                        31/08/2026 85320831000100073298                                                                                                              950,000.00            1,902,439.65
+                                                                                        117531926174916
+                                                                                        001100032026083
+                        31/08/2026 85320831000100073419                                                                                                              900,000.00              952,439.65
+                                                                                        117531826175003
+                        31/08/2026 85320831000100969517                                 EXCISE DUTY FOR THE FEE                                          3.75                                  52,439.65
+                                                                                        FUND TRANSFER WITHIN
+                        31/08/2026 85320831000100969517                                                                                                25.00                                   52,443.40
+                                                                                        ABSA FEE
+                        31/08/2026 85320831000100969511                                 JAMEEL PREMIUM                                      2,030,000.00                                       52,468.40
+                                                                                        UHVNT4XL2M;0727
+                        31/08/2026 85320831000100964052                                 292703;20451305                                                                70,000.00           2,082,468.40
+                                                                                        36
+                        31/08/2026 85320831000100957676                                 REEM JAMEEL                                                                  934,000.00            2,012,468.40
+                                                                                        UHVL44L5Q8 - 25472****301 -
+                        31/08/2026 220152026083135672825                                                                                                               28,000.00           1,078,468.40
+                                                                                        LA
+                                                                                        UHVJJ4J44N;0700
+
+
+
+Absa Bank Kenya PLC. Registered in Kenya (registered number C.18208). Registered office: The West End Building, Waiyaki Way, PO Box 30120, 00100 GPO, Nairobi, Kenya. ? Absa Bank Kenya PLC is regulated by the Central Bank of Kenya.
+                                                                                                                                                                                                                             Page 1 / 3
+                        31/08/2026 85320831000100719521                                 204894;20451305                                                              100,000.00            1,050,468.40
+                                                                                        36
+                                                                                        2046208474:FUND
+                        31/08/2026 248912026083100490125                                                                                                             950,000.00              950,468.40
+                                                                                        S TRANSFER
+                        31/08/2026 85320831000100400482                                 EXCISE DUTY FOR THE FEE                                          3.75                                       468.40
+                                                                                        FUND TRANSFER WITHIN
+                        31/08/2026 85320831000100400482                                                                                                25.00                                        472.15
+                                                                                        ABSA FEE
+                        31/08/2026 85320831000100400480                                 JAMEEL VITALAC                                      3,008,000.00                                            497.15
+                                                                                        RTGS IN;ELYAAS ENERGY
+                        31/08/2026 85320831000100268461                                                                                                           1,007,500.00             3,008,497.15
+                                                                                        LIMITED
+                        31/08/2026 85320831000100217878                                 REEM JAMEEL                                                               2,000,000.00             2,000,997.15
+                        31/08/2026 85320831000100199282                                 JAMEEL VITALAC                                    11,625,000.00                                             997.15
+                                                                                        RTGS IN;MALUINI VENTURES
+                        31/08/2026 85320831000100039768                                                                                                           1,985,000.00 11,625,997.15
+                                                                                        LTD
+                        30/08/2026 85320831000100963440                                 PETRONET JAMEEL                                                           7,865,000.00             9,640,997.15
+                                                                                        UHUI84V07K;0704
+                        30/08/2026 85320831000100946272                                 259588;20451305                                                                90,000.00           1,775,997.15
+                                                                                        36
+                                                                                        BILL PAYMENT LOAD MPESA
+                        29/08/2026 85320831000100830398                                                                                                78.55                               1,685,997.15
+                                                                                        FEE
+                                                                                        :254704259588//
+                        29/08/2026 85320831000100830387                                                                                          79,008.00                                 1,686,075.70
+                                                                                        BILL//IB BP:MPESAB2C-11/2
+                        29/08/2026 85320831000100669020                                 PETRONET JAMEEL                                                           1,092,000.00             1,765,083.70
+                                                                                        2047175790:ABSA
+                        29/08/2026 000000004701                                                                                                                      673,000.00              673,083.70
+                                                                                        CHEQUE
+                        29/08/2026 85320831000100444385                                 EXCISE DUTY FOR THE FEE                                          3.75                                         83.70
+                                                                                        FUND TRANSFER WITHIN
+                        29/08/2026 85320831000100444385                                                                                                25.00                                          87.45
+                                                                                        ABSA FEE
+                        29/08/2026 85320831000100444382                                 JAMEEL VITALAC                                      8,920,000.00                                            112.45
+                                                                                        2047175790:ABSA
+                        29/08/2026 000000004705                                                                                                                      808,000.00            8,920,112.45
+                                                                                        CHEQUE
+                        29/08/2026 85320831000100425496                                 PETRONET JAMEEL                                                           3,448,000.00             8,112,112.45
+                        29/08/2026 85320831000100389998                                 5M3 AGO ZAYNU                                                                999,000.00            4,664,112.45
+                        29/08/2026 85320831000100341107                                 REEM JAMEEL                                                               2,500,000.00             3,665,112.45
+                        29/08/2026 85320831000100334136                                 PURCHASES                                                                    380,950.00            1,165,112.45
+                                                                                        001100032026082
+                        29/08/2026 85320831000100170652                                                                                                              784,000.00              784,162.45
+                                                                                        908184808544494
+                        28/08/2026 85320828000100271157                                 EXCISE DUTY FOR THE FEE                                          3.75                                       162.45
+                                                                                        FUND TRANSFER WITHIN
+                        28/08/2026 85320828000100271157                                                                                                25.00                                        166.20
+                                                                                        ABSA FEE
+                        28/08/2026 85320828000100271156                                 JAMEEL VITALAC                                      5,000,000.00                                            191.20
+
+
+
+
+Absa Bank Kenya PLC. Registered in Kenya (registered number C.18208). Registered office: The West End Building, Waiyaki Way, PO Box 30120, 00100 GPO, Nairobi, Kenya. ? Absa Bank Kenya PLC is regulated by the Central Bank of Kenya.
+                                                                                                                                                                                                                             Page 2 / 3
+                        28/08/2026 85320828000100270803                                 JAMEEL VITALAC NAKURU                               2,030,000.00                                   5,000,191.20
+                        28/08/2026 85320828000100270534                                 EXCISE DUTY FOR THE FEE                                          3.75                              7,030,191.20
+                                                                                        FUND TRANSFER WITHIN
+                        28/08/2026 85320828000100270534                                                                                                25.00                               7,030,194.95
+                                                                                        ABSA FEE
+
+
+                                                                                                                                               Opening balance                             7,030,219.95
+                                                                                                                                                 Closing balance                           9,153,439.65
+
+
+
+
+Absa Bank Kenya PLC. Registered in Kenya (registered number C.18208). Registered office: The West End Building, Waiyaki Way, PO Box 30120, 00100 GPO, Nairobi, Kenya. ? Absa Bank Kenya PLC is regulated by the Central Bank of Kenya.
+                                                                                                                                                                                                                             Page 3 / 3
+

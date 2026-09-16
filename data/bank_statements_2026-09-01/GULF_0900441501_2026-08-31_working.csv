@@ -1,0 +1,14 @@
+date,payment_ref,partner,amount,label,proposed_action,confidence,notes
+2026-08-31,HOUSE CHQ DEPOSIT #2547679 CHQ 001420 QUBAA ENTER TO JAMEEL,QUBAA,1993000.00,HOUSE CHQ DEPOSIT #2547679 CHQ 001420 QUBAA ENTER TO JAMEEL,register payment then match,high,bal=1993717.63
+2026-08-31,SMS Charge #5069465800,,-4.00,SMS Charge #5069465800,fee,high,bal=1993713.63
+2026-08-31,Charges - SMS Charge #5069465800,,-1.80,Charges - SMS Charge #5069465800,fee,high,bal=1993711.83
+2026-08-31,Real Time Gross Sett #1481935 JAMEEL VITALAC,VITALAC INTERNATIONAL LIMITED,-1993000.00,Real Time Gross Sett #1481935 JAMEEL VITALAC,interbank_or_supplier,med,bal=711.83
+2026-08-31,Charges - Real Time Gross Sett #1481935,,-575.00,Charges - Real Time Gross Sett #1481935,fee,high,bal=136.83
+2026-08-31,SMS Charge #5069473681,,-4.00,SMS Charge #5069473681,fee,high,bal=132.83
+2026-08-31,Charges - SMS Charge #5069473681,,-1.80,Charges - SMS Charge #5069473681,fee,high,bal=131.03
+2026-08-31,Excise Duty,,-80.00,Excise Duty,fee,high,bal=51.03
+2026-08-31,Maintenance Fee,,-400.00,Maintenance Fee,fee,high,bal=-348.97
+2026-08-31,Excise Duty,,-90.00,Excise Duty,fee,high,bal=-438.97
+2026-08-31,Ledger Fees,,-450.00,Ledger Fees,fee,high,bal=-888.97
+2026-08-31,Excise Duty,,-100.00,Excise Duty,fee,high,bal=-988.97
+2026-08-31,IBK Monthly Charges,,-500.00,IBK Monthly Charges,fee,high,bal=-1488.97
