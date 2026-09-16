@@ -350,6 +350,14 @@ class PetroleumDealReviseConfirmed(models.TransientModel):
 
     def action_confirm(self):
         self.ensure_one()
+        drafts = self._apply_revision()
+        if drafts:
+            return self._action_open_draft_moves(drafts)
+        return {'type': 'ir.actions.act_window_close'}
+
+    def _apply_revision(self):
+        """Apply the quantity / sell price revision and return draft moves."""
+        self.ensure_one()
         deal = self.deal_id
         line = self.deal_line_id
         if deal.state not in ('confirmed', 'loaded', 'done'):
@@ -398,6 +406,4 @@ class PetroleumDealReviseConfirmed(models.TransientModel):
             new_price=self.new_sell_price,
             note=self.note,
         ))
-        if drafts:
-            return self._action_open_draft_moves(drafts)
-        return {'type': 'ir.actions.act_window_close'}
+        return drafts
