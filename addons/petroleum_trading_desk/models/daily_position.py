@@ -140,6 +140,20 @@ class PetroleumDailyPositionLine(models.Model):
             'note': note or '',
         })
 
+    def _log_quantity_change(self, old_qty, new_qty, note=False):
+        """Audit a litres correction on this lot in the revision history."""
+        self.ensure_one()
+        self.env['petroleum.daily.position.price.history'].create({
+            'position_line_id': self.id,
+            'date': self.date,
+            'old_buy_price': self.buy_price,
+            'new_buy_price': self.buy_price,
+            'old_quantity': old_qty,
+            'new_quantity': new_qty,
+            'reason': 'quantity_revision',
+            'note': note or '',
+        })
+
     def _merge_incoming_vals(self, vals):
         """Fold a same-price create into this lot (opening + bought on one row)."""
         self.ensure_one()
@@ -558,7 +572,7 @@ class PetroleumDailyPositionLine(models.Model):
             ))
         return {
             'type': 'ir.actions.act_window',
-            'name': _('Revise Buy Price'),
+            'name': _('Revise Price / Quantity'),
             'res_model': 'petroleum.daily.position.revise.price',
             'view_mode': 'form',
             'target': 'new',
@@ -569,6 +583,7 @@ class PetroleumDailyPositionLine(models.Model):
                     'remaining' if self.qty_remaining > 0 else 'sold'),
                 'default_affected_quantity': (
                     self.qty_remaining if self.qty_remaining > 0 else self.qty_sold),
+                'default_new_lot_quantity': self.qty_remaining,
             },
         }
 
@@ -756,6 +771,140 @@ class PetroleumDailyPositionLine(models.Model):
             'old_price': old_price,
             'new_price': new_price,
         }
+
+    def action_revise_lot_quantity(
+            self, new_remaining, note='', create_adjustment_doc=True):
+        """Correct this lot's litres so remaining stock becomes ``new_remaining``.
+
+        - An increase adds litres to Bought Today (or Opening when the lot
+          only carries rolled stock and has no purchase order).
+        - A decrease removes litres from Bought Today first, then Opening.
+          It can never cut into sold/allocated volume because the change is
+          bounded by ``new_remaining >= 0``.
+        - When the changed litres belong to a synced daily-position purchase
+          order, the PO line and its vendor bill are re-aligned through the
+          existing sync machinery (no separate CN/DN, to avoid double
+          counting). Litres without a same-day PO (e.g. rolled opening
+          stock) get a draft supplier credit note / debit bill instead.
+        - The correction is logged in the lot's revision history.
+        """
+        self.ensure_one()
+        rounding = self._qty_rounding()
+        new_remaining = float(new_remaining)
+        old_remaining = self.qty_remaining
+        if float_compare(new_remaining, 0.0, precision_rounding=rounding) < 0:
+            raise UserError(_('Corrected litres cannot be negative.'))
+        delta = new_remaining - old_remaining
+        if float_compare(delta, 0.0, precision_rounding=rounding) == 0:
+            raise UserError(_(
+                'Corrected litres are the same as the current remaining volume.'))
+        note = (note or '').strip() or _('Lot quantity correction.')
+
+        bought_delta = 0.0
+        if delta > 0:
+            if self.purchase_order_line_id or self.qty_bought > 0:
+                self.write({'qty_bought': self.qty_bought + delta})
+                bought_delta = delta
+            else:
+                self.write({'qty_opening': self.qty_opening + delta})
+        else:
+            reduction = -delta
+            reduce_bought = min(self.qty_bought, reduction)
+            reduce_opening = reduction - reduce_bought
+            self.write({
+                'qty_bought': self.qty_bought - reduce_bought,
+                'qty_opening': self.qty_opening - reduce_opening,
+            })
+            bought_delta = -reduce_bought
+
+        self._log_quantity_change(
+            old_remaining, new_remaining,
+            note=_('%(note)s — remaining %(old)s L → %(new)s L.',
+                   note=note, old=old_remaining, new=new_remaining))
+
+        adjustment_move = self.env['account.move']
+        po_synced = False
+        if create_adjustment_doc:
+            unbilled_delta = delta
+            if bought_delta and self.purchase_order_line_id:
+                self._sync_po_after_qty_change()
+                po_synced = True
+                unbilled_delta = delta - bought_delta
+            if float_compare(
+                    unbilled_delta, 0.0, precision_rounding=rounding) != 0:
+                adjustment_move = self._create_supplier_quantity_adjustment(
+                    unbilled_delta, note)
+        return {
+            'adjustment_move': adjustment_move,
+            'po_synced': po_synced,
+            'old_remaining': old_remaining,
+            'new_remaining': new_remaining,
+            'delta': delta,
+        }
+
+    def _sync_po_after_qty_change(self):
+        """Re-align the daily-position PO and vendor bill after a qty change."""
+        self.ensure_one()
+        po = self.purchase_order_id
+        po_line = self.purchase_order_line_id
+        if self.qty_bought > 0:
+            self._sync_purchase_order_line()
+        elif po and po_line:
+            po._prepare_daily_position_qty_decrease(po_line, 0.0)
+            po_line.write({'product_qty': 0.0})
+            po._sync_daily_position_vendor_bills()
+
+    def _create_supplier_quantity_adjustment(self, delta, note):
+        """Draft a vendor CN (fewer litres) / DN (more litres) at buy price.
+
+        Used for corrected litres that no same-day purchase order can absorb.
+        The document is intentionally not linked to a PO line so it cannot
+        disturb qty_invoiced on an unrelated purchase.
+        """
+        self.ensure_one()
+        quantity = abs(delta)
+        if quantity <= 0:
+            return self.env['account.move']
+        is_reduction = delta < 0
+        direction = _('reduction') if is_reduction else _('increase')
+        product = self.product_id
+        po_line = self.purchase_order_line_id
+        taxes = self.env['account.tax']
+        if po_line and po_line.tax_ids:
+            taxes = po_line.tax_ids
+        elif product.supplier_taxes_id:
+            taxes = product.supplier_taxes_id.filtered(
+                lambda t: t.company_id == self.company_id)
+        return self.env['account.move'].create({
+            'move_type': 'in_refund' if is_reduction else 'in_invoice',
+            'partner_id': self.supplier_id.id,
+            'company_id': self.company_id.id,
+            'invoice_date': fields.Date.context_today(self),
+            'petro_adjustment_scope': 'remaining',
+            'petro_adjustment_quantity': quantity,
+            'ref': _('Supplier quantity %(direction)s %(product)s (%(qty)s L)',
+                     direction=direction, product=product.display_name,
+                     qty=quantity),
+            'invoice_origin': (
+                self.purchase_order_id.name if self.purchase_order_id
+                else self.display_name),
+            'invoice_line_ids': [fields.Command.create({
+                'product_id': product.id,
+                'name': _(
+                    'Supplier quantity %(direction)s on %(product)s: '
+                    '%(qty)s L @ %(price)s. %(note)s',
+                    direction=direction,
+                    product=product.display_name,
+                    qty=quantity,
+                    price=self.buy_price,
+                    note=note,
+                ),
+                'quantity': quantity,
+                'price_unit': self.buy_price,
+                'tax_ids': [fields.Command.set(taxes.ids)],
+                'product_uom_id': product.uom_id.id,
+            })],
+        })
 
     def _create_supplier_price_adjustment(
             self, old_price, new_price, quantity, note, deal=False,
@@ -1081,11 +1230,16 @@ class PetroleumDailyPositionPriceHistory(models.Model):
     date = fields.Date(required=True)
     old_buy_price = fields.Float(digits='Product Price')
     new_buy_price = fields.Float(string='Buy Price', digits='Product Price', required=True)
+    old_quantity = fields.Float(
+        string='Previous Litres', digits='Product Unit of Measure')
+    new_quantity = fields.Float(
+        string='New Litres', digits='Product Unit of Measure')
     reason = fields.Selection([
         ('initial', 'Initial entry'),
         ('roll_forward', 'Rolled from previous day'),
         ('revision', 'Manual revision'),
         ('supplier_reduction', 'Supplier price reduction'),
+        ('quantity_revision', 'Quantity correction'),
     ], required=True, default='revision')
     note = fields.Text()
     user_id = fields.Many2one(
