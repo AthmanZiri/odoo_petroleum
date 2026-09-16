@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_petroleum_bank_pdf_to_csv_user,petroleum.bank.pdf.to.csv.wizard.user,model_petroleum_bank_pdf_to_csv_wizard,account.group_account_basic,1,1,1,1
+access_petroleum_bank_pdf_to_csv_invoice,petroleum.bank.pdf.to.csv.wizard.invoice,model_petroleum_bank_pdf_to_csv_wizard,account.group_account_invoice,1,1,1,1

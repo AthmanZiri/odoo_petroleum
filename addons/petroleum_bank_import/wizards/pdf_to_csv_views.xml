@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_petroleum_bank_pdf_to_csv_form" model="ir.ui.view">
+        <field name="name">petroleum.bank.pdf.to.csv.wizard.form</field>
+        <field name="model">petroleum.bank.pdf.to.csv.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Bank PDF → CSV">
+                <group invisible="state != 'draft'">
+                    <group>
+                        <field name="bank"/>
+                        <field name="attachment" filename="file_name"/>
+                        <field name="file_name" invisible="1"/>
+                        <field name="state" invisible="1"/>
+                    </group>
+                    <div class="alert alert-info" role="alert" colspan="2">
+                        Converts a bank PDF or text extract into an import-ready
+                        <code>date,payment_ref,partner,amount</code> CSV.
+                        Review the CSV and cover sheet before importing — this does not post or reconcile.
+                        Absa MVP only; scanned/image PDFs are rejected.
+                        <div class="mt-2">
+                            Prefer starting from the
+                            <button name="action_download_csv_template" type="object"
+                                    string="CSV template" class="btn-link"/>
+                            if preparing rows manually.
+                        </div>
+                    </div>
+                </group>
+                <group invisible="state != 'done'">
+                    <group>
+                        <field name="row_count"/>
+                        <field name="exception_count"/>
+                        <field name="result_csv" filename="result_csv_name"/>
+                        <field name="result_csv_name" invisible="1"/>
+                    </group>
+                    <group string="Exceptions / low confidence" colspan="2">
+                        <field name="exception_text" nolabel="1" colspan="2"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_convert" type="object" string="Convert"
+                            class="btn-primary" invisible="state != 'draft'"/>
+                    <button string="Close" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_petroleum_bank_pdf_to_csv" model="ir.actions.act_window">
+        <field name="name">Bank PDF → CSV</field>
+        <field name="res_model">petroleum.bank.pdf.to.csv.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

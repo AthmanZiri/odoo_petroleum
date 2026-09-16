@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_import_bank_statement_form_petro" model="ir.ui.view">
+        <field name="name">import.bank.statement.form.petro.template</field>
+        <field name="model">import.bank.statement</field>
+        <field name="inherit_id" ref="base_accounting_kit.import_bank_statement_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet/p" position="replace">
+                <div class="alert alert-info" role="alert">
+                    CSV contract:
+                    <code>date,payment_ref,partner,amount</code>
+                    (signed amount: + in, − out).
+                    Extra analysis columns are ignored if <code>payment_ref</code> is present.
+                    Duplicates on the same journal are skipped.
+                    <div class="mt-2">
+                        <button name="action_download_csv_template" type="object"
+                                string="Download CSV template" class="btn-link"/>
+                    </div>
+                </div>
+            </xpath>
+            <xpath expr="//footer/button[@name='action_statement_import']" position="before">
+                <button name="action_download_csv_template" type="object"
+                        string="Download template" class="btn-secondary"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

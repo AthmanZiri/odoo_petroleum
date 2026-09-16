@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="action_petroleum_bank_csv_template" model="ir.actions.act_url">
+        <field name="name">Download Bank CSV Template</field>
+        <field name="url">/petroleum_bank_import/static/csv/bank_statement_import_template.csv</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem id="menu_petroleum_bank_pdf_to_csv"
+              name="Bank PDF → CSV"
+              parent="account.account_transactions_menu"
+              action="action_petroleum_bank_pdf_to_csv"
+              sequence="26"
+              groups="account.group_account_basic"/>
+
+    <menuitem id="menu_petroleum_bank_csv_template"
+              name="Bank CSV Template"
+              parent="account.account_transactions_menu"
+              action="action_petroleum_bank_csv_template"
+              sequence="27"
+              groups="account.group_account_basic"/>
+</odoo>
