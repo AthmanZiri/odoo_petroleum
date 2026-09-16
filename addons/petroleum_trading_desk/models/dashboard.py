@@ -451,12 +451,34 @@ class DeskDashboard(models.TransientModel):
         return sell_total, vol
 
     @api.model
+    def _invoice_has_margin_data(self, invoice, lines):
+        """True when the stored line margins can be trusted, even at zero.
+
+        A break-even deal (sell price == buy price) legitimately sums to a
+        zero margin; falling back to ``sell - matched buy`` in that case
+        counts the whole revenue as margin. Only invoices with no margin
+        information at all (no sale-order link and no buy price on any line)
+        should use the fallback.
+        """
+        if invoice.petro_price_adjustment:
+            return True
+        if any(line.sale_line_ids or line.petro_buy_price for line in lines):
+            return True
+        if invoice.move_type == 'out_refund':
+            original = invoice.petro_original_move_id or invoice.reversed_entry_id
+            if original and any(
+                    line.sale_line_ids or line.petro_buy_price
+                    for line in original.invoice_line_ids):
+                return True
+        return False
+
+    @api.model
     def _invoice_margin(self, invoices, flt):
         margin = 0.0
         for invoice in invoices:
             lines = self._filter_invoice_lines(invoice, flt)
             line_margin = sum(lines.mapped('petro_margin'))
-            if line_margin:
+            if line_margin or self._invoice_has_margin_data(invoice, lines):
                 margin += line_margin
             else:
                 sell = sum(lines.mapped('price_subtotal'))
