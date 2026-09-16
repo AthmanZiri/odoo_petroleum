@@ -331,7 +331,7 @@ class PurchaseOrder(models.Model):
         if line_commands:
             bill.write({'invoice_line_ids': line_commands})
         self._stamp_daily_position_bill(bill)
-        bill.action_post()
+        bill.with_context(petro_position_sync=True).action_post()
         return bill
 
     def _post_daily_position_delta_bills(self):
@@ -356,7 +356,7 @@ class PurchaseOrder(models.Model):
                 and not move.petro_price_adjustment)
         if drafts:
             self._stamp_daily_position_bill(drafts)
-            drafts.action_post()
+            drafts.with_context(petro_position_sync=True).action_post()
         return drafts
 
     def _create_daily_position_qty_refund(self, po_line, quantity):
@@ -377,7 +377,7 @@ class PurchaseOrder(models.Model):
             'invoice_line_ids': [fields.Command.create(vals)],
         })
         self._stamp_daily_position_bill(refund)
-        refund.action_post()
+        refund.with_context(petro_position_sync=True).action_post()
         return refund
 
     def _prepare_daily_position_qty_decrease(self, po_line, new_qty):

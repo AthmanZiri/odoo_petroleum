@@ -260,6 +260,9 @@ class PetroleumDealReviseConfirmed(models.TransientModel):
             'invoice_date': fields.Date.context_today(self),
             'deal_id': self.deal_id.id,
             'petro_original_move_id': original.id,
+            # The wizard already updated deal/allocation litres; the marker
+            # stops posting this document from propagating them again.
+            'petro_adjustment_quantity': qty,
             'invoice_origin': original.name,
             'ref': _('Customer quantity %(direction)s — %(deal)s',
                      direction=direction, deal=self.deal_id.name),

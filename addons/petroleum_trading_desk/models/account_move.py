@@ -1,6 +1,8 @@
 import re
 
 from odoo import api, fields, models, _
+from odoo.exceptions import UserError
+from odoo.tools.float_utils import float_compare
 
 _SKIP_INVOICE_LINE_DISPLAY = ('line_section', 'line_subsection', 'line_note')
 
@@ -40,6 +42,11 @@ class AccountMove(models.Model):
     petro_margin_total = fields.Monetary(
         string='Margin', compute='_compute_petro_margin_total', store=True,
         currency_field='currency_id')
+    petro_qty_propagated = fields.Boolean(
+        string='Litres Propagated', copy=False,
+        help='Set when posting this manual refund / debit note updated the '
+             'daily position lot or deal quantities. Resetting to draft '
+             'restores them.')
     petroleum_expense_debtor_warning = fields.Char(
         compute='_compute_petroleum_expense_debtor_warning')
 
@@ -104,6 +111,246 @@ class AccountMove(models.Model):
                     vals['deal_id'] = original.deal_id.id
                 vals.setdefault('petro_original_move_id', original.id)
         return super().create(vals_list)
+
+    # ------------------------------------------------------------------
+    # Propagate manual refunds / debit notes to litres and deals
+    # ------------------------------------------------------------------
+
+    def action_post(self):
+        res = super().action_post()
+        self._petro_propagate_qty_documents(direction=1)
+        return res
+
+    def button_draft(self):
+        propagated = self.filtered('petro_qty_propagated')
+        res = super().button_draft()
+        propagated._petro_propagate_qty_documents(direction=-1)
+        return res
+
+    def _petro_qty_propagation_candidate(self):
+        """Manual quantity refund / debit note that must move litres.
+
+        Documents the desk already accounted for are excluded: price-only
+        CN/DN (``petro_price_adjustment``), quantity documents created by the
+        revision wizards (``petro_adjustment_quantity``), daily-position bill
+        sync documents (context flag), and ledger imports.
+        """
+        self.ensure_one()
+        if self.move_type not in (
+                'in_refund', 'in_invoice', 'out_refund', 'out_invoice'):
+            return False
+        if self.petro_price_adjustment or self.petro_adjustment_quantity:
+            return False
+        if self.env.context.get('petro_position_sync'):
+            return False
+        if 'petro_import_batch' in self._fields and self.petro_import_batch:
+            return False
+        if self.move_type in ('in_refund', 'out_refund'):
+            return True
+        # Debit notes and reversals of refunds add litres back.
+        debit_origin = (
+            'debit_origin_id' in self._fields and self.debit_origin_id)
+        return bool(debit_origin) or (
+            self.reversed_entry_id
+            and self.reversed_entry_id.move_type in ('in_refund', 'out_refund'))
+
+    def _petro_propagate_qty_documents(self, direction):
+        """Apply (direction=1) or undo (direction=-1) litres of manual docs."""
+        for move in self:
+            if direction > 0 and (
+                    move.petro_qty_propagated
+                    or not move._petro_qty_propagation_candidate()):
+                continue
+            if direction < 0 and not move.petro_qty_propagated:
+                continue
+            move = move.sudo()
+            # Set the marker before applying so any flush triggered while
+            # updating records (e.g. chatter posts recomputing deal amounts)
+            # already sees this document as a propagated quantity document.
+            move.petro_qty_propagated = direction > 0
+            if move.move_type in ('in_refund', 'in_invoice'):
+                changed = move._petro_apply_vendor_qty_document(direction)
+            else:
+                changed = move._petro_apply_customer_qty_document(direction)
+            if direction > 0 and not changed:
+                move.petro_qty_propagated = False
+
+    def _petro_product_lines(self):
+        return self.invoice_line_ids.filtered(
+            lambda line: line.display_type not in _SKIP_INVOICE_LINE_DISPLAY
+            and line.product_id and line.product_id.fuel_ok
+            and line.quantity)
+
+    def _petro_line_sign(self):
+        """Litres direction of this document: refunds remove, others add."""
+        return -1.0 if self.move_type in ('in_refund', 'out_refund') else 1.0
+
+    def _petro_trace_position_lot(self, line):
+        """Best-effort match of a vendor document line to a position lot."""
+        self.ensure_one()
+        po_line = line.purchase_line_id
+        if po_line and po_line.petroleum_position_line_id:
+            return po_line.petroleum_position_line_id
+        original = self.reversed_entry_id or self.petro_original_move_id
+        if not original and 'debit_origin_id' in self._fields:
+            original = self.debit_origin_id
+        if original:
+            for original_line in original.invoice_line_ids.filtered(
+                    lambda ol: ol.product_id == line.product_id
+                    and ol.purchase_line_id.petroleum_position_line_id):
+                return original_line.purchase_line_id.petroleum_position_line_id
+        po = self.env['purchase.order']._petro_po_from_origin(
+            self.invoice_origin or self.ref)
+        if po:
+            po_line = po._petro_matching_order_line(
+                product=line.product_id, old_price=line.price_unit)
+            if po_line and po_line.petroleum_position_line_id:
+                return po_line.petroleum_position_line_id
+        return self.env['petroleum.daily.position.line']
+
+    def _petro_apply_vendor_qty_document(self, direction):
+        """Move litres of a manual vendor CN/DN on the traced position lots."""
+        self.ensure_one()
+        sign = self._petro_line_sign()
+        changed = False
+        for line in self._petro_product_lines():
+            lot = self._petro_trace_position_lot(line)
+            if not lot:
+                continue
+            delta = sign * direction * line.quantity
+            if direction > 0:
+                note = _('Vendor document %(doc)s posted (%(qty)s L).',
+                         doc=self.display_name, qty=line.quantity)
+            else:
+                note = _('Vendor document %(doc)s reset to draft (%(qty)s L '
+                         'restored).', doc=self.display_name, qty=line.quantity)
+            lot._petro_apply_external_qty_delta(delta, note)
+            changed = True
+        return changed
+
+    def _petro_shift_deal_allocation(self, deal_line, delta):
+        """Adjust the deal line's active position allocations by ``delta``."""
+        rounding = (
+            deal_line.product_id.uom_id.rounding
+            if deal_line.product_id.uom_id else 0.01)
+        allocations = deal_line.deal_id.position_allocation_ids.filtered(
+            lambda alloc: alloc.deal_line_id == deal_line
+            and alloc.state == 'active').sorted('id')
+        if delta > 0:
+            pos_line = (
+                allocations[:1].position_line_id
+                or deal_line.position_line_id
+                or self.env['petroleum.daily.position.line'].find_for_deal_line(
+                    deal_line))
+            if not pos_line or float_compare(
+                    pos_line.qty_remaining, delta,
+                    precision_rounding=rounding) < 0:
+                raise UserError(_(
+                    'Cannot post %(doc)s: no position lot has %(qty)s L '
+                    'remaining for %(product)s. Use the deal revision wizard '
+                    'instead.',
+                    doc=self.display_name, qty=delta,
+                    product=deal_line.product_id.display_name))
+            if allocations:
+                allocations[0].write(
+                    {'quantity': allocations[0].quantity + delta})
+            else:
+                self.env['petroleum.daily.position.allocation'].create({
+                    'position_line_id': pos_line.id,
+                    'deal_id': deal_line.deal_id.id,
+                    'deal_line_id': deal_line.id,
+                    'quantity': delta,
+                    'buy_price': deal_line.buy_price or pos_line.buy_price,
+                })
+            return
+        remaining = -delta
+        if float_compare(
+                sum(allocations.mapped('quantity')), remaining,
+                precision_rounding=rounding) < 0:
+            raise UserError(_(
+                'Cannot post %(doc)s: the active position allocation for '
+                '%(product)s is smaller than %(qty)s L. Use the deal revision '
+                'wizard instead.',
+                doc=self.display_name, qty=remaining,
+                product=deal_line.product_id.display_name))
+        for allocation in allocations.sorted('id', reverse=True):
+            if float_compare(
+                    remaining, 0.0, precision_rounding=rounding) <= 0:
+                break
+            if float_compare(
+                    remaining, allocation.quantity,
+                    precision_rounding=rounding) >= 0:
+                remaining -= allocation.quantity
+                allocation.write({'state': 'released'})
+            else:
+                allocation.write(
+                    {'quantity': allocation.quantity - remaining})
+                remaining = 0.0
+
+    def _petro_apply_customer_qty_document(self, direction):
+        """Move litres of a manual customer CN/DN on the linked deal."""
+        self.ensure_one()
+        deal = self.deal_id
+        if not deal or deal.state not in ('confirmed', 'loaded', 'done'):
+            return False
+        sign = self._petro_line_sign()
+        changed = False
+        for line in self._petro_product_lines():
+            rounding = (
+                line.product_id.uom_id.rounding
+                if line.product_id.uom_id else 0.01)
+            delta = sign * direction * line.quantity
+            deal_lines = deal.line_ids.filtered(
+                lambda dl: dl.product_id == line.product_id)
+            if len(deal_lines) != 1:
+                raise UserError(_(
+                    'Cannot post %(doc)s: %(product)s does not match exactly '
+                    'one line on deal %(deal)s. Use the deal revision wizard '
+                    'instead.',
+                    doc=self.display_name,
+                    product=line.product_id.display_name,
+                    deal=deal.name))
+            deal_line = deal_lines
+            new_qty = deal_line.quantity + delta
+            if float_compare(
+                    new_qty, 0.0, precision_rounding=rounding) <= 0:
+                raise UserError(_(
+                    'Cannot post %(doc)s: it would leave %(product)s on deal '
+                    '%(deal)s at %(qty)s L. Use the deal revision wizard (or '
+                    'cancel the deal) instead.',
+                    doc=self.display_name,
+                    product=line.product_id.display_name,
+                    deal=deal.name, qty=new_qty))
+            sale_lines = self.env['sale.order.line']
+            if deal.sale_order_id:
+                sale_lines = deal.sale_order_id.order_line.filtered(
+                    lambda so_line: so_line.product_id == line.product_id
+                    and not so_line.display_type)
+                if len(sale_lines) > 1:
+                    raise UserError(_(
+                        'Cannot post %(doc)s: %(product)s appears on several '
+                        'sale order lines of deal %(deal)s. Use the deal '
+                        'revision wizard instead.',
+                        doc=self.display_name,
+                        product=line.product_id.display_name,
+                        deal=deal.name))
+            self._petro_shift_deal_allocation(deal_line, delta)
+            deal_line.write({'quantity': new_qty})
+            if sale_lines:
+                sale_lines.write({
+                    'product_uom_qty': sale_lines.product_uom_qty + delta})
+            changed = True
+        if changed:
+            if direction > 0:
+                body = _(
+                    'Customer document %(doc)s posted — deal litres updated '
+                    'accordingly.', doc=self.display_name)
+            else:
+                body = _(
+                    'Customer document %(doc)s reset to draft — deal litres '
+                    'restored.', doc=self.display_name)
+            deal.message_post(body=body)
+        return changed
 
     # ------------------------------------------------------------------
     # Backfill buy prices on imported ledger invoices
