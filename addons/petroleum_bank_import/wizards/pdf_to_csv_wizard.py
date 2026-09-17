@@ -140,16 +140,28 @@ class PetroleumBankPdfToCsvWizard(models.TransientModel):
 
         if name.endswith('.pdf') or raw[:4] == b'%PDF':
             text = self._pdftotext(raw)
-            if text and text.strip():
+            if text is None:
+                raise UserError(_(
+                    "This server cannot read PDFs: the pdftotext tool is not "
+                    "installed. Ask an administrator to install poppler-utils, "
+                    "or upload a bank text extract (.txt) instead."
+                ))
+            if text.strip():
                 return text
             raise UserError(_(
-                "Could not extract text from PDF (pdftotext missing or empty). "
-                "Upload a bank text extract (.txt) instead."
+                "No text could be extracted from this PDF, so it is most likely "
+                "scanned. Export a text statement from the bank and upload the "
+                ".txt instead."
             ))
 
         return raw.decode('utf-8', errors='replace')
 
     def _pdftotext(self, raw):
+        """Return the layout-preserving text, or None if pdftotext is missing.
+
+        ``-layout`` is what keeps the figures in their printed columns, which
+        is how the parsers tell a debit from a credit.
+        """
         try:
             with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as tmp:
                 tmp.write(raw)
@@ -171,7 +183,9 @@ class PetroleumBankPdfToCsvWizard(models.TransientModel):
                 except OSError:
                     pass
         except FileNotFoundError:
-            _logger.info('pdftotext not installed in container')
+            _logger.warning(
+                'pdftotext is not installed; the server cannot read bank PDFs')
+            return None
         except Exception as err:
             _logger.info('pdftotext error: %s', err)
         return ''

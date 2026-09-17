@@ -10,8 +10,11 @@ Two of the statements misreport their own header figures — Gulf labels its
 opening balance DR when the arithmetic says CR, and Premier prints 0/0 — so
 the opening balances below are the reconstructed ones.
 """
+import base64
 import os
+from unittest.mock import patch
 
+from odoo.exceptions import UserError
 from odoo.tests import tagged, TransactionCase
 
 from odoo.addons.petroleum_bank_import.wizards import statement_parsers
@@ -157,3 +160,15 @@ class TestStatementParsers(TransactionCase):
             self.env['petroleum.bank.pdf.to.csv.wizard']._fields['bank'].selection)
         selection.pop('other')
         self.assertEqual(set(selection), set(statement_parsers.PARSERS))
+
+    def test_missing_pdftotext_is_reported_as_a_server_problem(self):
+        """A server without poppler must not look like a bad statement."""
+        wizard = self.env['petroleum.bank.pdf.to.csv.wizard'].create({
+            'bank': 'absa',
+            'file_name': 'statement.pdf',
+            'attachment': base64.b64encode(b'%PDF-1.4 binary'),
+        })
+        with patch('odoo.addons.petroleum_bank_import.wizards.pdf_to_csv_wizard'
+                   '.subprocess.run', side_effect=FileNotFoundError):
+            with self.assertRaisesRegex(UserError, 'poppler-utils'):
+                wizard.action_convert()
