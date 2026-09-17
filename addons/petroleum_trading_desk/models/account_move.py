@@ -20,6 +20,12 @@ class AccountMove(models.Model):
     deal_id = fields.Many2one(
         'petroleum.deal', string='Trading Deal', index=True, copy=False, ondelete='set null',
         help='Links this imported ledger invoice or bill to the matching Trading Desk deal.')
+    petro_deal_date = fields.Date(
+        string='Desk Date', compute='_compute_petro_deal_date', store=True,
+        index=True, copy=False,
+        help='Business date the trading desk reports this document under: the '
+             'date of the deal it belongs to, or the document date when there '
+             'is no deal.')
     petro_price_adjustment = fields.Selection([
         ('customer_sell', 'Customer Sell Price'),
         ('supplier_buy', 'Supplier Buy Price'),
@@ -54,6 +60,33 @@ class AccountMove(models.Model):
              'trading deal, or whose margin data (buy price) is missing.')
     petro_desk_link_warning = fields.Char(
         compute='_compute_petro_desk_link_warning')
+
+    def _petro_period_date(self):
+        """Date the trading desk reports this document under.
+
+        Deal-backed documents follow ``deal_id.date`` so a deal keeps its
+        litres, revenue and margin in its own period instead of the period
+        where the invoice or bill happened to be created — customer invoices
+        are posted on the loading day, which can fall in the next month.
+        Credit notes and reversals follow the deal of the document they
+        correct. Anything with no deal (ledger imports, plain entries) keeps
+        its own accounting date.
+        """
+        self.ensure_one()
+        if self.deal_id.date:
+            return self.deal_id.date
+        original = self.petro_original_move_id or self.reversed_entry_id
+        if original.deal_id.date:
+            return original.deal_id.date
+        return self.invoice_date or self.date
+
+    @api.depends(
+        'deal_id', 'deal_id.date', 'invoice_date', 'date',
+        'petro_original_move_id.deal_id.date',
+        'reversed_entry_id.deal_id.date')
+    def _compute_petro_deal_date(self):
+        for move in self:
+            move.petro_deal_date = move._petro_period_date()
 
     def _petro_desk_link_gaps(self):
         """Missing desk connections of a customer invoice.
