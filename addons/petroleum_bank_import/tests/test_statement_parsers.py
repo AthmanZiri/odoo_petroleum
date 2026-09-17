@@ -5,6 +5,10 @@ The fixtures are the ``pdftotext -layout`` extracts of the PDFs downloaded
 for the cut-over, so the tests run without pdftotext installed. The expected
 figures come from the accountant-verified conversion in
 ``data/bank_statements_2026-09-01/`` (COVER_SHEET.csv and OPERATOR_CHECKLIST.md).
+
+Gulf misreports its own header figures — it labels the opening balance DR
+when the arithmetic says CR — so the opening balance below is the
+reconstructed one.
 """
 import os
 
@@ -21,6 +25,7 @@ FIXTURES = os.path.join(os.path.dirname(__file__), 'fixtures')
 STATEMENTS = {
     'absa': ('absa_statement.txt', 40, 7030219.95, 9153439.65),
     'kcb': ('kcb_statement.txt', 279, 115368.29, 2188492.04),
+    'gulf': ('gulf_statement.txt', 13, 717.63, -1488.97),
 }
 
 
@@ -90,6 +95,16 @@ class TestStatementParsers(TransactionCase):
         self.assertEqual(float(last['amount']), -1065.00)
         self.assertIn('Biashara Club Subscription', last['payment_ref'])
         self.assertIn('Fee', last['payment_ref'])
+
+    def test_gulf_reads_dr_balances_as_negative(self):
+        rows, _exceptions = self._parse('gulf')
+        self.assertAlmostEqual(rows[-1]['balance'], -1488.97, places=2)
+        self.assertEqual(float(rows[-1]['amount']), -500.00)
+
+    def test_gulf_reports_its_mislabelled_opening_balance(self):
+        _rows, exceptions = self._parse('gulf')
+        reasons = [e['reason'] for e in exceptions]
+        self.assertIn('opening_balance_mismatch', reasons)
 
     def test_no_partner_is_invented(self):
         for bank in STATEMENTS:

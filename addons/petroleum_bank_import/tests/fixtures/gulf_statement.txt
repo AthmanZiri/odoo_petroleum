@@ -1,0 +1,80 @@
+Date: Tuesday, 01 Sep 2026 07:45:54 AM                                                                                                 Branch: Bondeni
+Name: JAMEEL PETROLEUM LIMITED                                                                                                         From Date: 31/08/2026To Date: 01/09/2026
+Account No: 0900441501                                                                                                                 Account Type: SME Business AC
+Account Available Balance: 1,488.97 DR                             Currency: KES
+Blocked Balance: 0.00                                                                                                                  Pending settlements: 0.00
+
+ Statement of Account
+
+
+           Trade Date                        Value Date                       Description                      Debit (KES)                      Credit (KES)                        Balance
+                                                                                                                                                                           Opening Balance (KES):
+                                                                                                                                                                                 717.63 DR
+           31/08/2026                       31/08/2026               HOUSE CHQ DEPOSIT #                                                                 1,993,000.00                  1,993,717.63 CR
+                                                                   2547679,CHQ 001420,QUBAA
+                                                                         ENTER TO JAMEEL
+                                                                     PETROLEU CHQ 001420
+                                                                    QUBAA ENTER TO JAMEEL
+                                                                             PETROLEU
+           31/08/2026                       31/08/2026                     SMS Charge #                                         4.00                                                   1,993,713.63 CR
+                                                                        5069465800,Transfer
+                                                                     ref.JAMEEL PETROLEUM
+                                                                     LIMITED090 Ref. JAMEEL
+                                                                            PETROLEUM
+                                                                        LIMITED0900441501
+           31/08/2026                       31/08/2026                 Charges - SMS Charge                                     1.80                                                   1,993,711.83 CR
+                                                                       #5069465800 , Transfer
+                                                                     ref.JAMEEL PETROLEUM
+                                                                     LIMITED090 Ref. JAMEEL
+                                                                            PETROLEUM
+                                                                        LIMITED0900441501
+           31/08/2026                       31/08/2026                 Real Time Gross Sett #                           1,993,000.00                                                          711.83 CR
+                                                                      1481935, 1993000 KES
+                                                                      Rate:1,JAMEEL VITALAC
+                                                                          JAMEEL VITALAC
+           31/08/2026                       31/08/2026               Charges - Real Time Gross                                575.00                                                          136.83 CR
+                                                                   Sett #1481935 , 1993000 KES
+                                                                     Rate:1 , JAMEEL VITALAC
+                                                                          JAMEEL VITALAC
+           31/08/2026                       31/08/2026                     SMS Charge #                                         4.00                                                          132.83 CR
+                                                                        5069473681,Transfer
+                                                                     ref.JAMEEL PETROLEUM
+                                                                     LIMITED090 Ref. JAMEEL
+                                                                            PETROLEUM
+                                                                        LIMITED0900441501
+
+
+
+
+Disclaimer:This record is produced for your personal use and is not transferable. It’s not recommended for any official use whatsoever for further guidance and official statements please contact us via
+                                            customercare@gab.co.ke ,call us on 0711075000 or visit any of our nearest branch. Terms & Conditions apply
+Date: Tuesday, 01 Sep 2026 07:45:54 AM                                                                                                 Branch: Bondeni
+Name: JAMEEL PETROLEUM LIMITED                                                                                                         From Date: 31/08/2026To Date: 01/09/2026
+Account No: 0900441501                                                                                                                 Account Type: SME Business AC
+Account Available Balance: 1,488.97 DR                             Currency: KES
+Blocked Balance: 0.00                                                                                                                  Pending settlements: 0.00
+
+ Statement of Account
+           Trade Date                        Value Date                       Description                      Debit (KES)                      Credit (KES)                        Balance
+           31/08/2026                       31/08/2026                 Charges - SMS Charge                                     1.80                                                          131.03 CR
+                                                                       #5069473681 , Transfer
+                                                                     ref.JAMEEL PETROLEUM
+                                                                     LIMITED090 Ref. JAMEEL
+                                                                           PETROLEUM
+                                                                        LIMITED0900441501
+           31/08/2026                      31/08/2026                   Excise Duty                                            80.00                                                        51.03 CR
+           31/08/2026                      31/08/2026                 Maintenance Fee                                         400.00                                                       348.97 DR
+           31/08/2026                      31/08/2026                   Excise Duty                                            90.00                                                       438.97 DR
+           31/08/2026                      31/08/2026                   Ledger Fees                                           450.00                                                       888.97 DR
+           31/08/2026                      31/08/2026                   Excise Duty                                           100.00                                                       988.97 DR
+           31/08/2026                      31/08/2026               IBK Monthly Charges-                                      500.00                                                     1,488.97 DR
+                                 Total From 31/08/2026 To 01/09/2026                                                    1,995,206.60                     1,993,000.00 Available Balance: 1,488.97 DR
+                                                                                                                                                                              Closing Balance (KES):
+                                                                                                                                                                                         1,488.97 DR
+
+
+
+
+Disclaimer:This record is produced for your personal use and is not transferable. It’s not recommended for any official use whatsoever for further guidance and official statements please contact us via
+                                            customercare@gab.co.ke ,call us on 0711075000 or visit any of our nearest branch. Terms & Conditions apply
+
