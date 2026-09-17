@@ -230,8 +230,8 @@ export class PetroleumDashboard extends Component {
         const domain = [
             ["move_type", "=", "out_invoice"],
             ["state", "=", "posted"],
-            ["invoice_date", ">=", f.date_from],
-            ["invoice_date", "<=", f.date_to],
+            ["petro_deal_date", ">=", f.date_from],
+            ["petro_deal_date", "<=", f.date_to],
             ...extra,
         ];
         if (f.partner_id) {
