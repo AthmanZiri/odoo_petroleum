@@ -98,11 +98,23 @@ class DeskDashboard(models.TransientModel):
 
     @staticmethod
     def _invoice_effective_date(invoice):
+        """Accounting date of the document itself.
+
+        Only for matching documents to each other (same-day vendor bills);
+        period membership goes through ``petro_deal_date``.
+        """
         return invoice.invoice_date or invoice.date
 
     @api.model
+    def _period_domain(self, flt, field='petro_deal_date'):
+        return [
+            (field, '>=', flt['date_from']),
+            (field, '<=', flt['date_to']),
+        ]
+
+    @api.model
     def _invoice_in_period(self, invoice, flt):
-        eff = self._invoice_effective_date(invoice)
+        eff = invoice.petro_deal_date
         return bool(eff and flt['date_from'] <= eff <= flt['date_to'])
 
     @api.model
@@ -198,7 +210,7 @@ class DeskDashboard(models.TransientModel):
             ('deal_id', '!=', False),
             ('move_type', 'in', ('out_invoice', 'out_refund')),
             ('state', '=', 'posted'),
-        ])
+        ] + self._period_domain(flt))
         for inv in linked:
             if self._invoice_in_period(inv, flt):
                 invoice_ids.add(inv.id)
@@ -209,7 +221,7 @@ class DeskDashboard(models.TransientModel):
             ('state', '=', 'posted'),
             ('move_type', 'in', ('out_invoice', 'out_refund')),
             ('petro_price_adjustment', '=', 'customer_sell'),
-        ])
+        ] + self._period_domain(flt))
         for inv in tagged_customer:
             if self._invoice_in_period(inv, flt):
                 invoice_ids.add(inv.id)
@@ -220,7 +232,7 @@ class DeskDashboard(models.TransientModel):
                 ('state', '=', 'posted'),
                 ('petro_import_batch', '!=', False),
                 ('deal_id', '=', False),
-            ])
+            ] + self._period_domain(flt))
             for inv in imported:
                 if self._invoice_in_period(inv, flt):
                     invoice_ids.add(inv.id)
@@ -231,7 +243,7 @@ class DeskDashboard(models.TransientModel):
             ('move_type', '=', 'out_refund'),
             ('state', '=', 'posted'),
             ('deal_id', '=', False),
-        ])
+        ] + self._period_domain(flt))
         for refund in refunds:
             original = refund.petro_original_move_id or refund.reversed_entry_id
             is_imported = bool(
@@ -305,8 +317,7 @@ class DeskDashboard(models.TransientModel):
             ('move_type', '=', 'in_invoice'),
             ('state', '=', 'posted'),
             ('petro_import_batch', '!=', False),
-        ])
-        bills = bills.filtered(lambda m: self._invoice_in_period(m, flt))
+        ] + self._period_domain(flt))
         if flt['supplier_id']:
             bills = bills.filtered(
                 lambda m, sid=flt['supplier_id']: m.partner_id.id == sid)
@@ -327,11 +338,10 @@ class DeskDashboard(models.TransientModel):
             ('move_type', 'in', ('in_invoice', 'in_refund')),
             ('petro_price_adjustment', '=', 'supplier_buy'),
             ('petro_adjustment_scope', '!=', 'remaining'),
-        ])
+        ] + self._period_domain(flt))
         # Remaining-stock documents reconcile AP but the revised lot price is
         # already used as cost when those litres sell; counting both would
         # double the same supplier change.
-        moves = moves.filtered(lambda m: self._invoice_in_period(m, flt))
         if flt['supplier_id']:
             moves = moves.filtered(
                 lambda m, sid=flt['supplier_id']: m.partner_id.id == sid)
@@ -504,9 +514,9 @@ class DeskDashboard(models.TransientModel):
         return len(imported.filtered(lambda m: not self._invoice_in_period(m, flt)))
 
     @api.model
-    def _margin_by_invoice_date(self, invoices, flt, day):
+    def _margin_by_deal_date(self, invoices, flt, day):
         day_invoices = invoices.filtered(
-            lambda inv, day=day: self._invoice_effective_date(inv) == day)
+            lambda inv, day=day: inv.petro_deal_date == day)
         if not day_invoices:
             return 0.0
         return self._invoice_margin(day_invoices, flt)
@@ -756,11 +766,11 @@ class DeskDashboard(models.TransientModel):
             ]
         trend_labels, trend_values = [], []
         for day in trend_days:
-            margin_day = self._margin_by_invoice_date(invoices, flt, day)
+            margin_day = self._margin_by_deal_date(invoices, flt, day)
             margin_day += sum(
                 self._supplier_adjustment_margin(move)
                 for move in supplier_adjustments
-                if self._invoice_effective_date(move) == day)
+                if move.petro_deal_date == day)
             trend_labels.append(day.strftime('%d %b'))
             trend_values.append(round(margin_day, 2))
 
