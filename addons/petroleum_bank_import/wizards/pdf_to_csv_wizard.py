@@ -21,6 +21,7 @@ class PetroleumBankPdfToCsvWizard(models.TransientModel):
     bank = fields.Selection(
         [
             ('absa', 'Absa'),
+            ('kcb', 'KCB'),
             ('other', 'Other (manual / unsupported)'),
         ],
         required=True,

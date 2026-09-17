@@ -20,6 +20,7 @@ FIXTURES = os.path.join(os.path.dirname(__file__), 'fixtures')
 # bank -> (fixture, rows, opening, closing)
 STATEMENTS = {
     'absa': ('absa_statement.txt', 40, 7030219.95, 9153439.65),
+    'kcb': ('kcb_statement.txt', 279, 115368.29, 2188492.04),
 }
 
 
@@ -76,6 +77,19 @@ class TestStatementParsers(TransactionCase):
         self.assertEqual(
             by_ref['85320828000100270803 | JAMEEL VITALAC NAKURU'], -2030000.00)
         self.assertEqual(by_ref['85320828000100271157 | ABSA FEE'], -25.00)
+
+    def test_kcb_drops_brought_forward_row(self):
+        rows, _exceptions = self._parse('kcb')
+        self.assertFalse([r for r in rows if 'B/FWD' in r['payment_ref'].upper()])
+        self.assertTrue(rows[0]['payment_ref'].startswith('FT26213DGD09'))
+
+    def test_kcb_joins_details_printed_above_the_figures(self):
+        """KCB centres a wrapped details cell around its own amount line."""
+        rows, _exceptions = self._parse('kcb')
+        last = rows[-1]
+        self.assertEqual(float(last['amount']), -1065.00)
+        self.assertIn('Biashara Club Subscription', last['payment_ref'])
+        self.assertIn('Fee', last['payment_ref'])
 
     def test_no_partner_is_invented(self):
         for bank in STATEMENTS:

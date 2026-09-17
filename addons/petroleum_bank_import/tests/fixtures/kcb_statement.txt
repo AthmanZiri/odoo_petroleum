@@ -1,0 +1,721 @@
+Account Statement
+
+
+Date: 01/09/2026 07:44:13
+
+
+Account: 1312387386
+Account Name: JAMEEL PETROLEUM LIMITED
+Available Balance: KES 2,620,992.04
+Period: Last Month
+Balance At Period Start: 115,368.29
+Balance At Period End: 2,188,492.04
+Total Money In: 175,084,313.00
+Total Money Out: -173,011,189.25
+
+
+
+                                                                                                                                 Bank
+  Transaction          Value Date           Transaction Details              Money Out     Money In        Ledger Balance      Reference
+     Date                                                                                                                       Number
+    01.08.2026          01.08.2026   BALANCE B/FWD                                  0.00            0.00        115,368.29
+                                      Transfer fuel purchase fuel purchase
+    01.08.2026          01.08.2026   DARUSALAAM PETROLEUM                           0.00    1,600,000.00       1,715,368.29   FT26213DGD09
+                                     SERVICES LTD
+                                      Transfer FUEL PURCHASE FUEL
+    01.08.2026          01.08.2026   MWANAAM HAODO HUSEIN                           0.00     470,000.00        2,185,368.29   FT26213KQ9R8
+                                     IDNO1188833
+                                      Mobi 522522 MPESA UH1DD14DR4
+    01.08.2026          01.08.2026                                                  0.00     100,000.00        2,285,368.29   FT26213CZ0RB
+                                     254713959058 jami /
+                           Transfer 99000 99000 SAKATII
+02.08.2026   02.08.2026                                                  0.00      99,000.00     2,384,368.29   FT262145XNFP
+                          FILLING STATION
+                           Pesalink Incomi 20260802185504bc
+02.08.2026   02.08.2026   UPSALA HOLDINGS LTD purchase of                0.00     259,000.00     2,643,368.29   FT26214064YT
+                          petroleum product KCB BANK
+                           Mobi 522522 MPESA UH2S722O5M
+02.08.2026   02.08.2026                                                  0.00     574,000.00     3,217,368.29   FT26214DT8N7
+                          254710115821 UPSA /
+                           Mobi 522522 MPESA UH20U12OB9
+03.08.2026   03.08.2026                                                  0.00     250,000.00     3,467,368.29   FT26215G6ZXC
+                          254117158722 OMAR /
+                           Mobi 522522 MPESA UH20U12PT7
+03.08.2026   03.08.2026                                                  0.00     190,700.00     3,658,068.29 FT26215W8DSW
+                          254117158722 OMAR /
+                           Mobi 522522 MPESA UH3DD1B7AF
+03.08.2026   03.08.2026                                                  0.00     200,000.00     3,858,068.29   FT26215PM8ZJ
+                          254713959058 jami /
+03.08.2026   03.08.2026   Transfer Charge AC-1322812683                 -57.50           0.00    3,858,010.79   FT26215VC39L
+                          Transfer JAMEEL VITALAC
+03.08.2026   03.08.2026                                          -1,715,000.00           0.00    2,143,010.79   FT26215VC39L
+                          VITALAC INTERNATIONAL LIMITED
+                          Transfer RIZIKI MOHAMED RIZIKI
+03.08.2026   03.08.2026                                                  0.00     500,000.00     2,643,010.79 FT26215NSQH3
+                          MOHAMED RIZIKI MOHAMED ALI
+03.08.2026   03.08.2026   Transfer Charge AC-1322812683                 -57.50           0.00    2,642,953.29 FT262155CQSW
+                          Transfer JAMEEL VITALAC
+03.08.2026   03.08.2026                                          -2,642,000.00           0.00         953.29 FT262155CQSW
+                          VITALAC INTERNATIONAL LIMITED
+                          Inward SWIFT Pa KE GARISSA
+03.08.2026   03.08.2026                                                  0.00    1,945,000.00    1,945,953.29   FT2621559R47
+                          MARZIQ COMPANY LIMITED
+                          Transfer fuel purchase fuel purchase
+03.08.2026   03.08.2026   DARUSALAAM PETROLEUM                           0.00    3,000,000.00    4,945,953.29 FT26215SHHBD
+                          SERVICES LTD
+03.08.2026   03.08.2026   Transfer payment for fuel 999999               0.00     163,000.00     5,108,953.29 FT26215WCQK2
+03.08.2026   03.08.2026   Transfer payment for fuel 999999               0.00      88,000.00     5,196,953.29   FT26215ND5GZ
+                           Transfer fuel payments fuel
+03.08.2026   03.08.2026                                                  0.00    1,700,000.00    6,896,953.29   FT262158F81Y
+                          payments WAFI ENERGY LTD
+                           Transfer Fuel payment Fuel payment
+03.08.2026   03.08.2026                                                  0.00    6,000,000.00   12,896,953.29   FT26215XDL5C
+                          PETROLKIM LTD
+03.08.2026   03.08.2026   Transfer Charge AC-1332628346                 -57.50           0.00   12,896,895.79   FT262156WTJ1
+                          Transfer JAMEEL PIN OIL PINOIL
+03.08.2026   03.08.2026                                           -1,277,500.00           0.00   11,619,395.79   FT262156WTJ1
+                          ENERGY LIMITED
+03.08.2026   03.08.2026   Transfer Charge AC-1298277094                  -57.50           0.00   11,619,338.29   FT26215CTB7S
+                          Transfer JAMEEL RAAD RAAD
+03.08.2026   03.08.2026                                           -8,000,000.00           0.00    3,619,338.29   FT26215CTB7S
+                          ENERGY LIMITED
+03.08.2026   03.08.2026   Transfer Charge AC-1352482096                  -57.50           0.00    3,619,280.79   FT262158TYT1
+                           Transfer JAMEEL SKYBARREL
+03.08.2026   03.08.2026                                           -3,600,000.00           0.00      19,280.79    FT262158TYT1
+                          SKYBARREL ENERGIES LIMITED
+                           Transfer CHQ000236 FUEL
+03.08.2026   03.08.2026   PURCHASE FUEL PAYMENTS                          0.00    2,880,000.00    2,899,280.79   FT26215THH84
+                          HESFAN GENERAL LIMITED
+                           Transfer purchase petrol purchase
+04.08.2026   04.08.2026                                                   0.00     603,000.00     3,502,280.79   FT262167BY9X
+                          petrol HERITANA FILLING STATION
+04.08.2026   04.08.2026   Transfer Charge AC-1298277094                  -57.50           0.00    3,502,223.29   FT26216K6T7Y
+                          Transfer JAMEEL RAAD RAAD
+04.08.2026   04.08.2026                                           -3,502,000.00           0.00         223.29    FT26216K6T7Y
+                          ENERGY LIMITED
+                          Transfer ALAWI HUSUNI HUSUNI
+04.08.2026   04.08.2026                                                   0.00     720,000.00      720,223.29    FT26216C6QLP
+                          ALAWI HUSUNI MOHAMED
+04.08.2026   04.08.2026   Transfer Charge AC-1352482096                  -57.50           0.00     720,165.79    FT26216R2CB3
+                           Transfer JAMEEL SKYBARREL
+04.08.2026   04.08.2026                                            -720,000.00            0.00         165.79    FT26216R2CB3
+                          SKYBARREL ENERGIES LIMITED
+                           Transfer 137000 137000 SAKATII
+04.08.2026   04.08.2026                                                   0.00     137,000.00      137,165.79    FT262160J2FY
+                          FILLING STATION
+                           Transfer fuel payments fuel
+04.08.2026   04.08.2026                                                   0.00     820,000.00      957,165.79    FT26216ZZYQ0
+                          payments WAFI ENERGY LTD
+                           Transfer fuel purchase fuel purchase
+04.08.2026   04.08.2026   DARUSALAAM PETROLEUM                            0.00    3,950,000.00    4,907,165.79 FT26216MM59X
+                          SERVICES LTD
+                           Mobi 522522 MPESA
+04.08.2026   04.08.2026                                                   0.00     250,000.00     5,157,165.79   FT2621616J37
+                          UH4CK1WATC 254794774964 cath /
+                           Mobi 522522 MPESA
+04.08.2026   04.08.2026                                                   0.00     248,500.00     5,405,665.79   FT262160VSNC
+                          UH4CK1WAW9 254794774964 cath /
+04.08.2026   04.08.2026   Transfer Charge AC-1332628346                  -57.50           0.00    5,405,608.29   FT26216TP799
+                           Transfer JAMEEL PINOIL PINOIL
+04.08.2026   04.08.2026                                        -3,000,000.00           0.00   2,405,608.29   FT26216TP799
+                          ENERGY LIMITED
+                           Mobi 522522 MPESA UH4R11U95B
+04.08.2026   04.08.2026                                                0.00     106,000.00    2,511,608.29   FT26216TZN0Z
+                          254118919254 CATH /
+04.08.2026   04.08.2026   Transfer payment for fuel 999999             0.00     230,000.00    2,741,608.29   FT26216G8JTZ
+04.08.2026   04.08.2026   Transfer Charge AC-1322812683               -57.50           0.00   2,741,550.79   FT26216S9101
+                          Transfer JAMEEL VITALAC
+04.08.2026   04.08.2026                                        -2,741,000.00           0.00        550.79    FT26216S9101
+                          VITALAC INTERNATIONAL LIMITED
+                          Transfer Fuel payment Fuel payment
+05.08.2026   05.08.2026                                                0.00    3,500,000.00   3,500,550.79   FT26217L0M4V
+                          PETROLKIM LTD
+05.08.2026   05.08.2026   Transfer Charge AC-1322812683               -57.50           0.00   3,500,493.29   FT262178NW35
+                           Transfer JAMEEL VITALAC
+05.08.2026   05.08.2026                                        -3,500,000.00           0.00        493.29    FT262178NW35
+                          VITALAC INTERNATIONAL LIMITED
+                           Transfer CHQ3053 AL RAIDY
+05.08.2026   05.08.2026   PAYMENT FOR PETROL AL RAIDY                  0.00     150,000.00     150,493.29 FT26217WG7FR
+                          STORES
+                           Transfer 114000 114000 SAKATII
+05.08.2026   05.08.2026                                                0.00     114,000.00     264,493.29    FT26217ZB1HK
+                          FILLING STATION
+                           Transfer CHQ72 AMASO ENT
+05.08.2026   05.08.2026   PAYMENT FOR PETROL AMASO                     0.00     620,000.00     884,493.29    FT26217JJY1D
+                          ENTERPRISES LIMITED
+                           Transfer JAMEEL PETROLEUM
+05.08.2026   05.08.2026   JAMEEL PETROLEUM DIMKA                       0.00    1,990,000.00   2,874,493.29   FT262171LW1R
+                          POWER SYSTEM LIMITED
+05.08.2026   05.08.2026   Transfer Charge AC-1223272621               -57.50           0.00   2,874,435.79 FT26217MH5NS
+                          Transfer JAMEEL KENGAS
+05.08.2026   05.08.2026                                         -780,000.00            0.00   2,094,435.79 FT26217MH5NS
+                          KENGAS KENYA LIMITED
+                          Pesalink Incomi 2026080519375019
+05.08.2026   05.08.2026   BWANAMKUU BWANAMKUU                          0.00     500,000.00    2,594,435.79   FT2621734RR9
+                          Pesalink KCB BANK
+                          Pesalink Incomi 2026080519385519
+05.08.2026   05.08.2026   BWANAMKUU BWANAMKUU                          0.00     500,000.00    3,094,435.79   FT26217L35DZ
+                          Pesalink KCB BANK
+                           Pesalink Incomi 2026080606582106
+06.08.2026   06.08.2026   BWANAMKUU BWANAMKUU                             0.00     500,000.00    3,594,435.79 FT26218HHTHG
+                          Pesalink KCB BANK
+                           Pesalink Incomi 2026080607004207
+06.08.2026   06.08.2026   BWANAMKUU BWANAMKUU                             0.00     500,000.00    4,094,435.79   FT262183NQH6
+                          Pesalink KCB BANK
+                           Mobi 522522 MPESA UH6DD1NT4S
+06.08.2026   06.08.2026                                                   0.00     248,650.00    4,343,085.79   FT26218PL36M
+                          254713959058 jami /
+06.08.2026   06.08.2026   Transfer Charge AC-1322812683                  -57.50           0.00   4,343,028.29   FT26218C3BH5
+                          Transfer JAMEEL VITALAC
+06.08.2026   06.08.2026                                           -2,094,000.00           0.00   2,249,028.29   FT26218C3BH5
+                          VITALAC INTERNATIONAL LIMITED
+06.08.2026   06.08.2026   Transfer Charge AC-1322812683                  -57.50           0.00   2,248,970.79 FT26218DCY8M
+                           Transfer JAMEEL VITALAC
+06.08.2026   06.08.2026                                           -2,248,000.00           0.00        970.79 FT26218DCY8M
+                          VITALAC INTERNATIONAL LIMITED
+                           Transfer fuel purchase fuel purchase
+06.08.2026   06.08.2026   DARUSALAAM PETROLEUM                            0.00    5,200,000.00   5,200,970.79   FT26218Y9KY4
+                          SERVICES LTD
+                           Transfer fuel payments fuel
+06.08.2026   06.08.2026                                                   0.00    1,080,000.00   6,280,970.79   FT26218KCS4B
+                          payments WAFI ENERGY LTD
+06.08.2026   06.08.2026   Transfer Charge AC-1322812683                  -57.50           0.00   6,280,913.29   FT26218R7D7X
+                           Transfer JAMEEL VITALAC
+06.08.2026   06.08.2026                                           -6,280,000.00           0.00        913.29    FT26218R7D7X
+                          VITALAC INTERNATIONAL LIMITED
+                           Transfer RIZIKI MOHAMED RIZIKI
+06.08.2026   06.08.2026                                                   0.00     700,000.00     700,913.29 FT26218M7D2G
+                          MOHAMED RIZIKI MOHAMED ALI
+                           Transfer Reem Jameel Reem
+06.08.2026   06.08.2026   Jameel JAMEEL RESIDENCY                         0.00     516,000.00    1,216,913.29   FT26218FYCTT
+                          LIMITED
+                           Transfer 129000 129000 SAKATII
+06.08.2026   06.08.2026                                                   0.00     129,000.00    1,345,913.29   FT262180PXCK
+                          FILLING STATION
+06.08.2026   06.08.2026   Transfer Charge AC-1322812683                  -57.50           0.00   1,345,855.79   FT262189NM4X
+                          Transfer JAMEEL VITALAC
+06.08.2026   06.08.2026                                           -1,345,000.00           0.00        855.79    FT262189NM4X
+                          VITALAC INTERNATIONAL LIMITED
+                          Transfer 122000 122000 SAKATII
+07.08.2026   07.08.2026                                                   0.00     122,000.00     122,855.79    FT262190CYXH
+                          FILLING STATION
+                           Transfer Reem Jameel Reem
+07.08.2026   07.08.2026                                                 0.00     300,000.00     422,855.79    FT262199ZQ6X
+                          Jameel REEM VENTURES LIMITED
+                           Transfer Fuel payment Fuel payment
+07.08.2026   07.08.2026                                                 0.00    4,000,000.00   4,422,855.79   FT26219SX69L
+                          PETROLKIM LTD
+07.08.2026   07.08.2026   Transfer Charge AC-1322812683                -57.50           0.00   4,422,798.29   FT26219N20GF
+                           Transfer JAMEEL VITALAC
+07.08.2026   07.08.2026                                         -4,422,000.00           0.00        798.29    FT26219N20GF
+                          VITALAC INTERNATIONAL LIMITED
+                           Transfer JAMEEL PETROLEUM
+08.08.2026   08.08.2026   JAMEEL PETROLEUM LIMITED                      0.00     540,900.00     541,698.29    FT26220J511K
+                          HASSAN DIDO WARE
+                           Cash Deposit OMAR KHALIF NOOR
+08.08.2026   08.08.2026                                                 0.00      50,000.00     591,698.29    TT26220C9Q6N
+                          AT-MLNDI
+                           Mobi 522522 MPESA UH8S72C7W9
+08.08.2026   08.08.2026                                                 0.00     125,300.00     716,998.29    FT26220Q4YP5
+                          254710115821 UPSA /
+                           Transfer TRANSFER FUEL
+08.08.2026   08.08.2026   PURCHASE MWANAAMU HAODO                       0.00     171,000.00     887,998.29    FT262202BQD2
+                          OMAR J^A
+                           Transfer Fuel payment Fuel payment
+08.08.2026   08.08.2026                                                 0.00    2,000,000.00   2,887,998.29   FT262202GHZ5
+                          PETROLKIM LTD
+                           Bank to mobile charge AC-
+08.08.2026   08.08.2026                                                -76.25           0.00   2,887,922.04   FT26220ZB4BR
+                          KES1452600060001
+                           Bank to Mobile 254704259588-
+08.08.2026   08.08.2026   FUND TRANSFER MOBEE BANK               -250,000.00            0.00   2,637,922.04   FT26220ZB4BR
+                          MPESA SUSPENSE NO 006
+                           Bank to mobile charge AC-
+08.08.2026   08.08.2026                                                -76.25           0.00   2,637,845.79   FT262202XHF7
+                          KES1452600060001
+                           Bank to Mobile 254704259588-
+08.08.2026   08.08.2026   FUND TRANSFER MOBEE BANK                -44,250.00            0.00   2,593,595.79   FT262202XHF7
+                          MPESA SUSPENSE NO 006
+08.08.2026   08.08.2026   Transfer Charge AC-1322812683                -57.50           0.00   2,593,538.29 FT26220RQ7WY
+                          Transfer JAMEEL VITALAC
+08.08.2026   08.08.2026                                         -2,593,000.00           0.00        538.29 FT26220RQ7WY
+                          VITALAC INTERNATIONAL LIMITED
+                          Transfer 130000 130000 SAKATII
+08.08.2026   08.08.2026                                                 0.00     130,000.00     130,538.29    FT26220KZZXJ
+                          FILLING STATION
+                          Transfer 147000 147000 SAKATII
+09.08.2026   09.08.2026                                                 0.00     147,000.00     277,538.29    FT26221Q2JZY
+                          FILLING STATION
+                          Agent Deposit KE2BAANDK0QM
+10.08.2026   10.08.2026                                                  0.00     100,000.00     377,538.29 FT26222BR91W
+                          Depo Khadija 999999
+                          Agent Deposit KE2BAANDME0Y
+10.08.2026   10.08.2026                                                  0.00     100,000.00     477,538.29 FT26222WY5ZC
+                          Depo Khadija 999999
+                          Agent Deposit KE2BAANDM91T
+10.08.2026   10.08.2026                                                  0.00     100,000.00     577,538.29 FT26222HNGYB
+                          Depo Khadija 999999
+                          Agent Deposit KE2BAANDPD8B
+10.08.2026   10.08.2026                                                  0.00      35,450.00     612,988.29    FT26222D2N2L
+                          Depo Khadija 999999
+                          Inward SWIFT Pa KE AL BARAKAT
+10.08.2026   10.08.2026                                                  0.00    2,450,000.00   3,062,988.29   FT26222PP9M7
+                          MARZIQ COMPANY LIMITED
+10.08.2026   10.08.2026   Transfer Charge AC-1322812683                 -57.50           0.00   3,062,930.79   FT262228R133
+                          Transfer JAMEEL VITALAC
+10.08.2026   10.08.2026                                          -3,062,000.00           0.00        930.79    FT262228R133
+                          VITALAC INTERNATIONAL LIMITED
+                          Transfer fuel purchase fuel purchase
+10.08.2026   10.08.2026   DARUSALAAM PETROLEUM                           0.00    2,000,000.00   2,000,930.79 FT26222LLQHW
+                          SERVICES LTD
+                          Transfer 122000 122000 SAKATII
+10.08.2026   10.08.2026                                                  0.00     122,000.00    2,122,930.79   FT26222V72KG
+                          FILLING STATION
+10.08.2026   10.08.2026   Transfer Charge AC-1177434911                 -57.50           0.00   2,122,873.29   FT26222M4JY9
+                          Transfer JAMEEL QUALITY
+10.08.2026   10.08.2026                                          -2,000,000.00           0.00    122,873.29    FT26222M4JY9
+                          QUALITY PETROLEUM LIMITED
+10.08.2026   10.08.2026   Transfer payment for fuel 999999               0.00     108,000.00     230,873.29    FT26222JQXLG
+10.08.2026   10.08.2026   Transfer payment for fuel 999999               0.00      90,000.00     320,873.29    FT26222YJXY0
+                           Mobi 522522 MPESA UHBDD289R8
+11.08.2026   11.08.2026                                                  0.00     143,000.00     463,873.29    FT26223G1NS8
+                          254713959058 jami /
+                           Transfer purchase petrol purchase
+11.08.2026   11.08.2026                                                  0.00     606,000.00    1,069,873.29   FT26223F5NY4
+                          petrol HERITANA FILLING STATION
+11.08.2026   11.08.2026   Transfer Charge AC-1338773348                 -57.50           0.00   1,069,815.79   FT262231QB3N
+                          Transfer REFUND JAMEEL
+11.08.2026   11.08.2026                                           -100,000.00            0.00    969,815.79    FT262231QB3N
+                          RESIDENCY LIMITED
+                          Transfer Fuel payment Fuel payment
+11.08.2026   11.08.2026                                                  0.00    5,000,000.00   5,969,815.79   FT2622323L0P
+                          PETROLKIM LTD
+11.08.2026   11.08.2026   Transfer Charge AC-1322812683                 -57.50           0.00   5,969,758.29   FT26223DFYSF
+                          Transfer JAMEEL VITALAC
+11.08.2026   11.08.2026                                           -5,969,000.00           0.00        758.29    FT26223DFYSF
+                          VITALAC INTERNATIONAL LIMITED
+                          Transfer 147000 147000 SAKATII
+11.08.2026   11.08.2026                                                   0.00     147,000.00     147,758.29    FT26223SJ6RN
+                          FILLING STATION
+                          Transfer fuel purchase fuel purchase
+11.08.2026   11.08.2026   DARUSALAAM PETROLEUM                            0.00    3,000,000.00   3,147,758.29   FT26223PTZ6X
+                          SERVICES LTD
+11.08.2026   11.08.2026   Transfer payment for fuel 999999                0.00     183,000.00    3,330,758.29 FT262238GWH2
+11.08.2026   11.08.2026   Transfer payment for fuel 999999                0.00      44,000.00    3,374,758.29   FT262238MZV3
+11.08.2026   11.08.2026   Transfer fuel fuel 999999                       0.00     417,000.00    3,791,758.29   FT26223YSB4M
+12.08.2026   12.08.2026   Cash Deposit SAID ALI AT-MLNDI                  0.00     200,000.00    3,991,758.29 TT26224WKN1Y
+12.08.2026   12.08.2026   Transfer Charge AC-1224231759                  -57.50           0.00   3,991,700.79   FT26224RFQH5
+                           Transfer JAMEEL OILHUB OILHUB
+12.08.2026   12.08.2026                                           -3,147,000.00           0.00    844,700.79    FT26224RFQH5
+                          LIMITED
+12.08.2026   12.08.2026   Transfer Charge AC-1224231759                  -57.50           0.00    844,643.29    FT26224NR79S
+                           Transfer JAMEEL OILHUB OILHUB
+12.08.2026   12.08.2026                                            -844,000.00            0.00        643.29    FT26224NR79S
+                          LIMITED
+                           Transfer fuel purchase fuel purchase
+12.08.2026   12.08.2026   DARUSALAAM PETROLEUM                            0.00    2,100,000.00   2,100,643.29   FT262242ZV0T
+                          SERVICES LTD
+                           Transfer fuel payments fuel
+12.08.2026   12.08.2026                                                   0.00    3,200,000.00   5,300,643.29   FT26224H095F
+                          payments WAFI ENERGY LTD
+12.08.2026   12.08.2026   Transfer Charge AC-1322812683                  -57.50           0.00   5,300,585.79   FT26224592BX
+                          Transfer JAMEEL VITALAC
+12.08.2026   12.08.2026                                           -5,300,000.00           0.00        585.79    FT26224592BX
+                          VITALAC INTERNATIONAL LIMITED
+                          Transfer 124000 124000 SAKATII
+12.08.2026   12.08.2026                                                   0.00     124,000.00     124,585.79 FT26224WWK50
+                          FILLING STATION
+                          Mobi 522522 MPESA
+13.08.2026   13.08.2026                                                   0.00     181,300.00     305,885.79    FT2622554BBS
+                          UHDDD2GLUC 254713959058 jami /
+                          Mobi 522522 MPESA
+13.08.2026   13.08.2026   UHDHG2HWH1 254707401535                         0.00     250,000.00     555,885.79    FT26225Q68TZ
+                          TWAH /
+                            Mobi 522522 MPESA
+13.08.2026   13.08.2026   UHDHG2HTS7 254707401535 TWAH                     0.00      89,000.00     644,885.79 FT262250VWBZ
+                          /
+                            Transfer fuel purchase fuel purchase
+13.08.2026   13.08.2026   DARUSALAAM PETROLEUM                             0.00    5,100,000.00   5,744,885.79   FT2622502BTZ
+                          SERVICES LTD
+13.08.2026   13.08.2026   Transfer Charge AC-1322812683                   -57.50           0.00   5,744,828.29   FT26225T6B0L
+                           Transfer JAMEEL VITALAC
+13.08.2026   13.08.2026                                            -5,744,000.00           0.00        828.29    FT26225T6B0L
+                          VITALAC INTERNATIONAL LIMITED
+                           Transfer Fuel payment Fuel payment
+13.08.2026   13.08.2026                                                    0.00    4,000,000.00   4,000,828.29   FT26225N35YC
+                          PETROLKIM LTD
+                           Mobi 522522 MPESA UHD932K2C8
+13.08.2026   13.08.2026                                                    0.00     250,000.00    4,250,828.29   FT26225K1FJX
+                          254740373745 Twah /
+                           Mobi 522522 MPESA UHD932K6V9
+13.08.2026   13.08.2026                                                    0.00      36,000.00    4,286,828.29   FT262255JWVD
+                          254740373745 Twah /
+                           Inward SWIFT Pa KE MOMBASA
+13.08.2026   13.08.2026                                                    0.00    1,077,500.00   5,364,328.29   FT26225YPD8H
+                          TOTAL-LINK LOGISTICS LIMITED
+13.08.2026   13.08.2026   Transfer Charge AC-1322812683                   -57.50           0.00   5,364,270.79   FT26225L47Z0
+                           Transfer JAMEEL VITALAC
+13.08.2026   13.08.2026                                            -5,364,000.00           0.00        270.79    FT26225L47Z0
+                          VITALAC INTERNATIONAL LIMITED
+                           Transfer 80000 80000 SAKATII
+13.08.2026   13.08.2026                                                    0.00      80,000.00      80,270.79    FT26225TLVXS
+                          FILLING STATION
+                           Transfer fuel payments fuel
+14.08.2026   14.08.2026                                                    0.00     500,000.00     580,270.79    FT26226K8JRH
+                          payments WAFI ENERGY LTD
+                           Mobi 522522 MPESA
+14.08.2026   14.08.2026                                                    0.00     100,000.00     680,270.79 FT262260TWCG
+                          UHEDD2KOX7 254713959058 jami /
+                           Transfer 121000 121000 SAKATII
+14.08.2026   14.08.2026                                                    0.00     121,000.00     801,270.79 FT26226VWX06
+                          FILLING STATION
+14.08.2026   14.08.2026   Transfer payment for fuel 999999                 0.00     116,000.00     917,270.79 FT26226N4DQW
+                           Transfer purchase petrol purchase
+14.08.2026   14.08.2026                                                    0.00     413,000.00    1,330,270.79 FT26226PWV0T
+                          petrol HERITANA FILLING STATION
+                           Transfer REEM JAMEEL REEM
+14.08.2026   14.08.2026                                                    0.00     298,000.00    1,628,270.79   FT262266DQ0V
+                          JAMEEL REEM VENTURES LIMITED
+14.08.2026   14.08.2026   Transfer mafuta 999999                           0.00     279,500.00    1,907,770.79   FT262269T23K
+                           Transfer fuel payments fuel
+14.08.2026   14.08.2026                                                   0.00     560,000.00     2,467,770.79   FT262263Z8YZ
+                          payments WAFI ENERGY LTD
+                           Transfer fuel purchase fuel purchase
+14.08.2026   14.08.2026   DARUSALAAM PETROLEUM                            0.00     940,000.00     3,407,770.79   FT26226CF11N
+                          SERVICES LTD
+                           Cash Deposit ASMA ABUBAKAR AT-
+14.08.2026   14.08.2026                                                   0.00     135,560.00     3,543,330.79   TT2622672FWN
+                          BANK
+15.08.2026   15.08.2026   Transfer payment for fuel 999999                0.00      28,500.00     3,571,830.79   FT26227BBBM1
+15.08.2026   15.08.2026   Transfer Charge AC-1322812683                  -57.50           0.00    3,571,773.29 FT262274LWHP
+                          Transfer JAMEEL VITALAC
+15.08.2026   15.08.2026                                           -3,543,000.00           0.00      28,773.29 FT262274LWHP
+                          VITALAC INTERNATIONAL LIMITED
+                          Transfer 115000 115000 SAKATII
+15.08.2026   15.08.2026                                                   0.00     115,000.00      143,773.29    FT26227HBS0P
+                          FILLING STATION
+                          Transfer 139000 139000 SAKATII
+16.08.2026   16.08.2026                                                   0.00     139,000.00      282,773.29    FT26228D95XJ
+                          FILLING STATION
+                          Mobi 522522 MPESA
+17.08.2026   17.08.2026                                                   0.00     177,700.00      460,473.29 FT26229QCPZG
+                          UHHDD2WLKY 254713959058 jami /
+17.08.2026   17.08.2026   Transfer Charge AC-1338773348                  -57.50           0.00     460,415.79    FT26229CP4QF
+                           Transfer FUND TRANSFER
+17.08.2026   17.08.2026                                             -82,000.00            0.00     378,415.79    FT26229CP4QF
+                          JAMEEL RESIDENCY LIMITED
+                           Pesalink Incomi 2026081700260817
+17.08.2026   17.08.2026   CHESFIELD INVESTMENT LTD fuel                   0.00     400,000.00      778,415.79    FT262294BFJL
+                          purchase KCB BANK
+                           Transfer 121000 121000 SAKATII
+17.08.2026   17.08.2026                                                   0.00     121,000.00      899,415.79    FT26229KZ95F
+                          FILLING STATION
+                           Transfer fuel purchase fuel purchase
+17.08.2026   17.08.2026   DARUSALAAM PETROLEUM                            0.00    5,100,000.00    5,999,415.79   FT26229Z60D0
+                          SERVICES LTD
+                           Transfer Fuel payment Fuel payment
+17.08.2026   17.08.2026                                                   0.00    8,000,000.00   13,999,415.79   FT26229KFB31
+                          PETROLKIM LTD
+17.08.2026   17.08.2026   Transfer Charge AC-1322812683                  -57.50           0.00   13,999,358.29 FT26229YH8HQ
+                          Transfer JAMEEL VITALAC
+17.08.2026   17.08.2026                                           -3,325,000.00           0.00   10,674,358.29 FT26229YH8HQ
+                          VITALAC INTERNATIONAL LIMITED
+17.08.2026   17.08.2026   Transfer Charge AC-1332628346                  -57.50           0.00   10,674,300.79   FT26229ZL0DZ
+                          Transfer JAMEEL PIN OIL PINOIL
+17.08.2026   17.08.2026                                           -10,000,000.00           0.00     674,300.79   FT26229ZL0DZ
+                          ENERGY LIMITED
+17.08.2026   17.08.2026   Transfer Charge AC-1177434911                   -57.50           0.00     674,243.29   FT26229LRD9F
+                           Transfer JAMEEL QUALITY
+17.08.2026   17.08.2026                                             -674,000.00            0.00        243.29    FT26229LRD9F
+                          QUALITY PETROLEUM LIMITED
+                           Mobi 522522 MPESA UHI8W34DHU
+18.08.2026   18.08.2026                                                    0.00      62,000.00       62,243.29   FT26230SJ45R
+                          254757299071 jami /
+                           Mobi 522522 MPESA UHIDD30962
+18.08.2026   18.08.2026                                                    0.00      38,000.00      100,243.29   FT26230F86J6
+                          254713959058 jami /
+                           Transfer fuel payments fuel
+18.08.2026   18.08.2026                                                    0.00    2,380,000.00   2,480,243.29   FT26230332WP
+                          payments WAFI ENERGY LTD
+18.08.2026   18.08.2026   Transfer Charge AC-1338773348                   -57.50           0.00   2,480,185.79   FT2623021H8Q
+                           Transfer FUND TRANSFER
+18.08.2026   18.08.2026                                             -500,000.00            0.00   1,980,185.79   FT2623021H8Q
+                          JAMEEL RESIDENCY LIMITED
+                           Transfer JAMEEL JAMEEL DIMKA
+18.08.2026   18.08.2026                                                    0.00    2,010,500.00   3,990,685.79   FT26230SC8HZ
+                          POWER SYSTEM LIMITED
+                           Transfer 139000 139000 SAKATII
+18.08.2026   18.08.2026                                                    0.00     139,000.00    4,129,685.79   FT26230VQPXJ
+                          FILLING STATION
+18.08.2026   18.08.2026   Transfer Charge AC-1202702996                   -57.50           0.00   4,129,628.29   FT26230Q83ZT
+                           Transfer JAMEEL AFTAH AFTAH
+18.08.2026   18.08.2026                                            -4,129,000.00           0.00        628.29    FT26230Q83ZT
+                          PETROLEUM (K) LIMITED
+                           Transfer 115000 115000 SAKATII
+19.08.2026   19.08.2026                                                    0.00     115,000.00      115,628.29 FT26231W3VPG
+                          FILLING STATION
+                           Transfer Reem Jameel Reem
+19.08.2026   19.08.2026   Jameel JAMEEL RESIDENCY                          0.00     340,000.00      455,628.29 FT26231W3ZHY
+                          LIMITED
+                           Transfer fuel purchase fuel purchase
+19.08.2026   19.08.2026   DARUSALAAM PETROLEUM                             0.00    2,500,000.00   2,955,628.29   FT26231CL5Z7
+                          SERVICES LTD
+                           Inward SWIFT Pa KE AL BARAKAT
+19.08.2026   19.08.2026                                                    0.00    2,015,000.00   4,970,628.29   FT262310R6XC
+                          MARZIQ COMPANY LIMITED HOLA
+                           Transfer Fuel payment Fuel payment
+19.08.2026   19.08.2026                                                    0.00    6,000,000.00   10,970,628.29 FT26231DRW3F
+                          PETROLKIM LTD
+19.08.2026   19.08.2026   Transfer Charge AC-1322812683                   -57.50           0.00   10,970,570.79 FT26231CXGGH
+                           Transfer JAMEEL VITALAC
+19.08.2026   19.08.2026                                           -10,970,000.00           0.00        570.79 FT26231CXGGH
+                          VITALAC INTERNATIONAL LIMITED
+                           Transfer fuel payments fuel
+20.08.2026   20.08.2026                                                    0.00     820,000.00     820,570.79    FT26232T1X5T
+                          payments WAFI ENERGY LTD
+                           Transfer fuel purchase fuel purchase
+20.08.2026   20.08.2026   DARUSALAAM PETROLEUM                             0.00    1,700,000.00   2,520,570.79 FT262320W9CM
+                          SERVICES LTD
+20.08.2026   20.08.2026   Transfer Charge AC-1322812683                   -57.50           0.00   2,520,513.29   FT262326NDR5
+                           Transfer JAMEEL VITALAC
+20.08.2026   20.08.2026                                            -2,520,000.00           0.00        513.29    FT262326NDR5
+                          VITALAC INTERNATIONAL LIMITED
+                           Transfer 113000 113000 SAKATII
+20.08.2026   20.08.2026                                                    0.00     113,000.00     113,513.29    FT262323TJRP
+                          FILLING STATION
+                           Mobi 522522 MPESA UHLDD3CUF4
+21.08.2026   21.08.2026                                                    0.00     150,000.00     263,513.29    FT26233JN6NF
+                          254713959058 jami /
+                           Transfer CHQ73 AMASO ENT
+21.08.2026   21.08.2026   PAYMENT FOR PETROL AMASO                         0.00     624,000.00     887,513.29    FT26233XKDD7
+                          ENTERPRISES LIMITED
+                           Transfer Fuel payment Fuel payment
+21.08.2026   21.08.2026                                                    0.00    4,000,000.00   4,887,513.29   FT262339RN91
+                          PETROLKIM LTD
+                           Transfer 106000 106000 SAKATII
+21.08.2026   21.08.2026                                                    0.00     106,000.00    4,993,513.29 FT26233QWH06
+                          FILLING STATION
+21.08.2026   21.08.2026   Transfer Charge AC-1338773348                   -57.50           0.00   4,993,455.79 FT26233GFQ9N
+                           Transfer JAMEEL VITALAC NBI
+21.08.2026   21.08.2026                                            -2,075,000.00           0.00   2,918,455.79 FT26233GFQ9N
+                          JAMEEL RESIDENCY LIMITED
+21.08.2026   21.08.2026   Transfer Charge AC-1322812683                   -57.50           0.00   2,918,398.29   FT262332K820
+                           Transfer JAMEEL VITALAC
+21.08.2026   21.08.2026   NAKURU VITALAC INTERNATIONAL             -2,918,000.00           0.00        398.29    FT262332K820
+                          LIMITED
+                           Transfer JAMEEL JAMEEL JAMEEL
+21.08.2026   21.08.2026                                                    0.00     750,000.00     750,398.29    FT2623315H80
+                          RESIDENCY LIMITED
+                           Transfer DOKOTA SHUSHE
+21.08.2026   21.08.2026   PURCHASE OF PETROL DOKOTA                        0.00    1,030,000.00   1,780,398.29   FT26233T4HM1
+                          SHUSHE ABADADA
+                           Transfer JAMEEL JAMEEL JAMEEL
+21.08.2026   21.08.2026                                                    0.00     750,000.00    2,530,398.29   FT26233TVR34
+                          RESIDENCY LIMITED
+21.08.2026   21.08.2026   Transfer Charge AC-1322812683                   -57.50           0.00   2,530,340.79   FT262337JZHL
+                          Transfer JAMEEL VITALAC NBI
+21.08.2026   21.08.2026                                            -2,075,000.00           0.00    455,340.79    FT262337JZHL
+                          VITALAC INTERNATIONAL LIMITED
+                          Transfer fuel purchase fuel purchase
+21.08.2026   21.08.2026   DARUSALAAM PETROLEUM                             0.00    1,900,000.00   2,355,340.79   FT26233J9BX3
+                          SERVICES LTD
+22.08.2026   22.08.2026   Transfer Charge AC-1322812683                   -57.50           0.00   2,355,283.29   FT26234L4DLL
+                            Transfer JAMEEL VITALAC
+22.08.2026   22.08.2026                                            -2,355,000.00           0.00        283.29    FT26234L4DLL
+                          VITALAC INTERNATIONAL LIMITED
+                            Cash Deposit JAMEEL PETROLEUM
+22.08.2026   22.08.2026                                                    0.00      43,130.00      43,413.29    TT26234HL4FQ
+                          LIMITED AT-BANK
+                            Transfer fuel purchase fuel purchase
+22.08.2026   22.08.2026   DARUSALAAM PETROLEUM                             0.00     999,999.00    1,043,412.29   FT26234QN1JG
+                          SERVICES LTD
+                            Bank to mobile charge AC-
+22.08.2026   22.08.2026                                                   -76.25           0.00   1,043,336.04   FT262345B6TY
+                          KES1452600060001
+                            Bank to Mobile 254704259588-
+22.08.2026   22.08.2026   FUND TRANSFER MOBEE BANK                  -171,000.00            0.00    872,336.04    FT262345B6TY
+                          MPESA SUSPENSE NO 006
+                            Mobi 522522 MPESA
+22.08.2026   22.08.2026   UHMHG3KAZA 254707401535 TWAH                     0.00     250,000.00    1,122,336.04   FT26234B5RLN
+                          /
+                            Transfer fuel payments fuel
+22.08.2026   22.08.2026                                                    0.00     820,000.00    1,942,336.04   FT26234T14GP
+                          payments WAFI ENERGY LTD
+                            Transfer 125000 125000 SAKATII
+22.08.2026   22.08.2026                                                    0.00     125,000.00    2,067,336.04   FT26234YK8LP
+                          FILLING STATION
+                            Mobi 522522 MPESA UHN933OY7Z
+23.08.2026   23.08.2026                                                    0.00     143,000.00    2,210,336.04   FT26235L6VK4
+                          254740373745 Twah /
+                            Transfer 123000 123000 SAKATII
+23.08.2026   23.08.2026                                                    0.00     123,000.00    2,333,336.04   FT262350NPGX
+                          FILLING STATION
+                            Transfer 123000 123000 SAKATII
+24.08.2026   24.08.2026                                                    0.00     123,000.00    2,456,336.04 FT26236V2MHS
+                          FILLING STATION
+                            Mobi 522522 MPESA UHODD3PC22
+24.08.2026   24.08.2026                                                    0.00     232,400.00    2,688,736.04   FT26236TKGV8
+                          254713959058 jami /
+                            Transfer REEM JAMEEL REEM
+24.08.2026   24.08.2026                                                    0.00     236,000.00    2,924,736.04   FT262366FP01
+                          JAMEEL REEM VENTURES LIMITED
+24.08.2026   24.08.2026   Transfer Charge AC-1322812683                  -57.50           0.00   2,924,678.54   FT26236LBFLN
+                           Transfer JAMEEL VITALAC
+24.08.2026   24.08.2026                                           -2,333,000.00           0.00    591,678.54    FT26236LBFLN
+                          VITALAC INTERNATIONAL LIMITED
+                           Transfer JAMEEL JAMEEL DIMKA
+24.08.2026   24.08.2026                                                   0.00     632,000.00    1,223,678.54   FT26236T9JJL
+                          POWER SYSTEM LIMITED
+                           Pesalink Incomi 2026082414331219
+24.08.2026   24.08.2026   Mr ABDULAZIZ OMAR AMER                          0.00     999,000.00    2,222,678.54 FT26236CQYCT
+                          purchase fuel KCB BANK
+24.08.2026   24.08.2026   Transfer Charge AC-1128930269                  -57.50           0.00   2,222,621.04   FT262367F0KQ
+                           Transfer JAMEEL BRENTWOOD
+24.08.2026   24.08.2026                                            -295,000.00            0.00   1,927,621.04   FT262367F0KQ
+                          BRENT WOOD OIL (K) LIMITED
+                           Mobi 522522 MPESA UHPDD3SZC8
+25.08.2026   25.08.2026                                                   0.00     150,000.00    2,077,621.04   FT2623707CF4
+                          254713959058 jami /
+25.08.2026   25.08.2026   Transfer Charge AC-1322812683                  -57.50           0.00   2,077,563.54 FT26237NKMBW
+                          Transfer JAMEEL VITALAC
+25.08.2026   25.08.2026                                           -1,927,000.00           0.00    150,563.54 FT26237NKMBW
+                          VITALAC INTERNATIONAL LIMITED
+25.08.2026   25.08.2026   Transfer payment for fuel 999999                0.00     143,000.00     293,563.54    FT2623764YK6
+25.08.2026   25.08.2026   Transfer payment for fuel 999999                0.00      73,000.00     366,563.54    FT26237CVQ95
+                           Transfer fuel payments fuel
+25.08.2026   25.08.2026                                                   0.00    2,008,000.00   2,374,563.54 FT262378WSM5
+                          payments WAFI ENERGY LTD
+                           Transfer fuel purchase fuel purchase
+25.08.2026   25.08.2026   DARUSALAAM PETROLEUM                            0.00    4,000,000.00   6,374,563.54 FT26237HRWKF
+                          SERVICES LTD
+25.08.2026   25.08.2026   Transfer Charge AC-1322812683                  -57.50           0.00   6,374,506.04   FT26237T9FPS
+                          Transfer JAMEEL VITALAC
+25.08.2026   25.08.2026                                           -6,374,000.00           0.00        506.04    FT26237T9FPS
+                          VITALAC INTERNATIONAL LIMITED
+                          Transfer 128000 128000 SAKATII
+25.08.2026   25.08.2026                                                   0.00     128,000.00     128,506.04 FT26237Q1CKC
+                          FILLING STATION
+                          Transfer 108000 108000 SAKATII
+26.08.2026   26.08.2026                                                   0.00     108,000.00     236,506.04 FT262383WV9D
+                          FILLING STATION
+                          Transfer CHQ74 AMASO ENT
+26.08.2026   26.08.2026   PAYMENT FOR PETROL AMASO                        0.00     621,000.00     857,506.04    FT26238YDYJY
+                          ENTERPRISES LIMITED
+                          Inward SWIFT Pa KE AL BARAKAT
+26.08.2026   26.08.2026                                                   0.00    2,005,000.00   2,862,506.04   FT262389HHJD
+                          MARZIQ COMPANY LIMITED HOLA
+                          Cash Deposit CASH DEPOSIT AT-
+26.08.2026   26.08.2026                                                   0.00     220,000.00    3,082,506.04   TT262383PQ88
+                          GRSEN
+26.08.2026   26.08.2026   Transfer Charge AC-1322812683                  -57.50           0.00   3,082,448.54   FT262387SXF4
+                          Transfer JAMEEL VITALAC
+26.08.2026   26.08.2026                                           -2,085,000.00           0.00    997,448.54    FT262387SXF4
+                          VITALAC INTERNATIONAL LIMITED
+                          Transfer Fuel payment Fuel payment
+26.08.2026   26.08.2026                                                   0.00    7,000,000.00   7,997,448.54 FT26238RSRWS
+                          PETROLKIM LTD
+26.08.2026   26.08.2026   Transfer Charge AC-1332628346                  -57.50           0.00   7,997,391.04   FT26238RQ6L2
+                           Transfer JAMEEL PIN OIL PINOIL
+26.08.2026   26.08.2026                                           -7,997,000.00           0.00        391.04    FT26238RQ6L2
+                          ENERGY LIMITED
+                           Mobi 522522 MPESA UHRDD41CH1
+27.08.2026   27.08.2026                                                   0.00     175,850.00     176,241.04    FT262395T5JG
+                          254713959058 jami /
+                           Transfer MWANAAMU HAODO
+27.08.2026   27.08.2026   JAMEEL PETROLEUM LTD                            0.00     791,000.00     967,241.04    FT26239S9YBB
+                          MWANAAMU HAODO OMAR J^A
+                           Pesalink Incomi 2026082709284876
+27.08.2026   27.08.2026   UPSALA HOLDINGS LTD purchase if                 0.00     500,000.00    1,467,241.04   FT26239LNC23
+                          petroleum product KCB BANK
+                           Pesalink Incomi 20260827093130ba
+27.08.2026   27.08.2026   UPSALA HOLDINGS LTD purchase of                 0.00     224,000.00    1,691,241.04 FT26239TMM5G
+                          product KCB BANK
+27.08.2026   27.08.2026   Transfer mafuta 999999                          0.00     293,500.00    1,984,741.04   FT26239VXK2R
+                           Transfer fuel purchase fuel purchase
+27.08.2026   27.08.2026   DARUSALAAM PETROLEUM                            0.00    5,100,000.00   7,084,741.04   FT26239C7M9S
+                          SERVICES LTD
+                           Transfer fuel payments fuel
+27.08.2026   27.08.2026                                                   0.00     999,999.00    8,084,740.04   FT26239J92D5
+                          payments WAFI ENERGY LTD
+27.08.2026   27.08.2026   Transfer Charge AC-1332628346                  -57.50           0.00   8,084,682.54   FT26239SXT55
+                          Transfer JAMEEL PIN OIL PINOIL
+27.08.2026   27.08.2026                                           -7,084,000.00           0.00   1,000,682.54   FT26239SXT55
+                          ENERGY LIMITED
+27.08.2026   27.08.2026   Transfer Charge AC-1322812683                  -57.50           0.00   1,000,625.04   FT26239JYRSJ
+                          Transfer JAMEEL VITALAC NBI
+27.08.2026   27.08.2026                                          -1,000,000.00           0.00        625.04    FT26239JYRSJ
+                          VITALAC INTERNATIONAL LIMITED
+                          Transfer fuel purchase fuel purchase
+27.08.2026   27.08.2026   DARUSALAAM PETROLEUM                           0.00    2,300,000.00   2,300,625.04   FT26239JLT2T
+                          SERVICES LTD
+                          Transfer 110000 110000 SAKATII
+28.08.2026   28.08.2026                                                  0.00     110,000.00    2,410,625.04   FT262403M5T5
+                          FILLING STATION
+28.08.2026   28.08.2026   Transfer Charge AC-1322812683                 -57.50           0.00   2,410,567.54   FT26240G754W
+                          Transfer JAMEEL VITALAC
+28.08.2026   28.08.2026                                          -2,410,000.00           0.00        567.54    FT26240G754W
+                          VITALAC INTERNATIONAL LIMITED
+                          Transfer Fuel payment Fuel payment
+28.08.2026   28.08.2026                                                  0.00    5,000,000.00   5,000,567.54 FT26240TWGD9
+                          PETROLKIM LTD
+                          Transfer RIZIKI MOHAMED RIZIKI
+28.08.2026   28.08.2026                                                  0.00     750,000.00    5,750,567.54   FT2624084TSK
+                          MOHAMED RIZIKI MOHAMED ALI
+28.08.2026   28.08.2026   Transfer Charge AC-1322812683                 -57.50           0.00   5,750,510.04   FT26240KQ9R8
+                          Transfer JAMEEL VITALAC
+28.08.2026   28.08.2026                                          -5,750,000.00           0.00        510.04    FT26240KQ9R8
+                          VITALAC INTERNATIONAL LIMITED
+28.08.2026   28.08.2026   Transfer payment for fuel 999999               0.00      80,000.00      80,510.04 FT26240YGN7Q
+28.08.2026   28.08.2026   Transfer payment for fuel 999999               0.00     138,000.00     218,510.04    FT26240VBNCT
+                           Transfer purchase petrol purchase
+29.08.2026   29.08.2026                                                  0.00     618,000.00     836,510.04 FT26241QYTHV
+                          petrol HERITANA FILLING STATION
+                           Cash Deposit AMEEL PETROLEUM
+29.08.2026   29.08.2026                                                  0.00     120,375.00     956,885.04    TT262419TCFX
+                          LIMITED AT-BANK
+                           Transfer 33000 33000 SAKATII
+29.08.2026   29.08.2026                                                  0.00      33,000.00     989,885.04    FT262414PS1J
+                          FILLING STATION
+29.08.2026   29.08.2026   Transfer Charge AC-1322812683                 -57.50           0.00    989,827.54    FT26241ZJMFB
+                            Transfer JAMEEL VITALAC NBI
+29.08.2026   29.08.2026                                           -767,000.00            0.00    222,827.54    FT26241ZJMFB
+                          VITALAC INTERNATIONAL LIMITED
+                            Mobi 522522 MPESA
+30.08.2026   30.08.2026   UHUHG4GNE8 254707401535 TWAH                   0.00     250,000.00     472,827.54    FT26242Y3SJJ
+                          /
+                            Mobi 522522 MPESA
+30.08.2026   30.08.2026   UHUHG4GKNW 254707401535                        0.00     140,000.00     612,827.54    FT2624230JST
+                          TWAH /
+                           Mobi 522522 MPESA UHU934J7YB
+30.08.2026   30.08.2026                                                 0.00     215,000.00     827,827.54 FT262426DW1M
+                          254740373745 Twah /
+                           Transfer 134500 134500 SAKATII
+30.08.2026   30.08.2026                                                 0.00     134,500.00     962,327.54    FT2624248FNH
+                          FILLING STATION
+                           Mobi 522522 MPESA UHVDD4HZU2
+31.08.2026   31.08.2026                                                 0.00     250,000.00    1,212,327.54   FT26243WYT03
+                          254713959058 jami /
+                           Mobi 522522 MPESA
+31.08.2026   31.08.2026                                                 0.00     152,500.00    1,364,827.54   FT262435DHR5
+                          UHVDD4HUB8 254713959058 jami /
+                           Transfer Fuel payment Fuel payment
+31.08.2026   31.08.2026                                                 0.00    6,000,000.00   7,364,827.54   FT26243F05MS
+                          PETROLKIM LTD
+31.08.2026   31.08.2026   Transfer Charge AC-1332628346                -57.50           0.00   7,364,770.04 FT26243BQMRQ
+                          Transfer JAMEEL PINOIL PINOIL
+31.08.2026   31.08.2026                                         -7,364,000.00           0.00        770.04 FT26243BQMRQ
+                          ENERGY LIMITED
+                          Transfer TRANSFER FUEL
+31.08.2026   31.08.2026                                                 0.00    2,004,000.00   2,004,770.04   FT26243MY7T3
+                          PURCHASE ZAHIRA HAGEYO KORI
+                          Cash Deposit OMAR KHALIF NOOR
+31.08.2026   31.08.2026                                                 0.00      70,000.00    2,074,770.04   TT26243CNPY3
+                          AT-MLNDI
+                          Transfer 115000 115000 SAKATII
+31.08.2026   31.08.2026                                                 0.00     115,000.00    2,189,770.04 FT26243RQQYR
+                          FILLING STATION
+31.08.2026   31.08.2026   Transfer Charge AC-PL52044                 -213.00            0.00   2,189,557.04   FT26243W5Y3S
+                          Transfer Biashara Club Subscription
+31.08.2026   31.08.2026                                             -1,065.00           0.00   2,188,492.04   FT26243W5Y3S
+                          Fee
+

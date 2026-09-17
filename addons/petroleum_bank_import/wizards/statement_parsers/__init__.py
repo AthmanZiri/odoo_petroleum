@@ -7,11 +7,13 @@ Adding a bank means writing one module exposing ``parse(text)`` and
 """
 from . import common
 from . import absa
+from . import kcb
 
 from .common import rows_to_csv  # re-exported for the wizard and tests
 
 PARSERS = {
     'absa': absa,
+    'kcb': kcb,
 }
 
 BANK_LABELS = {code: module.BANK_LABEL for code, module in PARSERS.items()}
