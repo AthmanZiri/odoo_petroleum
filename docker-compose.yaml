@@ -1,6 +1,7 @@
 services:
   web:
-    image: odoo:19
+    build: .
+    image: odoo-petrolium:19
     depends_on:
       - db
     environment:
