@@ -47,6 +47,19 @@ class TestPetroBankCsvImport(AccountTestInvoicingCommon):
         ])
         self.assertEqual(len(lines_after), 2)
 
+    def test_import_action_is_executable_by_web_client(self):
+        csv_text = (
+            "date,payment_ref,partner,amount\n"
+            "2026-08-31,ACTION REF 1 | ABSA FEE,,-25.00\n"
+        )
+        action = self._import_csv(csv_text)
+        self.assertEqual(action['tag'], 'display_notification')
+        nxt = action['params']['next']
+        self.assertEqual(nxt['type'], 'ir.actions.act_window')
+        # The web client reads `views` directly; `view_mode` alone crashes it.
+        self.assertTrue(nxt.get('views'))
+        self.assertIn('kanban', [view_type for __, view_type in nxt['views']])
+
     def test_validation_bad_date_fails_whole_file(self):
         csv_text = (
             "date,payment_ref,partner,amount\n"

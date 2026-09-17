@@ -279,19 +279,17 @@ class ImportBankStatement(models.TransientModel):
         if created == 0:
             raise UserError(message)
 
-        # Open bank reconciliation for unmatched lines of this statement
-        action = {
-            'type': 'ir.actions.act_window',
-            'name': _('Bank Reconciliation'),
-            'res_model': 'account.bank.statement.line',
-            'view_mode': 'kanban,list',
-            'domain': [('statement_id', '=', statement.id)],
-            'context': {
-                'default_journal_id': journal.id,
-                'search_default_journal_id': journal.id,
-                'search_default_not_matched': 1,
-                'petro_import_message': message,
-            },
+        # Open bank reconciliation for unmatched lines of this statement.
+        # Build from the stored action so it carries `views`: the web client
+        # does not derive them from `view_mode` for action dicts it receives.
+        action = self.env['ir.actions.actions']._for_xml_id(
+            'bank_reconciliation.action_bank_reconciliation'
+        )
+        action['domain'] = [('statement_id', '=', statement.id)]
+        action['context'] = {
+            'default_journal_id': journal.id,
+            'search_default_journal_id': journal.id,
+            'search_default_not_matched': 1,
         }
         return {
             'type': 'ir.actions.client',
