@@ -8,3 +8,4 @@ from . import test_bill_invoice_capture
 from . import test_bank_journal_from_account
 from . import test_customer_expense_entry
 from . import test_deal_confirm_position
+from . import test_dashboard_deal_date_filter
