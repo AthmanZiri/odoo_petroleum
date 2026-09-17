@@ -27,6 +27,7 @@ STATEMENTS = {
     'kcb': ('kcb_statement.txt', 279, 115368.29, 2188492.04),
     'gulf': ('gulf_statement.txt', 13, 717.63, -1488.97),
     'premier': ('premier_statement.txt', 10, 113975.19, 2000.00),
+    'equity': ('equity_statement.txt', 11, 370.17, 755.17),
 }
 
 
@@ -112,6 +113,11 @@ class TestStatementParsers(TransactionCase):
         rows, _exceptions = self._parse('premier')
         deposit = next(r for r in rows if '579694' in r['payment_ref'])
         self.assertEqual(float(deposit['amount']), 260665.00)
+
+    def test_equity_reads_figures_from_the_line_below_the_date(self):
+        rows, _exceptions = self._parse('equity')
+        transfer = next(r for r in rows if r['payment_ref'].startswith('54542530 | EOB'))
+        self.assertEqual(float(transfer['amount']), -2316000.00)
 
     def test_no_partner_is_invented(self):
         for bank in STATEMENTS:

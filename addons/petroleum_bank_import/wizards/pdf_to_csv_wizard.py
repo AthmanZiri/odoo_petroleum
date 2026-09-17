@@ -24,6 +24,7 @@ class PetroleumBankPdfToCsvWizard(models.TransientModel):
             ('kcb', 'KCB'),
             ('gulf', 'Gulf African'),
             ('premier', 'Premier'),
+            ('equity', 'Equity'),
             ('other', 'Other (manual / unsupported)'),
         ],
         required=True,

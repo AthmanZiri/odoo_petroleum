@@ -7,6 +7,7 @@ Adding a bank means writing one module exposing ``parse(text)`` and
 """
 from . import common
 from . import absa
+from . import equity
 from . import gulf
 from . import kcb
 from . import premier
@@ -18,6 +19,7 @@ PARSERS = {
     'kcb': kcb,
     'gulf': gulf,
     'premier': premier,
+    'equity': equity,
 }
 
 BANK_LABELS = {code: module.BANK_LABEL for code, module in PARSERS.items()}
