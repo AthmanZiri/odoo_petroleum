@@ -28,3 +28,13 @@ BANK_LABELS = {code: module.BANK_LABEL for code, module in PARSERS.items()}
 def parse_statement_text(bank, text):
     """Parse ``text`` with the parser registered for ``bank``."""
     return PARSERS[bank].parse(text)
+
+
+def detect_bank(text):
+    """Return the bank code whose format ``text`` matches, if exactly one does.
+
+    Ambiguous or unrecognised text returns ``None`` so the operator's own
+    choice stands.
+    """
+    matches = [code for code, module in PARSERS.items() if module.detect(text)]
+    return matches[0] if len(matches) == 1 else None

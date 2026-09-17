@@ -58,6 +58,8 @@ class PetroleumBankPdfToCsvWizard(models.TransientModel):
                 "then re-run this wizard on the text."
             ))
 
+        self._check_bank_matches_file(text)
+
         rows, exceptions = statement_parsers.parse_statement_text(self.bank, text)
         if not rows:
             detail = '\n'.join(
@@ -98,6 +100,22 @@ class PetroleumBankPdfToCsvWizard(models.TransientModel):
             'views': [(False, 'form')],
             'target': 'new',
         }
+
+    def _check_bank_matches_file(self, text):
+        """Refuse to parse a statement with another bank's parser.
+
+        Gulf African exports are labelled "Statement of Account" and are
+        routinely mistaken for KCB; running the wrong parser would silently
+        produce plausible but wrong rows.
+        """
+        detected = statement_parsers.detect_bank(text)
+        if detected and detected != self.bank:
+            raise UserError(_(
+                "This file looks like a %(detected)s statement, but %(chosen)s "
+                "was selected. Pick the matching bank and convert again.",
+                detected=statement_parsers.BANK_LABELS[detected],
+                chosen=statement_parsers.BANK_LABELS[self.bank],
+            ))
 
     def action_download_csv_template(self):
         return {

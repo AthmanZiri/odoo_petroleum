@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """Parser tests against the 1 Sep 2026 cut-over statements.
 
-The fixtures are the ``pdftotext -layout`` extracts of the PDFs downloaded
-for the cut-over, so the tests run without pdftotext installed. The expected
-figures come from the accountant-verified conversion in
+The fixtures are the ``pdftotext -layout`` extracts of the five PDFs
+downloaded for the cut-over, so the tests run without pdftotext installed.
+The expected figures come from the accountant-verified conversion in
 ``data/bank_statements_2026-09-01/`` (COVER_SHEET.csv and OPERATOR_CHECKLIST.md).
 
 Two of the statements misreport their own header figures — Gulf labels its
@@ -14,7 +14,9 @@ import os
 
 from odoo.tests import tagged, TransactionCase
 
+from odoo.addons.petroleum_bank_import.wizards import statement_parsers
 from odoo.addons.petroleum_bank_import.wizards.statement_parsers import (
+    detect_bank,
     parse_statement_text,
     rows_to_csv,
 )
@@ -73,6 +75,11 @@ class TestStatementParsers(TransactionCase):
                 rows, _exceptions = self._parse(bank)
                 dates = [row['date'] for row in rows]
                 self.assertEqual(dates, sorted(dates))
+
+    def test_detects_bank_from_text(self):
+        for bank, (fixture, _rows, _open, _close) in STATEMENTS.items():
+            with self.subTest(bank=bank):
+                self.assertEqual(detect_bank(read_fixture(fixture)), bank)
 
     def test_absa_signs_come_from_the_column_not_the_wording(self):
         rows, _exceptions = self._parse('absa')
@@ -138,3 +145,15 @@ class TestStatementParsers(TransactionCase):
                 rows, exceptions = parse_statement_text(bank, '')
                 self.assertEqual(rows, [])
                 self.assertEqual(exceptions[0]['reason'], 'empty_file')
+
+    def test_wrong_bank_yields_no_rows(self):
+        """A parser must not invent rows from another bank's layout."""
+        rows, exceptions = parse_statement_text('kcb', read_fixture('gulf_statement.txt'))
+        self.assertEqual(rows, [])
+        self.assertEqual(exceptions[-1]['reason'], 'no_rows')
+
+    def test_every_selectable_bank_has_a_parser(self):
+        selection = dict(
+            self.env['petroleum.bank.pdf.to.csv.wizard']._fields['bank'].selection)
+        selection.pop('other')
+        self.assertEqual(set(selection), set(statement_parsers.PARSERS))
