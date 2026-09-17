@@ -34,6 +34,12 @@
               action="action_trading_desk_vendor_bills"
               sequence="20"/>
 
+    <menuitem id="menu_trading_desk_needs_link"
+              name="Needs Desk Link"
+              parent="menu_trading_desk_accounting"
+              action="action_trading_desk_needs_link"
+              sequence="25"/>
+
     <menuitem id="menu_trading_desk_customers"
               name="Customers"
               parent="menu_trading_desk_accounting"

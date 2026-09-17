@@ -10,12 +10,18 @@
                      invisible="not petroleum_expense_debtor_warning">
                     <field name="petroleum_expense_debtor_warning" nolabel="1"/>
                 </div>
+                <div class="alert alert-info" role="alert"
+                     invisible="not petro_desk_link_warning">
+                    <field name="petro_desk_link_warning" nolabel="1"/>
+                </div>
             </xpath>
             <field name="ref" position="after">
                 <field name="deal_id" readonly="1"
                        invisible="not deal_id"/>
                 <field name="petro_price_adjustment" invisible="1"/>
                 <field name="petroleum_expense_debtor_warning" invisible="1"/>
+                <field name="petro_desk_link_warning" invisible="1"/>
+                <field name="petro_needs_desk_link" invisible="1"/>
             </field>
             <xpath expr="//field[@name='invoice_line_ids']/list/field[@name='price_subtotal']"
                    position="after">
@@ -63,7 +69,28 @@
             <filter name="open" position="after">
                 <filter name="trading_deal" string="Trading deals"
                         domain="[('deal_id', '!=', False)]"/>
+                <filter name="needs_desk_link" string="Needs Desk Link"
+                        domain="[('petro_needs_desk_link', '=', True)]"/>
             </filter>
+        </field>
+    </record>
+
+    <record id="action_trading_desk_needs_link" model="ir.actions.act_window">
+        <field name="name">Invoices Needing Desk Link</field>
+        <field name="res_model">account.move</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="account.view_out_invoice_tree"/>
+        <field name="search_view_id" ref="account.view_account_invoice_filter"/>
+        <field name="domain">[('move_type', '=', 'out_invoice'), ('petro_needs_desk_link', '=', True)]</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                All fuel invoices are connected to the desk.
+            </p><p>
+                Invoices listed here are missing a trading deal link or a buy
+                price, so their litres and margin do not count on the desk.
+                Link them to a deal (Trading Desk → Accounting → Link Ledger
+                Invoices) or set the buy price on the fuel lines.
+            </p>
         </field>
     </record>
 

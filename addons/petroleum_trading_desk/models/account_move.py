@@ -47,6 +47,70 @@ class AccountMove(models.Model):
         help='Set when posting this manual refund / debit note updated the '
              'daily position lot or deal quantities. Resetting to draft '
              'restores them.')
+    petro_needs_desk_link = fields.Boolean(
+        string='Needs Desk Link', compute='_compute_petro_needs_desk_link',
+        store=True,
+        help='Customer invoice with fuel lines that is not connected to a '
+             'trading deal, or whose margin data (buy price) is missing.')
+    petro_desk_link_warning = fields.Char(
+        compute='_compute_petro_desk_link_warning')
+
+    def _petro_desk_link_gaps(self):
+        """Missing desk connections of a customer invoice.
+
+        Returns a dict with 'deal' (not linked to any deal / sale order) and
+        'buy' (fuel lines whose margin would report as zero) keys.
+        """
+        self.ensure_one()
+        gaps = {}
+        if self.move_type != 'out_invoice' or self.state == 'cancel':
+            return gaps
+        if self.petro_price_adjustment or self.petro_adjustment_quantity:
+            return gaps
+        fuel_lines = self.invoice_line_ids.filtered(
+            lambda line: line.display_type not in _SKIP_INVOICE_LINE_DISPLAY
+            and line.product_id and line.product_id.fuel_ok)
+        if not fuel_lines:
+            return gaps
+        if not self.deal_id and not any(
+                line.sale_line_ids for line in fuel_lines):
+            gaps['deal'] = True
+        margin_lines = fuel_lines.filtered(
+            lambda line: not line.petro_buy_price and not line.sale_line_ids)
+        if margin_lines:
+            gaps['buy'] = margin_lines
+        return gaps
+
+    @api.depends(
+        'move_type', 'state', 'deal_id',
+        'petro_price_adjustment', 'petro_adjustment_quantity',
+        'invoice_line_ids.product_id', 'invoice_line_ids.display_type',
+        'invoice_line_ids.sale_line_ids', 'invoice_line_ids.petro_buy_price')
+    def _compute_petro_needs_desk_link(self):
+        for move in self:
+            move.petro_needs_desk_link = bool(move._petro_desk_link_gaps())
+
+    @api.depends(
+        'move_type', 'state', 'deal_id',
+        'invoice_line_ids.product_id', 'invoice_line_ids.sale_line_ids',
+        'invoice_line_ids.petro_buy_price')
+    def _compute_petro_desk_link_warning(self):
+        for move in self:
+            gaps = move._petro_desk_link_gaps()
+            messages = []
+            if gaps.get('deal'):
+                messages.append(_(
+                    'This fuel invoice is not linked to a trading deal — its '
+                    'litres and margin will not appear on the desk. Create '
+                    'the sale through a Deal, or link it via Trading Desk → '
+                    'Accounting → Link Ledger Invoices.'))
+            if gaps.get('buy'):
+                messages.append(_(
+                    'Buy price is missing on %(count)d fuel line(s) — margin '
+                    'will report as zero until it is set (line field "Buy '
+                    'Price") or the invoice is linked to a deal.',
+                    count=len(gaps['buy'])))
+            move.petro_desk_link_warning = ' '.join(messages) or False
     petroleum_expense_debtor_warning = fields.Char(
         compute='_compute_petroleum_expense_debtor_warning')
 
