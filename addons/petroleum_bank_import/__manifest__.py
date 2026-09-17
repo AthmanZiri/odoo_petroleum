@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Petroleum Bank Statement Import',
-    'version': '19.0.1.1.0',
+    'version': '19.0.1.2.0',
     'category': 'Accounting/Accounting',
-    'summary': 'Duplicate-safe bank CSV import, validation, PDF→CSV (ABSA MVP)',
+    'summary': 'Duplicate-safe bank CSV import, validation, PDF→CSV for all five banks',
     'description': """
 Hardens Community bank statement import for Jameel Petroleum:
 
@@ -11,7 +11,9 @@ Hardens Community bank statement import for Jameel Petroleum:
 * Duplicate skip by journal/date/amount/payment_ref fingerprint
 * Import summary (created / skipped)
 * Downloadable CSV template
-* PDF/text → CSV wizard (ABSA parser MVP)
+* PDF/text → CSV wizard for Absa, KCB, Gulf African, Premier and Equity,
+  with the bank detected from the file and every amount reconciled against
+  the statement's running balance
     """,
     'author': 'Jameel Petroleum',
     'license': 'LGPL-3',

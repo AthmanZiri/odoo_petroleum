@@ -132,7 +132,7 @@ PDF / bank download
 3. Use **Import statement** / import wizard on that journal.  
 4. Upload a clean CSV (`date,payment_ref,partner,amount` only).  
    - Download template: **Accounting → Accounting → Bank CSV Template**, or **Download template** on the Import wizard.  
-   - Optional Absa draft: **Accounting → Accounting → Bank PDF → CSV**, then review the file before import.  
+   - Optional draft from the PDF (Absa, KCB, Gulf African, Premier, Equity): **Accounting → Accounting → Bank PDF → CSV**, then review the file before import. The wizard rejects the file if the selected bank does not match the statement, and lists any line that does not reconcile against the running balance under **Exceptions**.  
 5. Confirm the notification: **Created** / **Skipped duplicates**.  
 6. Spot-check 3–5 lines against the PDF (date, amount, narration).  
 

@@ -38,7 +38,10 @@ Download the template from **Accounting → Accounting → Bank CSV Template**, 
 
 - Validation **fails the whole file** if any row has a bad date, missing amount, or empty `payment_ref` (nothing is created).
 - Re-importing the same journal/date/amount/`payment_ref` **skips duplicates** and reports `Created` / `Skipped duplicates`.
-- Optional: **Accounting → Accounting → Bank PDF → CSV** (Absa MVP) to draft a CSV from PDF/text — always review before import.
+- Optional: **Accounting → Accounting → Bank PDF → CSV** to draft a CSV from PDF/text for Absa, KCB, Gulf African, Premier or Equity — always review before import.
+  - The wizard refuses the file if the selected bank does not match the statement, so a Gulf African SOA can no longer be converted as KCB.
+  - Amounts are read from the debit/credit column and re-checked against the running balance; anything that does not reconcile appears under **Exceptions** rather than in the CSV as a clean row.
+  - Gulf African's mislabelled opening balance (717.63 **DR** where the arithmetic needs **CR**) is reported as `opening_balance_mismatch` on every conversion; it is expected.
 
 ## Stop conditions
 

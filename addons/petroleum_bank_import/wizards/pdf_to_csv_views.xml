@@ -16,7 +16,9 @@
                         Converts a bank PDF or text extract into an import-ready
                         <code>date,payment_ref,partner,amount</code> CSV.
                         Review the CSV and cover sheet before importing — this does not post or reconcile.
-                        Absa MVP only; scanned/image PDFs are rejected.
+                        Supports Absa, KCB, Gulf African, Premier and Equity; scanned/image PDFs are rejected.
+                        Every amount is checked against the statement's own running balance —
+                        anything that does not reconcile is listed under Exceptions instead of being imported silently.
                         <div class="mt-2">
                             Prefer starting from the
                             <button name="action_download_csv_template" type="object"
