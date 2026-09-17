@@ -9,6 +9,7 @@ from . import common
 from . import absa
 from . import gulf
 from . import kcb
+from . import premier
 
 from .common import rows_to_csv  # re-exported for the wizard and tests
 
@@ -16,6 +17,7 @@ PARSERS = {
     'absa': absa,
     'kcb': kcb,
     'gulf': gulf,
+    'premier': premier,
 }
 
 BANK_LABELS = {code: module.BANK_LABEL for code, module in PARSERS.items()}

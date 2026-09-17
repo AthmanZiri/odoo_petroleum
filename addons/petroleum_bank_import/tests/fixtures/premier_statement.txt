@@ -1,0 +1,69 @@
+                                            Bank Account Statement
+
+
+                Statement
+            Statement     Summary
+                      Summary                                                                         Customer Profile
+
+                                                        KES                       Name       JAMEEL PETROLEUM LI
+Opening Balance                                     0
+
+Closing Balance                                     0 KES                         Mobile +254748700666
+
+Block Amount                                        0   KES                       Email      finance@jameelpetroleum.com
+
+Available Balance                                   0   KES                      Account # 0018867601
+
+Statement Date                   31 Aug 2026 to 01 Sep 2026                       Address      CANON TOWERS MOI AVENUE CANON
+                                                                                               TOWERS MOI AVENUE Kenya
+
+
+        Transaction Date                                  Description                               Debits           Credits          Balance
+
+                                Internal Acc Trans.- From 0019491401 # 20197788,from
+8/31/2026 8:05:27 AM                                                                                          0           318794        432769.19
+                                0019491401 to 0018867601 Pet rol
+
+
+8/31/2026 10:55:17 AM           Cash Deposit # 579694,SAID KIFALU                                             0           260665        693434.19
+
+
+
+8/31/2026 12:35:54 PM           Cash Deposit # 579722,SAID KIFALU                                             0           156125        849559.19
+
+
+                                Internal Acc Trans.- From 0019491403 # 20203486,from
+8/31/2026 1:19:09 PM                                                                                          0           129883        979442.19
+                                0019491403 to 0018867601 PET ROL
+
+
+8/31/2026 2:03:58 PM            Cash Deposit # 579730,SAID KIFALU                                             0           104835       1084277.19
+
+
+                                Internal Acc Trans.- To 0018149301 # 20205910,from
+8/31/2026 2:57:00 PM                                                                                     295000                0        789277.19
+                                0018867601 to 0018149301 FUND TRANSFER
+
+                                RTGS Transfer # 20205981, 786000 KES Rate:1,Txn
+8/31/2026 3:00:54 PM                                                                                     786000                0          3277.19
+                                2262117680
+
+                                RTGS - RTGS Transfer #20205981 , 786000 KES Rate:1 , Txn
+8/31/2026 3:00:54 PM                                                                                         500               0          2777.19
+                                2262117680
+
+
+8/31/2026 9:09:31 PM            Acc maintainance fee                                                         200               0          2577.19
+
+
+
+8/31/2026 9:09:31 PM            Acc maintainance fee                                                     577.19                0           2000.0
+
+
+
+
+  Note: The statement of your account and the balance reflected will be deemed accurate and accepted by you unless you notify us of any
+                                        discrepancies within 15 days following the statement date.
+
+      Premier Bank Kenya HQ Mihrab: Mihrab Building Mez1, Ring Road Killimani Nairobi, P.O Box 26219-00100, 020 2843000, info@premierbank.ke
+

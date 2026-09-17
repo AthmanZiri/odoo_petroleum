@@ -6,9 +6,9 @@ for the cut-over, so the tests run without pdftotext installed. The expected
 figures come from the accountant-verified conversion in
 ``data/bank_statements_2026-09-01/`` (COVER_SHEET.csv and OPERATOR_CHECKLIST.md).
 
-Gulf misreports its own header figures — it labels the opening balance DR
-when the arithmetic says CR — so the opening balance below is the
-reconstructed one.
+Two of the statements misreport their own header figures — Gulf labels its
+opening balance DR when the arithmetic says CR, and Premier prints 0/0 — so
+the opening balances below are the reconstructed ones.
 """
 import os
 
@@ -26,6 +26,7 @@ STATEMENTS = {
     'absa': ('absa_statement.txt', 40, 7030219.95, 9153439.65),
     'kcb': ('kcb_statement.txt', 279, 115368.29, 2188492.04),
     'gulf': ('gulf_statement.txt', 13, 717.63, -1488.97),
+    'premier': ('premier_statement.txt', 10, 113975.19, 2000.00),
 }
 
 
@@ -105,6 +106,12 @@ class TestStatementParsers(TransactionCase):
         _rows, exceptions = self._parse('gulf')
         reasons = [e['reason'] for e in exceptions]
         self.assertIn('opening_balance_mismatch', reasons)
+
+    def test_premier_ignores_digits_inside_the_description(self):
+        """"Cash Deposit # 579694" must not be read as a 579,694 movement."""
+        rows, _exceptions = self._parse('premier')
+        deposit = next(r for r in rows if '579694' in r['payment_ref'])
+        self.assertEqual(float(deposit['amount']), 260665.00)
 
     def test_no_partner_is_invented(self):
         for bank in STATEMENTS:
