@@ -154,26 +154,128 @@ class AccountMove(models.Model):
             self.reversed_entry_id
             and self.reversed_entry_id.move_type in ('in_refund', 'out_refund'))
 
+    def _petro_vendor_capture_candidate(self):
+        """Hand-typed vendor bill whose fuel litres may be new board stock.
+
+        Bills flowing from purchase orders (daily-position sync or deal POs)
+        are excluded per line through ``purchase_line_id``; flagged
+        adjustment/wizard documents, sync posts, and ledger imports are
+        excluded entirely.
+        """
+        self.ensure_one()
+        if self.move_type != 'in_invoice' or not self.partner_id:
+            return False
+        if self.petro_price_adjustment or self.petro_adjustment_quantity:
+            return False
+        if self.env.context.get('petro_position_sync'):
+            return False
+        if 'petro_import_batch' in self._fields and self.petro_import_batch:
+            return False
+        return bool(self._petro_capture_lines())
+
+    def _petro_capture_lines(self):
+        """Fuel lines a hand-typed vendor bill contributes to the board."""
+        return self._petro_product_lines().filtered(
+            lambda line: not line.purchase_line_id)
+
     def _petro_propagate_qty_documents(self, direction):
         """Apply (direction=1) or undo (direction=-1) litres of manual docs."""
         for move in self:
-            if direction > 0 and (
-                    move.petro_qty_propagated
-                    or not move._petro_qty_propagation_candidate()):
-                continue
-            if direction < 0 and not move.petro_qty_propagated:
-                continue
+            if direction > 0:
+                if move.petro_qty_propagated:
+                    continue
+                is_refund_doc = move._petro_qty_propagation_candidate()
+                is_capture_doc = (
+                    not is_refund_doc and move._petro_vendor_capture_candidate())
+                if not (is_refund_doc or is_capture_doc):
+                    continue
+            else:
+                if not move.petro_qty_propagated:
+                    continue
+                is_refund_doc = move._petro_qty_propagation_candidate()
+                is_capture_doc = (
+                    not is_refund_doc and move.move_type == 'in_invoice')
             move = move.sudo()
             # Set the marker before applying so any flush triggered while
             # updating records (e.g. chatter posts recomputing deal amounts)
             # already sees this document as a propagated quantity document.
             move.petro_qty_propagated = direction > 0
-            if move.move_type in ('in_refund', 'in_invoice'):
+            if is_capture_doc:
+                changed = move._petro_capture_vendor_bill(direction)
+            elif move.move_type in ('in_refund', 'in_invoice'):
                 changed = move._petro_apply_vendor_qty_document(direction)
             else:
                 changed = move._petro_apply_customer_qty_document(direction)
             if direction > 0 and not changed:
                 move.petro_qty_propagated = False
+
+    def _petro_capture_vendor_bill(self, direction):
+        """Feed litres of a hand-typed vendor bill onto the position board.
+
+        Only litres the board does not already know are added: when a lot for
+        the bill date / product / supplier / unit price already exists, the
+        bill is treated as the paperwork for that lot and nothing moves.
+        Lots created here remember their source bill so a reset-to-draft
+        removes exactly those litres (guarded against sold volume).
+        """
+        self.ensure_one()
+        Position = self.env['petroleum.daily.position.line']
+        supplier = self.partner_id.commercial_partner_id
+        bill_date = self.invoice_date or fields.Date.context_today(self)
+        changed = False
+        for line in self._petro_capture_lines():
+            own_lots = Position.search([
+                ('created_from_move_id', '=', self.id),
+                ('product_id', '=', line.product_id.id),
+            ])
+            own = own_lots.filtered(
+                lambda lot: lot._same_buy_price(line.price_unit))[:1]
+            if direction < 0:
+                if not own:
+                    continue
+                own._petro_apply_external_qty_delta(
+                    -line.quantity,
+                    _('Vendor bill %(doc)s reset to draft (%(qty)s L '
+                      'removed).', doc=self.display_name, qty=line.quantity))
+                changed = True
+                continue
+            if own:
+                # Re-posting a bill whose litres were removed on draft.
+                old_remaining = own.qty_remaining
+                own.write({'qty_bought': own.qty_bought + line.quantity})
+                own._log_quantity_change(
+                    old_remaining, own.qty_remaining,
+                    note=_('Vendor bill %(doc)s posted (%(qty)s L).',
+                           doc=self.display_name, qty=line.quantity))
+                changed = True
+                continue
+            existing = Position.search([
+                ('date', '=', bill_date),
+                ('product_id', '=', line.product_id.id),
+                ('supplier_id', 'in', (self.partner_id | supplier).ids),
+                ('company_id', '=', self.company_id.id),
+            ]).filtered(lambda lot: lot._same_buy_price(line.price_unit))
+            if existing:
+                # The board already carries these litres; the bill is just
+                # their paperwork. Adding again would double the stock.
+                continue
+            lot = Position.create({
+                'date': bill_date,
+                'product_id': line.product_id.id,
+                'supplier_id': supplier.id,
+                'company_id': self.company_id.id,
+                'currency_id': self.currency_id.id or False,
+                'qty_bought': line.quantity,
+                'buy_price': line.price_unit,
+                'created_from_move_id': self.id,
+                'note': _('Created from vendor bill %s', self.display_name),
+            })
+            lot._log_quantity_change(
+                0.0, lot.qty_remaining,
+                note=_('Vendor bill %(doc)s posted (%(qty)s L).',
+                       doc=self.display_name, qty=line.quantity))
+            changed = True
+        return changed
 
     def _petro_product_lines(self):
         return self.invoice_line_ids.filtered(

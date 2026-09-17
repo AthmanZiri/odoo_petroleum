@@ -52,6 +52,11 @@ class PetroleumDailyPositionLine(models.Model):
         string='Rolled On', copy=False, readonly=True,
         help='Set when this line\'s unsold volume was carried to the next day.')
 
+    created_from_move_id = fields.Many2one(
+        'account.move', string='Created From Bill', copy=False, readonly=True,
+        index='btree_not_null',
+        help='Hand-typed vendor bill whose posting created this lot. '
+             'Resetting that bill to draft removes its litres again.')
     allocation_ids = fields.One2many(
         'petroleum.daily.position.allocation', 'position_line_id', string='Allocations')
     price_history_ids = fields.One2many(
