@@ -1,3 +1,3 @@
 # -*- coding: utf-8 -*-
 from . import test_csv_import
-from . import test_absa_parser
+from . import test_statement_parsers

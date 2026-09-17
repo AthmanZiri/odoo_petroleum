@@ -8,7 +8,8 @@ import tempfile
 from odoo import _, fields, models
 from odoo.exceptions import UserError
 
-from .absa_pdf_parser import parse_absa_statement_text, rows_to_csv
+from . import statement_parsers
+from .statement_parsers import rows_to_csv
 
 _logger = logging.getLogger(__name__)
 
@@ -39,10 +40,10 @@ class PetroleumBankPdfToCsvWizard(models.TransientModel):
 
     def action_convert(self):
         self.ensure_one()
-        if self.bank != 'absa':
+        if self.bank == 'other':
             raise UserError(_(
-                "Only the Absa parser is implemented so far. "
-                "For other banks, prepare date,payment_ref,partner,amount manually."
+                "No parser for this bank. Prepare a "
+                "date,payment_ref,partner,amount CSV manually."
             ))
 
         text = self._extract_text()
@@ -53,14 +54,16 @@ class PetroleumBankPdfToCsvWizard(models.TransientModel):
                 "then re-run this wizard on the text."
             ))
 
-        rows, exceptions = parse_absa_statement_text(text)
+        rows, exceptions = statement_parsers.parse_statement_text(self.bank, text)
         if not rows:
             detail = '\n'.join(
                 f"{e.get('reason')}: {e.get('detail')}" for e in exceptions
             ) or _('No detail')
             raise UserError(_(
-                "No transactions parsed from Absa file.\n%s"
-            ) % detail)
+                "No transactions parsed from %(bank)s file.\n%(detail)s",
+                bank=statement_parsers.BANK_LABELS[self.bank],
+                detail=detail,
+            ))
 
         csv_text = rows_to_csv(rows)
         exc_lines = []
