@@ -117,6 +117,7 @@ class AccountMove(models.Model):
     # ------------------------------------------------------------------
 
     def action_post(self):
+        self._petro_check_customer_invoices_against_deals()
         res = super().action_post()
         self._petro_propagate_qty_documents(direction=1)
         return res
@@ -276,6 +277,73 @@ class AccountMove(models.Model):
                        doc=self.display_name, qty=line.quantity))
             changed = True
         return changed
+
+    def _petro_check_customer_invoices_against_deals(self):
+        """Block hand-typed customer invoices that contradict their deal.
+
+        Invoices generated from the deal's sale order (lines linked through
+        ``sale_line_ids``) and adjustment/wizard/import documents are left
+        alone. A confirmed deal is never silently changed from a hand-typed
+        invoice — mismatches point the user at the deal revision wizard.
+        """
+        for move in self:
+            if move.move_type != 'out_invoice' or not move.deal_id:
+                continue
+            if move.petro_price_adjustment or move.petro_adjustment_quantity:
+                continue
+            if move.petro_qty_propagated:
+                continue
+            if move._petro_qty_propagation_candidate():
+                continue  # debit notes are handled by posting propagation
+            if move.env.context.get('petro_position_sync'):
+                continue
+            if 'petro_import_batch' in move._fields and move.petro_import_batch:
+                continue
+            deal = move.deal_id
+            if deal.state not in ('confirmed', 'loaded', 'done'):
+                continue
+            for line in move._petro_product_lines().filtered(
+                    lambda inv_line: not inv_line.sale_line_ids):
+                deal_lines = deal.line_ids.filtered(
+                    lambda dl: dl.product_id == line.product_id)
+                if len(deal_lines) != 1:
+                    raise UserError(_(
+                        'Cannot post %(doc)s: %(product)s does not match '
+                        'exactly one line on deal %(deal)s. Invoice the deal '
+                        'from its sale order, or revise the deal first.',
+                        doc=move.display_name,
+                        product=line.product_id.display_name,
+                        deal=deal.name))
+                deal_line = deal_lines
+                rounding = (
+                    line.product_id.uom_id.rounding
+                    if line.product_id.uom_id else 0.01)
+                precision = (
+                    move.currency_id.decimal_places
+                    if move.currency_id else 2)
+                if float_compare(
+                        line.quantity, deal_line.quantity,
+                        precision_rounding=rounding) != 0:
+                    raise UserError(_(
+                        'Cannot post %(doc)s: it invoices %(qty)s L of '
+                        '%(product)s but deal %(deal)s carries %(deal_qty)s L. '
+                        'Invoice the deal from its sale order, or change the '
+                        'deal litres with the deal revision wizard first.',
+                        doc=move.display_name, qty=line.quantity,
+                        product=line.product_id.display_name,
+                        deal=deal.name, deal_qty=deal_line.quantity))
+                if float_compare(
+                        line.price_unit, deal_line.sell_price,
+                        precision_digits=precision) != 0:
+                    raise UserError(_(
+                        'Cannot post %(doc)s: it invoices %(product)s at '
+                        '%(price)s but deal %(deal)s sells at %(deal_price)s. '
+                        'Invoice the deal from its sale order, or change the '
+                        'sell price with the deal revision wizard first.',
+                        doc=move.display_name,
+                        product=line.product_id.display_name,
+                        price=line.price_unit, deal=deal.name,
+                        deal_price=deal_line.sell_price))
 
     def _petro_product_lines(self):
         return self.invoice_line_ids.filtered(
