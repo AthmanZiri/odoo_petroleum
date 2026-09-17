@@ -1,0 +1,303 @@
+{
+  "period": "2026-08-01 .. 2026-08-10/11",
+  "sources": {
+    "db": "jameel_petroleum_aug12 from jameel_petroleum_2026-08-12_05-56-15.zip",
+    "loading": "AUGUST LOADING 2026.xlsx",
+    "ledgers": "JAMEEL SUPPLIERS/CUSTOMERS AUGUST 2026.xlsx (prior Excel review)"
+  },
+  "volumes_litres": {
+    "loading_sheet": 1126000.0,
+    "excel_supplier": 1096000.0,
+    "excel_customer": 1096000.0,
+    "odoo_deals_loaded": 1126000.0,
+    "odoo_out_invoice_qty": 1320000.0,
+    "odoo_in_invoice_qty": 767000.0
+  },
+  "margins_kes": {
+    "loading_sheet_units": 1566200.0,
+    "excel_matched_legs": 1277400.0,
+    "odoo_deal_margin_stored": 1635200.0,
+    "odoo_deal_sell_minus_buy": 1662200.0,
+    "odoo_invoice_petro_margin": 1885000.0
+  },
+  "loading_vs_deal": {
+    "matched_legs": 112,
+    "unmatched_load_legs": 5,
+    "unmatched_load_qty": 56000.0,
+    "deals_with_unused_qty": 7,
+    "unused_deal_qty": 56000
+  },
+  "loading_vs_excel_customer": {
+    "matched": 109,
+    "sheet_only_count": 8,
+    "sheet_only_qty": 66000.0,
+    "excel_only_count": 5,
+    "excel_only_qty": 36000.0
+  },
+  "deal_margin_anomaly": [
+    {
+      "name": "DEAL/2026/0761",
+      "stored": -24000.0,
+      "expected": 3000.0
+    }
+  ],
+  "sheet_only_legs": [
+    {
+      "row": 57,
+      "date": "2026-08-05",
+      "supplier": "VITALAC",
+      "customer": "REEM",
+      "truck": "KDL 369T",
+      "grade": "PMS",
+      "qty": 6000.0,
+      "buy_unit": 204.5,
+      "sell_unit": 205.5,
+      "buy_total": 1227000.0,
+      "sell_total": 1233000.0,
+      "margin_row": 6000.0,
+      "sheet_buy_total_col": 1227000.0,
+      "sheet_margin_col": 6000.0
+    },
+    {
+      "row": 66,
+      "date": "2026-08-06",
+      "supplier": "VITALAC",
+      "customer": "REEM",
+      "truck": "KDG 103L",
+      "grade": "PMS",
+      "qty": 3000.0,
+      "buy_unit": 200.0,
+      "sell_unit": 204.0,
+      "buy_total": 600000.0,
+      "sell_total": 612000.0,
+      "margin_row": 12000.0,
+      "sheet_buy_total_col": 600000.0,
+      "sheet_margin_col": 12000.0
+    },
+    {
+      "row": 76,
+      "date": "2026-08-07",
+      "supplier": "PREMIUM",
+      "customer": "BOLD",
+      "truck": "KBK 308Q",
+      "grade": "AGO",
+      "qty": 16000.0,
+      "buy_unit": 198.0,
+      "sell_unit": 198.3,
+      "buy_total": 3168000.0,
+      "sell_total": 3172800.0,
+      "margin_row": 4800.0,
+      "sheet_buy_total_col": 3168000.0,
+      "sheet_margin_col": 4800.0
+    },
+    {
+      "row": 77,
+      "date": "2026-08-07",
+      "supplier": "VITALAC",
+      "customer": "BOLD",
+      "truck": "KDC 920Y",
+      "grade": "PMS",
+      "qty": 10000.0,
+      "buy_unit": 200.0,
+      "sell_unit": 203.3,
+      "buy_total": 2000000.0,
+      "sell_total": 2033000.0,
+      "margin_row": 33000.0,
+      "sheet_buy_total_col": 2000000.0,
+      "sheet_margin_col": 33000.0
+    },
+    {
+      "row": 78,
+      "date": "2026-08-07",
+      "supplier": "VITALAC",
+      "customer": "BOLD",
+      "truck": "KDT 943V",
+      "grade": "PMS",
+      "qty": 10000.0,
+      "buy_unit": 200.0,
+      "sell_unit": 203.3,
+      "buy_total": 2000000.0,
+      "sell_total": 2033000.0,
+      "margin_row": 33000.0,
+      "sheet_buy_total_col": 2000000.0,
+      "sheet_margin_col": 33000.0
+    },
+    {
+      "row": 83,
+      "date": "2026-08-07",
+      "supplier": "VITALAC",
+      "customer": "TRANSGLIDE",
+      "truck": "KDG 103L",
+      "grade": "AGO",
+      "qty": 5000.0,
+      "buy_unit": 199.5,
+      "sell_unit": 201.5,
+      "buy_total": 997500.0,
+      "sell_total": 1007500.0,
+      "margin_row": 10000.0,
+      "sheet_buy_total_col": 997500.0,
+      "sheet_margin_col": 10000.0
+    },
+    {
+      "row": 108,
+      "date": "2026-08-10",
+      "supplier": "FOSSIL",
+      "customer": "REEM",
+      "truck": "KCN 025A",
+      "grade": "PMS",
+      "qty": 6000.0,
+      "buy_unit": 205.0,
+      "sell_unit": 205.5,
+      "buy_total": 1230000.0,
+      "sell_total": 1233000.0,
+      "margin_row": 3000.0,
+      "sheet_buy_total_col": 1230000.0,
+      "sheet_margin_col": 3000.0
+    },
+    {
+      "row": 109,
+      "date": "2026-08-10",
+      "supplier": "OILHUB",
+      "customer": "REEM",
+      "truck": "KBF 520W",
+      "grade": "AGO",
+      "qty": 10000.0,
+      "buy_unit": 199.0,
+      "sell_unit": 205.0,
+      "buy_total": 1990000.0,
+      "sell_total": 2050000.0,
+      "margin_row": 60000.0,
+      "sheet_buy_total_col": 1990000.0,
+      "sheet_margin_col": 60000.0
+    }
+  ],
+  "excel_only_legs": [
+    {
+      "date": "2026-08-07",
+      "partner": "BOLD",
+      "truck": "KBK 308Q",
+      "grade": "AGO",
+      "qty": 14000.0,
+      "price": 198.3,
+      "role": "customer"
+    },
+    {
+      "date": "2026-08-07",
+      "partner": "BOLD",
+      "truck": "KAR 032Y",
+      "grade": "PMS",
+      "qty": 10000.0,
+      "price": 203.3,
+      "role": "customer"
+    },
+    {
+      "date": "2026-08-07",
+      "partner": "BOLD",
+      "truck": "KDT 943V",
+      "grade": "PMS",
+      "qty": 7000.0,
+      "price": 203.3,
+      "role": "customer"
+    },
+    {
+      "date": "2026-08-07",
+      "partner": "MAQBUL",
+      "truck": "KBK 308Q",
+      "grade": "AGO",
+      "qty": 2000.0,
+      "price": 201.5,
+      "role": "customer"
+    },
+    {
+      "date": "2026-08-07",
+      "partner": "MAQBUL",
+      "truck": "KDT 943V",
+      "grade": "PMS",
+      "qty": 3000.0,
+      "price": 204.5,
+      "role": "customer"
+    }
+  ],
+  "unmatched_load_legs": [
+    {
+      "row": 53,
+      "date": "2026-08-05",
+      "supplier": "VITALAC",
+      "customer": "BOLD",
+      "truck": "KBL 473S",
+      "grade": "AGO",
+      "qty": 10000.0,
+      "buy_unit": 200.0,
+      "sell_unit": 200.3,
+      "buy_total": 2000000.0,
+      "sell_total": 2003000.0,
+      "margin_row": 3000.0,
+      "sheet_buy_total_col": 2000000.0,
+      "sheet_margin_col": 3000.0
+    },
+    {
+      "row": 68,
+      "date": "2026-08-06",
+      "supplier": "VITALAC",
+      "customer": "PETROLKIM",
+      "truck": "KBB 038G",
+      "grade": "AGO",
+      "qty": 10000.0,
+      "buy_unit": 199.5,
+      "sell_unit": 201.3,
+      "buy_total": 1995000.0,
+      "sell_total": 2013000.0,
+      "margin_row": 18000.0,
+      "sheet_buy_total_col": 1995000.0,
+      "sheet_margin_col": 18000.0
+    },
+    {
+      "row": 75,
+      "date": "2026-08-07",
+      "supplier": "PREMIUM",
+      "customer": "BOLD",
+      "truck": "KDC 920Y",
+      "grade": "AGO",
+      "qty": 10000.0,
+      "buy_unit": 198.0,
+      "sell_unit": 198.3,
+      "buy_total": 1980000.0,
+      "sell_total": 1983000.0,
+      "margin_row": 3000.0,
+      "sheet_buy_total_col": 1980000.0,
+      "sheet_margin_col": 3000.0
+    },
+    {
+      "row": 76,
+      "date": "2026-08-07",
+      "supplier": "PREMIUM",
+      "customer": "BOLD",
+      "truck": "KBK 308Q",
+      "grade": "AGO",
+      "qty": 16000.0,
+      "buy_unit": 198.0,
+      "sell_unit": 198.3,
+      "buy_total": 3168000.0,
+      "sell_total": 3172800.0,
+      "margin_row": 4800.0,
+      "sheet_buy_total_col": 3168000.0,
+      "sheet_margin_col": 4800.0
+    },
+    {
+      "row": 78,
+      "date": "2026-08-07",
+      "supplier": "VITALAC",
+      "customer": "BOLD",
+      "truck": "KDT 943V",
+      "grade": "PMS",
+      "qty": 10000.0,
+      "buy_unit": 200.0,
+      "sell_unit": 203.3,
+      "buy_total": 2000000.0,
+      "sell_total": 2033000.0,
+      "margin_row": 33000.0,
+      "sheet_buy_total_col": 2000000.0,
+      "sheet_margin_col": 33000.0
+    }
+  ]
+}

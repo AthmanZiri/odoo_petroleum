@@ -1,0 +1,169 @@
+{
+  "period": "2026-08-01 .. 2026-08-31",
+  "files": {
+    "suppliers": "/workspace/data/incoming/JAMEEL_SUPPLIERS_AUGUST_2026_782c.xlsx",
+    "customers": "/workspace/data/incoming/JAMEEL_CUSTOMERS_AUGUST_2026_f2bc.xlsx"
+  },
+  "suppliers": {
+    "txn_count": 157,
+    "kinds": {
+      "payment": 61,
+      "loading": 96
+    },
+    "debit_total": 225299500.0,
+    "credit_total": 209206000.0,
+    "loading_count": 96,
+    "payment_count": 61,
+    "loading_qty_litres": {
+      "AGO": 496000.0,
+      "PMS": 600000.0
+    },
+    "loading_qty_total": 1096000.0,
+    "loading_value_at_line_price": 218464000.0,
+    "payment_net": 139151500.0,
+    "partners_with_aug_activity": 12,
+    "date_min": "2026-08-01",
+    "date_max": "2026-08-10"
+  },
+  "customers": {
+    "txn_count": 274,
+    "kinds": {
+      "payment": 175,
+      "loading": 99
+    },
+    "debit_total": 221549200.0,
+    "credit_total": 217084735.0,
+    "loading_count": 99,
+    "payment_count": 175,
+    "loading_qty_litres": {
+      "PMS": 605000.0,
+      "AGO": 491000.0
+    },
+    "loading_qty_total": 1096000.0,
+    "loading_value_at_line_price": 219809200.0,
+    "payment_net": 215344735.0,
+    "partners_with_aug_activity": 36,
+    "date_min": "2026-08-01",
+    "date_max": "2026-08-10"
+  },
+  "cross_load_match": {
+    "matched_legs": 93,
+    "supplier_only_legs": 18,
+    "customer_only_legs": 21,
+    "matched_buy_total": 220923500.0,
+    "matched_sell_total": 221408300.0,
+    "matched_margin_total": 484800.0,
+    "matched_margin_pct_of_sell": 0.22,
+    "negative_margin_count": 2,
+    "zero_margin_count": 0
+  },
+  "payment_banks_suppliers": {
+    "ABSA": {
+      "count": 27,
+      "net": 93482000.0
+    },
+    "KCB": {
+      "count": 19,
+      "net": 23877500.0
+    },
+    "EQUITY": {
+      "count": 11,
+      "net": 18590000.0
+    },
+    "PREMIER": {
+      "count": 2,
+      "net": 3660000.0
+    },
+    "GULF": {
+      "count": 2,
+      "net": -458000.0
+    }
+  },
+  "payment_banks_customers": {
+    "PETRONET": {
+      "count": 16,
+      "net": 73906000.0
+    },
+    "RIZIKI MOHAMED ALI": {
+      "count": 2,
+      "net": 1200000.0
+    },
+    "FUND TRANSFER": {
+      "count": 5,
+      "net": 679000.0
+    },
+    "HERITANA FILLING STATION": {
+      "count": 1,
+      "net": 603000.0
+    },
+    "ALAWI HUSUNI MOHAMED": {
+      "count": 1,
+      "net": 720000.0
+    },
+    "MARIAM ISAM": {
+      "count": 2,
+      "net": 1300000.0
+    },
+    "PHOSTINE AKINYI": {
+      "count": 1,
+      "net": 200000.0
+    },
+    "AL RAIDY STORES": {
+      "count": 2,
+      "net": 815000.0
+    },
+    "AMASO ENTERPRISES LIMITED": {
+      "count": 1,
+      "net": 620000.0
+    },
+    "BWANAMKUU -PESALINK": {
+      "count": 4,
+      "net": 2000000.0
+    },
+    "MOHAMED SALEH": {
+      "count": 1,
+      "net": 550000.0
+    },
+    "PESALINK TRANSFER": {
+      "count": 1,
+      "net": 847000.0
+    },
+    "ABDALLA MOHAMED KOMBO": {
+      "count": 3,
+      "net": 388000.0
+    },
+    "SHAKIR MOHAMED ABDUL": {
+      "count": 2,
+      "net": 228000.0
+    },
+    "ABSA": {
+      "count": 46,
+      "net": 47986442.0
+    },
+    "KCB": {
+      "count": 43,
+      "net": 49234500.0
+    },
+    "EQUITY": {
+      "count": 20,
+      "net": 24845500.0
+    },
+    "PREMIER": {
+      "count": 22,
+      "net": 4053293.0
+    },
+    "GULF": {
+      "count": 2,
+      "net": 5169000.0
+    }
+  },
+  "db_status": "RESTORED jameel_petroleum_aug12 from jameel_petroleum_2026-08-12_05-56-15.zip (posted through 2026-08-11)",
+  "odoo_checks_pending": [],
+  "odoo_checks_done": [
+    "Trading Desk margin vs loading/excel",
+    "P&L Gross vs Desk margin",
+    "PO vs vendor bills for Aug",
+    "Payment/transfer journals vs Excel payments",
+    "AUGUST LOADING countercheck"
+  ]
+}
