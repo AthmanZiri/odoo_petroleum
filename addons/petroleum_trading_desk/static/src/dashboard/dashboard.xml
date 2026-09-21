@@ -191,6 +191,37 @@
                     </div>
                 </div>
 
+                <!-- Bank balances (current GL, not filtered by period) -->
+                <h5 class="mt-4 mb-2 text-muted d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <span>
+                        Bank Balances
+                        <span class="fw-normal small"> — current GL</span>
+                    </span>
+                    <span class="o_petro_clickable fw-bold"
+                          t-att-class="state.data.banks.total_raw &gt; 0 ? 'text-success' : (state.data.banks.total_raw &lt; 0 ? 'text-danger' : '')"
+                          t-on-click="openBankList">
+                        Total cash: <t t-esc="state.data.banks.total"/>
+                    </span>
+                </h5>
+                <div class="row g-3 mb-1" t-if="state.data.banks.journals.length">
+                    <div class="col-6 col-md-3" t-foreach="state.data.banks.journals" t-as="bank" t-key="bank.id">
+                        <div class="o_petro_kpi card h-100 border-0 shadow-sm o_petro_clickable"
+                             t-att-class="bank.type === 'cash' ? 'o_petro_bank_cash' : 'o_petro_bank_bank'"
+                             t-on-click="() => this.openBank(bank.id)">
+                            <div class="card-body">
+                                <div class="o_petro_kpi_label" t-esc="bank.name"/>
+                                <div class="o_petro_kpi_value"
+                                     t-att-class="bank.balance_raw &gt; 0 ? 'text-success' : (bank.balance_raw &lt; 0 ? 'text-danger' : '')"
+                                     t-esc="bank.balance"/>
+                                <div class="text-muted small" t-esc="bank.type === 'cash' ? 'Cash' : 'Bank'"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-muted small mb-1" t-if="!state.data.banks.journals.length">
+                    No bank or cash journals configured.
+                </div>
+
                 <!-- Daily position -->
                 <h5 class="mt-4 mb-2 text-muted">
                     Bulk Position

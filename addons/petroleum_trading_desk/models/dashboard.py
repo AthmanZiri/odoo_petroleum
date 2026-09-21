@@ -654,6 +654,47 @@ class DeskDashboard(models.TransientModel):
         }
 
     @api.model
+    def _bank_balances(self, money):
+        """Current GL balances for every Bank/Cash journal with a cash book.
+
+        Live cash position — not scoped to the dashboard date filter.
+        """
+        journals = self.env['account.journal'].search([
+            ('type', 'in', ('bank', 'cash')),
+            ('company_id', '=', self.env.company.id),
+            ('default_account_id', '!=', False),
+        ], order='name')
+        journal_rows = []
+        seen_accounts = set()
+        for journal in journals:
+            account_id = journal.default_account_id.id
+            if account_id in seen_accounts:
+                continue
+            seen_accounts.add(account_id)
+            journal_rows.append(journal)
+        accounts = self.env['account.account'].browse(
+            [journal.default_account_id.id for journal in journal_rows])
+        accounts.mapped('current_balance')
+
+        rows = []
+        total = 0.0
+        for journal in journal_rows:
+            raw = journal.default_account_id.current_balance
+            total += raw
+            rows.append({
+                'id': journal.id,
+                'name': journal.name,
+                'type': journal.type,
+                'balance': money(raw),
+                'balance_raw': round(raw, 2),
+            })
+        return {
+            'journals': rows,
+            'total': money(total),
+            'total_raw': round(total, 2),
+        }
+
+    @api.model
     def get_dashboard_data(self, filters=None):
         flt = self._parse_filters(filters)
         Deal = self.env['petroleum.deal']
@@ -824,7 +865,20 @@ class DeskDashboard(models.TransientModel):
                 },
                 'deals_pipeline': deals_pipeline,
             },
+            'banks': self._bank_balances(money),
         }
+
+    @api.model
+    def action_open_bank_journal(self, journal_id):
+        journal = self.env['account.journal'].browse(int(journal_id or 0))
+        if not journal.exists() or journal.type not in ('bank', 'cash'):
+            return False
+        action_open = getattr(journal, 'action_open_reconcile', None)
+        if callable(action_open):
+            action = action_open()
+            if action:
+                return action
+        return journal.open_action()
 
     @api.model
     def action_open_statement_wizard(self):

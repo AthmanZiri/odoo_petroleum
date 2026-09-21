@@ -309,6 +309,31 @@ export class PetroleumDashboard extends Component {
         });
     }
 
+    async openBank(journalId) {
+        const action = await this.orm.call(
+            "petroleum.desk.dashboard",
+            "action_open_bank_journal",
+            [journalId]
+        );
+        if (action) {
+            this.action.doAction(action);
+        }
+    }
+
+    openBankList() {
+        this.action.doAction({
+            type: "ir.actions.act_window",
+            name: "Bank / Cash Journals",
+            res_model: "account.journal",
+            domain: [
+                ["type", "in", ["bank", "cash"]],
+                ["default_account_id", "!=", false],
+            ],
+            views: [[false, "list"], [false, "form"]],
+            target: "current",
+        });
+    }
+
     openPartner(id) {
         this.action.doAction({
             type: "ir.actions.act_window",
