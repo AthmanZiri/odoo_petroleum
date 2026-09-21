@@ -136,9 +136,12 @@ class TestDashboardDealDateFilter(AccountTestInvoicingCommon):
         data = self._dashboard_data(self.deal_month)
         self.assertEqual(data['kpis']['deal_invoices_count'], 1)
         self.assertEqual(data['kpis']['litres_raw']['PMS'], 100.0)
+        self.assertEqual(data['kpis']['total_volume_raw'], 100.0)
+        self.assertTrue(data['kpis']['total_volume'].endswith('L'))
         self.assertEqual(data['charts']['deals_pipeline']['total_count'], 1)
 
         data = self._dashboard_data(self.this_month)
         self.assertEqual(data['kpis']['deal_invoices_count'], 0)
         self.assertEqual(data['kpis']['litres_raw']['PMS'], 0.0)
+        self.assertEqual(data['kpis']['total_volume_raw'], 0.0)
         self.assertEqual(data['charts']['deals_pipeline']['total_count'], 0)

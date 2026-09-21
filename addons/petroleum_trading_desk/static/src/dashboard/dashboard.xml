@@ -152,7 +152,7 @@
 
                 <!-- Litres by product -->
                 <div class="row g-3 mb-1">
-                    <div class="col-12 col-md-4">
+                    <div class="col-6 col-md-3">
                         <div class="o_petro_kpi o_petro_grade_pms card h-100 border-0 shadow-sm o_petro_clickable"
                              t-on-click="() => this.openInvoicesByGrade('PMS')">
                             <div class="card-body">
@@ -161,7 +161,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-12 col-md-4">
+                    <div class="col-6 col-md-3">
                         <div class="o_petro_kpi o_petro_grade_ago card h-100 border-0 shadow-sm o_petro_clickable"
                              t-on-click="() => this.openInvoicesByGrade('AGO')">
                             <div class="card-body">
@@ -170,12 +170,22 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-12 col-md-4">
+                    <div class="col-6 col-md-3">
                         <div class="o_petro_kpi o_petro_grade_ik card h-100 border-0 shadow-sm o_petro_clickable"
                              t-on-click="() => this.openInvoicesByGrade('IK')">
                             <div class="card-body">
                                 <div class="o_petro_kpi_label">IK Litres</div>
                                 <div class="o_petro_kpi_value" t-esc="state.data.kpis.litres.IK"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="o_petro_kpi o_petro_grade_total card h-100 border-0 shadow-sm o_petro_clickable"
+                             t-on-click="openFilteredInvoices">
+                            <div class="card-body">
+                                <div class="o_petro_kpi_label">Total Volume</div>
+                                <div class="o_petro_kpi_value" t-esc="state.data.kpis.total_volume"/>
+                                <div class="text-muted small">PMS + AGO + IK · filtered period</div>
                             </div>
                         </div>
                     </div>

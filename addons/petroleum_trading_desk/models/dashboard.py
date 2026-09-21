@@ -696,6 +696,8 @@ class DeskDashboard(models.TransientModel):
                 grade: f"{vol[grade]:,.0f} L" for grade in GRADE_CODES
             },
             'litres_raw': vol,
+            'total_volume': f"{total_litres:,.0f} L",
+            'total_volume_raw': total_litres,
         }
 
         queue_flt = dict(flt, deal_state='')
