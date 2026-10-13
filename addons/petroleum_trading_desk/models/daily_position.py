@@ -462,6 +462,39 @@ class PetroleumDailyPositionLine(models.Model):
             self._line_domain(today, product, supplier, depot, company), order='id')
         return candidates.filtered(lambda l: l._same_buy_price(buy_price))[:1]
 
+    def _live_position_line(self):
+        """The lot that still holds this line's litres on the board.
+
+        Carry-forward copies remaining litres onto a later line and marks
+        this one rolled. Quantity credit notes must change that later line:
+        the overview reads the latest day's position, not the historical lot
+        the purchase order still points at.
+        """
+        self.ensure_one()
+        line = self
+        seen = set()
+        while line.rolled_forward_on and line.id not in seen:
+            seen.add(line.id)
+            child = self.search([
+                ('rolled_from_line_id', '=', line.id),
+            ], limit=1)
+            if not child:
+                # A merge into an existing same-price lot does not set
+                # rolled_from_line_id; the roll date and buy price identify it.
+                candidates = self.search([
+                    ('date', '=', line.rolled_forward_on),
+                    ('product_id', '=', line.product_id.id),
+                    ('supplier_id', '=', line.supplier_id.id),
+                    ('company_id', '=', line.company_id.id),
+                    ('depot_id', '=', line.depot_id.id),
+                ])
+                child = candidates.filtered(
+                    lambda lot: line._same_buy_price(lot.buy_price))[:1]
+            if not child or child.id in seen:
+                break
+            line = child
+        return line
+
     def action_carry_forward(self):
         """Roll unsold volume from any prior day into today and open the board.
 

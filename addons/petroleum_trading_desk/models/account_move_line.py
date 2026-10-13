@@ -1,4 +1,5 @@
 from odoo import api, models
+from odoo.tools.float_utils import float_compare
 
 _SKIP_INVOICE_LINE_DISPLAY = ('line_section', 'line_subsection', 'line_note')
 
@@ -8,8 +9,8 @@ class AccountMoveLine(models.Model):
 
     @api.depends(
         'quantity', 'price_unit', 'petro_buy_price', 'product_id', 'display_type',
-        'sale_line_ids.petro_margin', 'move_id.move_type',
-        'move_id.petro_price_adjustment',
+        'sale_line_ids.petro_margin', 'sale_line_ids.price_unit',
+        'move_id.move_type', 'move_id.petro_price_adjustment',
     )
     def _compute_petro_margin(self):
         for line in self:
@@ -37,7 +38,14 @@ class AccountMoveLine(models.Model):
                 margin = (
                     sum(sale_lines.mapped('petro_margin')) / sale_qty * line.quantity
                     if sale_qty else 0.0)
-                if not margin and line.petro_buy_price:
+                # A sell-price revision rewrites the sale line, and the deal
+                # margin follows that new price. The posted invoice still
+                # carries the original price_unit; the credit note carries
+                # the delta. Using the revised sale margin here and then
+                # adding the note subtracts the same change twice.
+                if line.petro_buy_price and line._petro_sale_price_diverges(sale_lines):
+                    margin = (line.price_unit - line.petro_buy_price) * line.quantity
+                elif not margin and line.petro_buy_price:
                     margin = (line.price_unit - line.petro_buy_price) * line.quantity
                 if not margin and move.move_type == 'out_refund':
                     original = move.petro_original_move_id or move.reversed_entry_id
@@ -55,6 +63,18 @@ class AccountMoveLine(models.Model):
             if move.move_type == 'out_refund':
                 margin = -margin
             line.petro_margin = margin
+
+    def _petro_sale_price_diverges(self, sale_lines):
+        """True when this invoice line's price is not the sale line's price."""
+        self.ensure_one()
+        if not sale_lines:
+            return False
+        currency = self.currency_id or self.move_id.currency_id
+        digits = currency.decimal_places if currency else 2
+        return any(
+            float_compare(
+                self.price_unit, sale_line.price_unit, precision_digits=digits) != 0
+            for sale_line in sale_lines)
 
     def _petro_write_purchase_link(self, vals):
         """Set purchase_line_id (and optional product) on a vendor bill line.

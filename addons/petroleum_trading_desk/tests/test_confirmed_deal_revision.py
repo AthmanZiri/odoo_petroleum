@@ -219,6 +219,73 @@ class TestConfirmedDealRevision(AccountTestInvoicingCommon):
         self.assertTrue(
             drafts.filtered(lambda move: move.petro_original_move_id == invoice))
 
+    def test_sell_price_credit_note_counts_once_in_margin(self):
+        """Revising the sell price must not subtract the credit note twice.
+
+        The deal line already sells at the new price. The posted invoice keeps
+        its original price, and the credit note carries the delta. Overview
+        margin is original invoice margin plus that note — equal to the new
+        deal margin, not short by the note a second time.
+        """
+        deal, _position = self._confirmed_deal()
+        invoice = self._post_customer_invoice(deal)
+        self.assertEqual(invoice.petro_margin_total, 300.0)
+
+        action = self._wizard(deal, 100.0, 9.0, 'Price reduction').action_confirm()
+        credit = self.env['account.move'].browse(action['res_id'])
+        credit.action_post()
+
+        self.assertEqual(invoice.invoice_line_ids.price_unit, 10.0)
+        self.assertEqual(deal.line_ids.sell_price, 9.0)
+        self.assertEqual(invoice.petro_margin_total, 300.0)
+        self.assertEqual(credit.petro_margin_total, -100.0)
+        self.assertEqual(deal.margin_total, 200.0)
+        self.assertEqual(deal.adjustment_margin_total, 0.0)
+
+        dashboard = self.env['petroleum.desk.dashboard']
+        today = fields.Date.today()
+        filters = {
+            'date_from': today,
+            'date_to': today,
+            'product_id': False,
+            'partner_id': False,
+            'supplier_id': False,
+            'deal_state': '',
+        }
+        moves = dashboard._get_dashboard_invoices(filters)
+        self.assertIn(invoice, moves)
+        self.assertIn(credit, moves)
+        self.assertEqual(dashboard._invoice_margin(moves, filters), 200.0)
+
+    def test_legacy_quantity_credit_is_not_subtracted_from_revised_line(self):
+        """A quantity credit note whose litres already left the deal line counts once."""
+        deal, _position = self._confirmed_deal()
+        invoice = self._post_customer_invoice(deal)
+        action = self._wizard(deal, 80.0, 10.0, 'Short-loaded').action_confirm()
+        credit = self.env['account.move'].browse(action['res_id'])
+        credit.action_post()
+        # Documents created before the adjustment flag was stored: the litres
+        # are already on the deal line, and the marker was never written.
+        credit.petro_adjustment_quantity = 0.0
+        deal._compute_amounts()
+
+        self.assertEqual(deal.line_ids.quantity, 80.0)
+        self.assertEqual(deal.margin_total, 240.0)
+        self.assertEqual(invoice.petro_margin_total, 300.0)
+        self.assertEqual(credit.petro_margin_total, -60.0)
+        dashboard = self.env['petroleum.desk.dashboard']
+        today = fields.Date.today()
+        filters = {
+            'date_from': today,
+            'date_to': today,
+            'product_id': False,
+            'partner_id': False,
+            'supplier_id': False,
+            'deal_state': '',
+        }
+        self.assertEqual(
+            dashboard._invoice_margin(invoice | credit, filters), 240.0)
+
     def test_revise_sell_price_button_opens_unified_wizard(self):
         deal, _position = self._confirmed_deal()
         self._post_customer_invoice(deal)

@@ -69,13 +69,11 @@ class PetroleumDeal(models.Model):
                         # affect the deal they are linked to.
                         if move.deal_id and move.deal_id != deal:
                             continue
-                        # Quantity documents already moved their litres onto
-                        # the deal lines (revision wizard or posting-time
-                        # propagation); counting them again would double the
-                        # sell/margin reduction.
-                        if not move.petro_price_adjustment and (
-                                move.petro_qty_propagated
-                                or move.petro_adjustment_quantity):
+                        # Quantity and sell-price revisions already rewrote the
+                        # deal lines. Counting the credit note as well removes
+                        # the same margin twice, so the overview and the deal
+                        # disagree with the note.
+                        if move._petro_adjustment_already_in_deal_lines(deal):
                             continue
                         effect += move.petro_margin_total
                         sell_effect += (

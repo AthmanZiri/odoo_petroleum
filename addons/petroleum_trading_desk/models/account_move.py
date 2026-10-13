@@ -484,6 +484,9 @@ class AccountMove(models.Model):
             lot = self._petro_trace_position_lot(line)
             if not lot:
                 continue
+            # The PO still points at the lot that was bought. After that lot
+            # is rolled, the litres the overview shows live on the descendant.
+            lot = lot._live_position_line()
             delta = sign * direction * line.quantity
             if direction > 0:
                 note = _('Vendor document %(doc)s posted (%(qty)s L).',
@@ -529,6 +532,7 @@ class AccountMove(models.Model):
                     'quantity': delta,
                     'buy_price': deal_line.buy_price or pos_line.buy_price,
                 })
+            self._petro_sync_live_lot_after_allocation(deal_line, delta)
             return
         remaining = -delta
         if float_compare(
@@ -553,6 +557,97 @@ class AccountMove(models.Model):
                 allocation.write(
                     {'quantity': allocation.quantity - remaining})
                 remaining = 0.0
+        self._petro_sync_live_lot_after_allocation(deal_line, delta)
+
+    def _petro_sync_live_lot_after_allocation(self, deal_line, delta):
+        """Keep the overview lot in step when the allocation sits on a rolled line.
+
+        Carry-forward copies remaining litres and then leaves the source
+        line's remaining figure behind. Releasing litres on that source
+        (a credit note, or cancelling the order) would otherwise never
+        reach the later line the overview displays.
+        """
+        rounding = (
+            deal_line.product_id.uom_id.rounding
+            if deal_line.product_id.uom_id else 0.01)
+        if float_compare(delta, 0.0, precision_rounding=rounding) == 0:
+            return
+        allocations = deal_line.deal_id.position_allocation_ids.filtered(
+            lambda alloc: alloc.deal_line_id == deal_line)
+        position_line = (
+            allocations[:1].position_line_id or deal_line.position_line_id)
+        if not position_line or not position_line.rolled_forward_on:
+            return
+        live = position_line._live_position_line()
+        if not live or live == position_line:
+            return
+        # delta is the change in deal litres. Stock on the live board moves
+        # the other way: a credit note (negative delta) puts litres back.
+        live._petro_apply_external_qty_delta(
+            -delta,
+            _('Customer document %(doc)s adjusted rolled stock by %(qty)s L.',
+              doc=self.display_name, qty=abs(delta)))
+
+    def _petro_adjustment_already_in_deal_lines(self, deal):
+        """True when this note's margin is already in the deal line figures.
+
+        The revision wizard rewrites quantity and sell price before it drafts
+        the credit note. Adding the note on top of those lines removes the
+        same margin twice. Legacy notes created before the adjustment flag
+        existed are recognised from the litres and the new sell price.
+        """
+        self.ensure_one()
+        if self.move_type not in ('out_invoice', 'out_refund'):
+            return False
+        if not self.petro_price_adjustment and (
+                self.petro_qty_propagated or self.petro_adjustment_quantity):
+            return True
+        lines = self.invoice_line_ids.filtered(
+            lambda line: line.product_id
+            and line.display_type not in _SKIP_INVOICE_LINE_DISPLAY
+            and line.quantity)
+        if not lines:
+            return False
+        if self.petro_price_adjustment == 'customer_sell' and self.petro_new_price:
+            products = lines.mapped('product_id')
+            deal_lines = deal.line_ids.filtered(
+                lambda deal_line: deal_line.product_id in products)
+            if not deal_lines:
+                return False
+            note_qty = self.petro_adjustment_quantity or sum(lines.mapped('quantity'))
+            line_qty = sum(deal_lines.mapped('quantity'))
+            rounding = deal_lines[:1].product_id.uom_id.rounding or 0.01
+            # A partial note does not cover the whole line the wizard repriced.
+            if float_compare(note_qty, line_qty, precision_rounding=rounding) < 0:
+                return False
+            digits = (
+                self.currency_id.decimal_places if self.currency_id else 2)
+            return all(
+                float_compare(
+                    deal_line.sell_price, self.petro_new_price,
+                    precision_digits=digits) == 0
+                for deal_line in deal_lines)
+        if self.petro_price_adjustment or self.move_type != 'out_refund':
+            return False
+        original = self.petro_original_move_id or self.reversed_entry_id
+        if not original:
+            return False
+        for line in lines:
+            deal_lines = deal.line_ids.filtered(
+                lambda deal_line: deal_line.product_id == line.product_id)
+            if not deal_lines:
+                return False
+            original_lines = original.invoice_line_ids.filtered(
+                lambda original_line: original_line.product_id == line.product_id
+                and original_line.display_type not in _SKIP_INVOICE_LINE_DISPLAY)
+            original_qty = sum(original_lines.mapped('quantity'))
+            deal_qty = sum(deal_lines.mapped('quantity'))
+            rounding = line.product_id.uom_id.rounding or 0.01
+            if float_compare(
+                    deal_qty + line.quantity, original_qty,
+                    precision_rounding=rounding) != 0:
+                return False
+        return True
 
     def _petro_apply_customer_qty_document(self, direction):
         """Move litres of a manual customer CN/DN on the linked deal."""
