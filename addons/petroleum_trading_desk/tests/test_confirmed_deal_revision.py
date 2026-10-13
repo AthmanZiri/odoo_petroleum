@@ -292,3 +292,103 @@ class TestConfirmedDealRevision(AccountTestInvoicingCommon):
         deal.write({'state': 'loaded'})
         action = deal.action_open_revise_sell_price()
         self.assertEqual(action['res_model'], 'petroleum.deal.revise.confirmed')
+
+    def _second_truck(self):
+        driver = self.env['res.partner'].create({
+            'name': 'Revision Driver',
+            'is_driver': True,
+            'epra_no': 'EPRA-22',
+        })
+        truck = self.env['truck.management'].create({
+            'name': 'KBB 002B',
+            'capacity': 200.0,
+            'driver_id': driver.id,
+            'loading_plan': '2:3:2:3',
+        })
+        return truck, driver
+
+    def test_revise_truck_and_date_leaves_stock_and_invoices(self):
+        deal, position = self._confirmed_deal()
+        line = deal.line_ids
+        truck, driver = self._second_truck()
+        po = self.env['purchase.order'].create({'partner_id': self.partner_b.id})
+        deal.purchase_order_ids = [fields.Command.link(po.id)]
+        new_date = fields.Date.add(fields.Date.today(), days=-4)
+        allocation = deal.position_allocation_ids.filtered(
+            lambda alloc: alloc.deal_line_id == line and alloc.state == 'active')
+        moves_before = self.env['account.move'].search_count([
+            ('deal_id', '=', deal.id),
+        ])
+
+        wizard = self._wizard(deal, 100.0, 10.0, 'Truck and date correction')
+        wizard.write({
+            'new_date': new_date,
+            'new_truck_id': truck.id,
+            'new_driver_id': driver.id,
+            'new_epra_no': 'EPRA-22',
+            'new_compartment_plan': '1:1',
+        })
+        action = wizard.action_confirm()
+
+        self.assertEqual(action['type'], 'ir.actions.act_window_close')
+        self.assertEqual(self.env['account.move'].search_count([
+            ('deal_id', '=', deal.id),
+        ]), moves_before)
+        self.assertEqual(deal.date, new_date)
+        self.assertEqual(deal.truck_id, truck)
+        self.assertEqual(deal.driver_id, driver)
+        self.assertEqual(deal.epra_no, 'EPRA-22')
+        self.assertEqual(deal.compartment_plan, '1:1')
+        self.assertEqual(deal.trip_id.date, new_date)
+        self.assertEqual(deal.trip_id.truck_id, truck)
+        self.assertEqual(deal.trip_id.epra_no, 'EPRA-22')
+        self.assertEqual(deal.trip_id.compartment_plan, '1:1')
+        self.assertEqual(po.truck_id, truck)
+        self.assertEqual(po.epra_no, 'EPRA-22')
+        self.assertEqual(po.compartment_plan, '1:1')
+        self.assertEqual(line.quantity, 100.0)
+        self.assertEqual(line.sell_price, 10.0)
+        self.assertEqual(line.position_line_id, position)
+        self.assertEqual(allocation.quantity, 100.0)
+        self.assertEqual(position.qty_remaining, 50.0)
+
+    def test_revise_truck_onchange_fills_driver_epra_and_plan(self):
+        deal, _position = self._confirmed_deal()
+        truck, driver = self._second_truck()
+        wizard = self._wizard(deal, 100.0, 10.0)
+        wizard.new_compartment_plan = False
+        wizard.new_truck_id = truck
+        wizard._onchange_new_truck_id()
+
+        self.assertEqual(wizard.new_driver_id, driver)
+        self.assertEqual(wizard.new_epra_no, 'EPRA-22')
+        self.assertEqual(wizard.new_compartment_plan, '2:3:2:3')
+
+    def test_revise_litres_and_truck_creates_credit_note(self):
+        deal, position = self._confirmed_deal()
+        line = deal.line_ids
+        invoice = self._post_customer_invoice(deal)
+        truck, _driver = self._second_truck()
+        wizard = self._wizard(deal, 80.0, 10.0, 'Short-loaded, new truck')
+        wizard.new_truck_id = truck
+
+        action = wizard.action_confirm()
+        credit = self.env['account.move'].browse(action['res_id'])
+
+        self.assertEqual(credit.move_type, 'out_refund')
+        self.assertEqual(credit.state, 'draft')
+        self.assertEqual(credit.petro_original_move_id, invoice)
+        self.assertEqual(credit.invoice_line_ids.quantity, 20.0)
+        self.assertEqual(line.quantity, 80.0)
+        self.assertEqual(deal.truck_id, truck)
+        self.assertEqual(deal.trip_id.truck_id, truck)
+        self.assertEqual(position.qty_remaining, 70.0)
+        self.assertEqual(line.position_line_id, position)
+
+    def test_revise_unchanged_deal_is_rejected(self):
+        deal, position = self._confirmed_deal()
+        with self.assertRaises(UserError):
+            self._wizard(deal, 100.0, 10.0).action_confirm()
+        self.assertEqual(deal.truck_id, self.truck)
+        self.assertEqual(deal.date, fields.Date.today())
+        self.assertEqual(position.qty_remaining, 50.0)

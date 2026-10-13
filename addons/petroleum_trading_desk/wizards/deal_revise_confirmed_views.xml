@@ -21,6 +21,27 @@
                         <field name="note"/>
                     </group>
                 </group>
+                <group string="Loading">
+                    <group>
+                        <field name="current_date"/>
+                        <field name="current_truck_id"/>
+                        <field name="current_driver_id"/>
+                        <field name="current_epra_no"/>
+                        <field name="current_compartment_plan"/>
+                    </group>
+                    <group>
+                        <field name="new_date"/>
+                        <field name="new_truck_id"/>
+                        <field name="new_driver_id"/>
+                        <field name="new_epra_no"/>
+                        <field name="new_compartment_plan" placeholder="2:3:2:3"/>
+                    </group>
+                </group>
+                <div class="text-muted">
+                    Truck, driver, date, EPRA and compartment plan are saved on
+                    the deal, its trip, and its purchase orders. The position
+                    allocation stays on the original lot.
+                </div>
                 <div class="text-muted" invisible="has_posted_invoice">
                     Updates the deal, sale order, and position allocation.
                 </div>

@@ -496,15 +496,28 @@ class PetroleumDailyPositionLine(models.Model):
         return line
 
     def action_carry_forward(self):
-        """Roll unsold volume from any prior day into today and open the board.
+        """Open the dialog that rolls unsold volume onto a chosen date."""
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Carry Forward'),
+            'res_model': 'petroleum.daily.position.carry.forward',
+            'view_mode': 'form',
+            'target': 'new',
+        }
 
-        Looks beyond calendar yesterday so weekends / skipped trading days
-        still carry remaining stock forward. Each buy-price lot rolls into
-        its own opening line for today.
+    @api.model
+    def _carry_forward_to(self, target_date):
+        """Roll unsold volume from any earlier day onto *target_date*.
+
+        Looks beyond the previous calendar day so weekends / skipped trading
+        days still carry remaining stock forward. Each buy-price lot rolls
+        into its own opening line for the chosen date. Lines already on or
+        after that date, and lines already marked rolled, stay put.
         """
-        today = fields.Date.context_today(self)
+        if not target_date:
+            raise UserError(_('Choose the date to carry stock forward to.'))
         prev_lines = self.search([
-            ('date', '<', today),
+            ('date', '<', target_date),
             ('qty_remaining', '>', 0),
             ('rolled_forward_on', '=', False),
         ], order='date, id')
@@ -512,7 +525,7 @@ class PetroleumDailyPositionLine(models.Model):
         rolled_qty = 0.0
         for prev in prev_lines:
             existing = self._find_today_lot(
-                today, prev.product_id, prev.supplier_id, prev.depot_id,
+                target_date, prev.product_id, prev.supplier_id, prev.depot_id,
                 prev.company_id, prev.buy_price)
             roll_qty = prev.qty_remaining
             if existing:
@@ -530,7 +543,7 @@ class PetroleumDailyPositionLine(models.Model):
             else:
                 source_po = prev._get_linked_purchase_order()
                 new_line = self.create({
-                    'date': today,
+                    'date': target_date,
                     'product_id': prev.product_id.id,
                     'supplier_id': prev.supplier_id.id,
                     'depot_id': prev.depot_id.id,
@@ -548,24 +561,26 @@ class PetroleumDailyPositionLine(models.Model):
                     0.0, prev.buy_price, reason='roll_forward',
                     note=_('Rolled %(qty)s L from %(date)s',
                            qty=roll_qty, date=prev.date))
-            prev.write({'rolled_forward_on': today})
+            prev.write({'rolled_forward_on': target_date})
             rolled_count += 1
             rolled_qty += roll_qty
 
-        self.env['petroleum.daily.price']._carry_forward_prices(today)
+        self.env['petroleum.daily.price']._carry_forward_prices(target_date)
+        target_label = fields.Date.to_string(target_date)
         if rolled_count:
             title = _('Stock carried forward')
             message = _(
-                'Rolled %(count)d line(s) / %(qty).2f L into today.',
-                count=rolled_count, qty=rolled_qty)
+                'Rolled %(count)d line(s) / %(qty).2f L into %(date)s.',
+                count=rolled_count, qty=rolled_qty, date=target_label)
             ntype = 'success'
         else:
             title = _('Nothing to carry forward')
             message = _(
-                'No unrolled remaining stock found before today. '
+                'No unrolled remaining stock found before %(date)s. '
                 'Check previous days for remaining volume that is still '
                 'allocated to deals (cancel those deals first), or lines '
-                'already marked as rolled.')
+                'already marked as rolled.',
+                date=target_label)
             ntype = 'warning'
         return {
             'type': 'ir.actions.client',

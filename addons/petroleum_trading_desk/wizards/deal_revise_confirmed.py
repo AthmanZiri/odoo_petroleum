@@ -30,6 +30,22 @@ class PetroleumDealReviseConfirmed(models.TransientModel):
     note = fields.Char(
         string='Reason / Note', required=True,
         default='Deal correction')
+    current_date = fields.Date(string='Current Date', readonly=True)
+    new_date = fields.Date(string='New Date', required=True)
+    current_truck_id = fields.Many2one(
+        'truck.management', string='Current Truck', readonly=True)
+    new_truck_id = fields.Many2one(
+        'truck.management', string='New Truck', required=True)
+    current_driver_id = fields.Many2one(
+        'res.partner', string='Current Driver', readonly=True)
+    new_driver_id = fields.Many2one(
+        'res.partner', string='New Driver',
+        domain="[('is_driver', '=', True)]")
+    current_epra_no = fields.Char(string='Current EPRA No.', readonly=True)
+    new_epra_no = fields.Char(string='New EPRA No.')
+    current_compartment_plan = fields.Char(
+        string='Current Compartment Plan', readonly=True)
+    new_compartment_plan = fields.Char(string='New Compartment Plan')
 
     @api.depends(
         'deal_id', 'deal_id.invoice_ids', 'deal_id.invoice_ids.state',
@@ -69,6 +85,40 @@ class PetroleumDealReviseConfirmed(models.TransientModel):
         ], order='invoice_date desc, id desc').filtered(
             lambda move: line.product_id in move.invoice_line_ids.product_id)[:1]
         return latest.petro_new_price if latest else line.sell_price
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            deal = self.env['petroleum.deal'].browse(vals.get('deal_id'))
+            if not deal:
+                continue
+            vals.setdefault('current_date', deal.date)
+            vals.setdefault('new_date', deal.date)
+            vals.setdefault('current_truck_id', deal.truck_id.id)
+            vals.setdefault('new_truck_id', deal.truck_id.id)
+            vals.setdefault('current_driver_id', deal.driver_id.id)
+            vals.setdefault('new_driver_id', deal.driver_id.id)
+            vals.setdefault('current_epra_no', deal.epra_no)
+            vals.setdefault('new_epra_no', deal.epra_no)
+            vals.setdefault('current_compartment_plan', deal.compartment_plan)
+            vals.setdefault('new_compartment_plan', deal.compartment_plan)
+        return super().create(vals_list)
+
+    @api.onchange('new_truck_id')
+    def _onchange_new_truck_id(self):
+        if not self.new_truck_id:
+            return
+        if self.new_truck_id.driver_id:
+            self.new_driver_id = self.new_truck_id.driver_id
+            if self.new_driver_id.epra_no:
+                self.new_epra_no = self.new_driver_id.epra_no
+        if not self.new_compartment_plan and self.new_truck_id.loading_plan:
+            self.new_compartment_plan = self.new_truck_id.loading_plan
+
+    @api.onchange('new_driver_id')
+    def _onchange_new_driver_id(self):
+        if self.new_driver_id and self.new_driver_id.epra_no:
+            self.new_epra_no = self.new_driver_id.epra_no
 
     @api.onchange('deal_line_id')
     def _onchange_deal_line_id(self):
@@ -358,8 +408,87 @@ class PetroleumDealReviseConfirmed(models.TransientModel):
             return self._action_open_draft_moves(drafts)
         return {'type': 'ir.actions.act_window_close'}
 
+    def _loading_details_changed(self):
+        self.ensure_one()
+        deal = self.deal_id
+        return (
+            self.new_date != deal.date
+            or self.new_truck_id != deal.truck_id
+            or self.new_driver_id != deal.driver_id
+            or (self.new_epra_no or '') != (deal.epra_no or '')
+            or (self.new_compartment_plan or '') != (deal.compartment_plan or '')
+        )
+
+    def _apply_loading_details(self):
+        """Write truck and date onto the deal, its trip, and its purchase orders."""
+        self.ensure_one()
+        deal = self.deal_id
+        if not self.new_truck_id:
+            raise UserError(_('Assign a truck.'))
+        if not self.new_date:
+            raise UserError(_('Set the deal date.'))
+        deal.with_context(petro_skip_position_rematch=True).write({
+            'date': self.new_date,
+            'truck_id': self.new_truck_id.id,
+            'driver_id': self.new_driver_id.id,
+            'epra_no': self.new_epra_no,
+            'compartment_plan': self.new_compartment_plan,
+        })
+        if deal.trip_id:
+            deal.trip_id.write({
+                'truck_id': self.new_truck_id.id,
+                'date': self.new_date,
+                'epra_no': self.new_epra_no,
+                'compartment_plan': self.new_compartment_plan,
+            })
+        if deal.purchase_order_ids:
+            deal.purchase_order_ids.write({
+                'truck_id': self.new_truck_id.id,
+                'epra_no': self.new_epra_no,
+                'compartment_plan': self.new_compartment_plan,
+            })
+
+    def _loading_change_note(self, old_date, old_truck, old_driver, old_epra, old_plan):
+        self.ensure_one()
+        bits = []
+        if self.new_date != old_date:
+            bits.append(_(
+                'date %(old)s → %(new)s',
+                old=fields.Date.to_string(old_date),
+                new=fields.Date.to_string(self.new_date),
+            ))
+        if self.new_truck_id != old_truck:
+            bits.append(_(
+                'truck %(old)s → %(new)s',
+                old=old_truck.display_name or _('none'),
+                new=self.new_truck_id.display_name,
+            ))
+        if self.new_driver_id != old_driver:
+            bits.append(_(
+                'driver %(old)s → %(new)s',
+                old=old_driver.display_name or _('none'),
+                new=self.new_driver_id.display_name or _('none'),
+            ))
+        if (self.new_epra_no or '') != (old_epra or ''):
+            bits.append(_(
+                'EPRA %(old)s → %(new)s',
+                old=old_epra or _('none'),
+                new=self.new_epra_no or _('none'),
+            ))
+        if (self.new_compartment_plan or '') != (old_plan or ''):
+            bits.append(_(
+                'compartment plan %(old)s → %(new)s',
+                old=old_plan or _('none'),
+                new=self.new_compartment_plan or _('none'),
+            ))
+        return _('Loading details: %s.', ', '.join(bits))
+
     def _apply_revision(self):
-        """Apply the quantity / sell price revision and return draft moves."""
+        """Apply quantity, sell price, truck, and date revisions.
+
+        Returns draft customer credit/debit notes when litres or price change
+        on an invoiced deal. Truck and date changes never create those notes.
+        """
         self.ensure_one()
         deal = self.deal_id
         line = self.deal_line_id
@@ -368,45 +497,68 @@ class PetroleumDealReviseConfirmed(models.TransientModel):
                 'Only confirmed, loaded, or settled deals can be revised.'))
         if self.new_quantity <= 0:
             raise UserError(_('New litres must be greater than zero.'))
+        if not self.new_truck_id:
+            raise UserError(_('Assign a truck.'))
+        if not self.new_date:
+            raise UserError(_('Set the deal date.'))
 
         effective_price = self._effective_sell_price(line)
         same_qty = self._qty_compare(self.new_quantity, line.quantity) == 0
         same_price = self._price_compare(self.new_sell_price, effective_price) == 0
-        if same_qty and same_price:
-            raise UserError(_('Enter a new quantity or sell price to revise.'))
+        loading_changed = self._loading_details_changed()
+        if same_qty and same_price and not loading_changed:
+            raise UserError(_(
+                'Enter a new quantity, sell price, truck, or date to revise.'))
 
-        sale_line = self._find_sale_order_line()
-        invoiced = self._ensure_invoice_revision_allowed(sale_line)
+        old_date = deal.date
+        old_truck = deal.truck_id
+        old_driver = deal.driver_id
+        old_epra = deal.epra_no
+        old_plan = deal.compartment_plan
         old_quantity = line.quantity
-        old_price = effective_price if invoiced else line.sell_price
-
-        self._update_position_allocation()
-        line.write({
-            'quantity': self.new_quantity,
-            'sell_price': self.new_sell_price,
-        })
-        sale_line.write({
-            'product_uom_qty': self.new_quantity,
-            'price_unit': self.new_sell_price,
-            'petro_supplier_id': line.supplier_id.id,
-            'petro_buy_price': line.buy_price,
-        })
+        old_price = effective_price
 
         drafts = self.env['account.move']
-        if invoiced:
-            original = self._original_invoice()
-            drafts |= self._create_quantity_adjustment_move(
-                original, old_quantity, effective_price)
-            drafts |= self._create_price_adjustment_move(original, effective_price)
+        if not same_qty or not same_price:
+            sale_line = self._find_sale_order_line()
+            invoiced = self._ensure_invoice_revision_allowed(sale_line)
+            old_price = effective_price if invoiced else line.sell_price
 
-        deal.message_post(body=_(
-            'Deal revised for %(product)s: %(old_qty)s L @ %(old_price)s '
-            '→ %(new_qty)s L @ %(new_price)s. %(note)s',
-            product=line.product_id.display_name,
-            old_qty=old_quantity,
-            old_price=old_price,
-            new_qty=self.new_quantity,
-            new_price=self.new_sell_price,
-            note=self.note,
-        ))
+            self._update_position_allocation()
+            line.write({
+                'quantity': self.new_quantity,
+                'sell_price': self.new_sell_price,
+            })
+            sale_line.write({
+                'product_uom_qty': self.new_quantity,
+                'price_unit': self.new_sell_price,
+                'petro_supplier_id': line.supplier_id.id,
+                'petro_buy_price': line.buy_price,
+            })
+
+            if invoiced:
+                original = self._original_invoice()
+                drafts |= self._create_quantity_adjustment_move(
+                    original, old_quantity, effective_price)
+                drafts |= self._create_price_adjustment_move(original, effective_price)
+
+        if loading_changed:
+            self._apply_loading_details()
+
+        parts = []
+        if not same_qty or not same_price:
+            parts.append(_(
+                'Deal revised for %(product)s: %(old_qty)s L @ %(old_price)s '
+                '→ %(new_qty)s L @ %(new_price)s. %(note)s',
+                product=line.product_id.display_name,
+                old_qty=old_quantity,
+                old_price=old_price,
+                new_qty=self.new_quantity,
+                new_price=self.new_sell_price,
+                note=self.note,
+            ))
+        if loading_changed:
+            parts.append(self._loading_change_note(
+                old_date, old_truck, old_driver, old_epra, old_plan))
+        deal.message_post(body=' '.join(parts))
         return drafts

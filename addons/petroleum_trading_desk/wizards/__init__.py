@@ -8,3 +8,4 @@ from . import margin_backfill
 from . import position_revise_price
 from . import deal_revise_sell_price
 from . import deal_revise_confirmed
+from . import position_carry_forward

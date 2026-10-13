@@ -273,6 +273,10 @@ class PetroleumDeal(models.Model):
     def write(self, vals):
         old = {deal.id: (deal.depot_id.id, deal.date) for deal in self}
         res = super().write(vals)
+        # Confirmed revisions change the reporting date without moving the
+        # litres off the lot they were allocated from.
+        if self.env.context.get('petro_skip_position_rematch'):
+            return res
         if 'depot_id' not in vals and 'date' not in vals:
             return res
         changed = self.browse()
@@ -601,6 +605,16 @@ class PetroleumDeal(models.Model):
                 'default_current_sell_price': effective_price,
                 'default_new_quantity': line.quantity,
                 'default_new_sell_price': effective_price,
+                'default_current_date': self.date,
+                'default_new_date': self.date,
+                'default_current_truck_id': self.truck_id.id,
+                'default_new_truck_id': self.truck_id.id,
+                'default_current_driver_id': self.driver_id.id,
+                'default_new_driver_id': self.driver_id.id,
+                'default_current_epra_no': self.epra_no,
+                'default_new_epra_no': self.epra_no,
+                'default_current_compartment_plan': self.compartment_plan,
+                'default_new_compartment_plan': self.compartment_plan,
             },
         }
 

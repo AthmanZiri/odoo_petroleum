@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_daily_position_carry_forward_form" model="ir.ui.view">
+        <field name="name">petroleum.daily.position.carry.forward.form</field>
+        <field name="model">petroleum.daily.position.carry.forward</field>
+        <field name="arch" type="xml">
+            <form string="Carry Forward">
+                <group>
+                    <field name="target_date"/>
+                </group>
+                <div class="text-muted">
+                    Rolls every unrolled remaining lot dated before this day
+                    onto this date. Lines already on or after the date stay put.
+                </div>
+                <footer>
+                    <button name="action_confirm" type="object"
+                            string="Carry Forward" class="btn-primary"/>
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

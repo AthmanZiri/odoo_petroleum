@@ -1,6 +1,6 @@
 {
     'name': 'Petroleum Trading Desk',
-    'version': '19.0.1.0.51',
+    'version': '19.0.1.0.52',
     'category': 'Sales',
     'summary': 'Single-screen trading desk: one Deal per truck load drives sale, purchase, trip, invoice and payment',
     'description': """
@@ -52,6 +52,7 @@ A single place for the trader to run the whole buy-and-sell flow.
         'wizards/position_revise_price_views.xml',
         'wizards/deal_revise_sell_price_views.xml',
         'wizards/deal_revise_confirmed_views.xml',
+        'wizards/position_carry_forward_views.xml',
         'views/account_move_views.xml',
         'views/partner_views.xml',
         'reports/proforma_report.xml',
