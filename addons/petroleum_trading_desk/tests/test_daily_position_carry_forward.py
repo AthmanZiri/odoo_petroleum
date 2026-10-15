@@ -85,14 +85,10 @@ class TestDailyPositionCarryForward(AccountTestInvoicingCommon):
             ('supplier_id', '=', self.partner_b.id),
         ]), 1)
 
-    def _wizard(self, target=None, restrict=None):
-        context = {}
-        if restrict is not None:
-            context['carry_forward_line_ids'] = restrict.ids
-        return self.env['petroleum.daily.position.carry.forward'].with_context(
-            **context).create({
-                'target_date': target or self.target,
-            })
+    def _wizard(self, target=None):
+        return self.env['petroleum.daily.position.carry.forward'].create({
+            'target_date': target or self.target,
+        })
 
     def test_partial_quantity_leaves_the_leftover(self):
         source = self._lot(self.source_date, 40.0, 7.0)
@@ -197,23 +193,31 @@ class TestDailyPositionCarryForward(AccountTestInvoicingCommon):
     def test_lot_on_target_date_is_not_offered(self):
         current = self._lot(self.target, 15.0, 9.0)
         source = self._lot(self.source_date, 20.0, 7.0)
-        wizard = self._wizard(restrict=current | source)
+        wizard = self._wizard()
 
         self.assertEqual(wizard.line_ids.position_line_id, source)
+        self.assertEqual(wizard.line_ids.quantity, 20.0)
+        self.assertEqual(wizard.line_ids.product_id, source.product_id)
         wizard.action_confirm()
 
         self.assertEqual(current.qty_opening, 15.0)
         self.assertFalse(current.rolled_forward_on)
         self.assertEqual(source.rolled_forward_on, self.target)
 
-    def test_selected_rows_carry_only_those_lots(self):
+    def test_dialog_lists_every_carryable_lot_with_a_quantity(self):
         chosen = self._lot(self.source_date, 40.0, 7.0)
         other = self._lot(self.source_date, 12.0, 9.0)
         action = chosen.action_carry_forward()
-        self.assertEqual(action['context']['carry_forward_line_ids'], chosen.ids)
+        self.assertNotIn('carry_forward_line_ids', action['context'])
 
-        wizard = self._wizard(restrict=chosen)
-        self.assertEqual(wizard.line_ids.position_line_id, chosen)
+        wizard = self._wizard()
+        self.assertEqual(
+            set(wizard.line_ids.mapped('position_line_id').ids),
+            {chosen.id, other.id})
+        self.assertEqual(
+            set(wizard.line_ids.mapped('quantity')), {40.0, 12.0})
+        wizard.line_ids.filtered(
+            lambda line: line.position_line_id == other).quantity = 0.0
         wizard.action_confirm()
 
         self.assertEqual(chosen.rolled_forward_on, self.target)

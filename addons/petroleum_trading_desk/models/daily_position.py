@@ -498,19 +498,18 @@ class PetroleumDailyPositionLine(models.Model):
     def action_carry_forward(self):
         """Open the dialog that rolls unsold volume onto a chosen date.
 
-        Selected list rows limit the dialog to those lots. With no selection
-        every earlier unrolled lot with remaining stock is offered.
+        Every earlier unrolled lot with remaining stock is listed, with an
+        editable quantity. The list selection is not a filter: the Carry
+        Forward button only appears once a row is ticked, and that row often
+        has nothing left to roll.
         """
-        context = dict(self.env.context, dialog_size='extra-large')
-        if self:
-            context['carry_forward_line_ids'] = self.ids
         return {
             'type': 'ir.actions.act_window',
             'name': _('Carry Forward'),
             'res_model': 'petroleum.daily.position.carry.forward',
             'view_mode': 'form',
             'target': 'new',
-            'context': context,
+            'context': dict(self.env.context, dialog_size='extra-large'),
         }
 
     @api.model
