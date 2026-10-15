@@ -496,72 +496,146 @@ class PetroleumDailyPositionLine(models.Model):
         return line
 
     def action_carry_forward(self):
-        """Open the dialog that rolls unsold volume onto a chosen date."""
+        """Open the dialog that rolls unsold volume onto a chosen date.
+
+        Selected list rows limit the dialog to those lots. With no selection
+        every earlier unrolled lot with remaining stock is offered.
+        """
+        context = dict(self.env.context, dialog_size='extra-large')
+        if self:
+            context['carry_forward_line_ids'] = self.ids
         return {
             'type': 'ir.actions.act_window',
             'name': _('Carry Forward'),
             'res_model': 'petroleum.daily.position.carry.forward',
             'view_mode': 'form',
             'target': 'new',
+            'context': context,
         }
 
     @api.model
-    def _carry_forward_to(self, target_date):
+    def _carry_forward_candidates(self, target_date, restrict_ids=None):
+        """Unrolled lots dated before *target_date* that still have stock.
+
+        ``restrict_ids`` limits the result to those lines (the rows the user
+        selected). Lines on or after the date, already rolled, or with no
+        remaining litres are never candidates.
+        """
+        if not target_date:
+            return self.browse()
+        domain = [
+            ('date', '<', target_date),
+            ('qty_remaining', '>', 0),
+            ('rolled_forward_on', '=', False),
+        ]
+        if restrict_ids:
+            domain.append(('id', 'in', list(restrict_ids)))
+        return self.search(domain, order='date, id')
+
+    def _land_rolled_opening(self, target_date, roll_qty):
+        """Copy ``roll_qty`` litres onto *target_date* as opening stock.
+
+        Same product / supplier / depot / company / buy price merges into the
+        lot already on that date. Otherwise a new opening line is created.
+        """
+        self.ensure_one()
+        existing = self._find_today_lot(
+            target_date, self.product_id, self.supplier_id, self.depot_id,
+            self.company_id, self.buy_price)
+        if existing:
+            existing.write({'qty_opening': existing.qty_opening + roll_qty})
+            # Keep a PO link for sales from rolled opening when possible.
+            if not existing.purchase_order_id:
+                source_po = self._get_linked_purchase_order()
+                if source_po:
+                    existing.write({
+                        'purchase_order_id': source_po.id,
+                        'purchase_order_line_id': (
+                            self.purchase_order_line_id.id
+                            if self.purchase_order_line_id else False),
+                    })
+            return existing
+        source_po = self._get_linked_purchase_order()
+        new_line = self.create({
+            'date': target_date,
+            'product_id': self.product_id.id,
+            'supplier_id': self.supplier_id.id,
+            'depot_id': self.depot_id.id,
+            'company_id': self.company_id.id,
+            'qty_opening': roll_qty,
+            'buy_price': self.buy_price,
+            'sell_price': self.sell_price,
+            'rolled_from_line_id': self.id,
+            'purchase_order_id': source_po.id if source_po else False,
+            'purchase_order_line_id': (
+                self.purchase_order_line_id.id
+                if self.purchase_order_line_id else False),
+        })
+        new_line._log_buy_price_change(
+            0.0, self.buy_price, reason='roll_forward',
+            note=_('Rolled %(qty)s L from %(date)s',
+                   qty=roll_qty, date=self.date))
+        return new_line
+
+    @api.model
+    def _carry_forward_to(self, target_date, quantities=None):
         """Roll unsold volume from any earlier day onto *target_date*.
 
         Looks beyond the previous calendar day so weekends / skipped trading
         days still carry remaining stock forward. Each buy-price lot rolls
         into its own opening line for the chosen date. Lines already on or
         after that date, and lines already marked rolled, stay put.
+
+        ``quantities`` maps position-line ids to the litres to move. Omit it
+        to roll each candidate's full remaining balance. A quantity of zero
+        skips that lot. A partial quantity peels opening (then bought) on the
+        source and leaves it unrolled. A full quantity copies the remaining
+        balance and marks the source rolled, without changing its litres.
         """
         if not target_date:
             raise UserError(_('Choose the date to carry stock forward to.'))
-        prev_lines = self.search([
-            ('date', '<', target_date),
-            ('qty_remaining', '>', 0),
-            ('rolled_forward_on', '=', False),
-        ], order='date, id')
+        if quantities is None:
+            prev_lines = self._carry_forward_candidates(target_date)
+        else:
+            prev_lines = self._carry_forward_candidates(
+                target_date, restrict_ids=list(quantities))
+        plans = []
+        errors = []
+        for prev in prev_lines:
+            rounding = prev._qty_rounding()
+            if quantities is None:
+                roll_qty = prev.qty_remaining
+            else:
+                roll_qty = float(quantities.get(prev.id) or 0.0)
+            if float_compare(roll_qty, 0.0, precision_rounding=rounding) <= 0:
+                continue
+            if float_compare(
+                    roll_qty, prev.qty_remaining,
+                    precision_rounding=rounding) > 0:
+                errors.append(_(
+                    '%(line)s: quantity to carry (%(qty)s L) is above '
+                    'the remaining %(remaining)s L.',
+                    line=prev.display_name,
+                    qty=roll_qty,
+                    remaining=prev.qty_remaining,
+                ))
+                continue
+            plans.append((prev, roll_qty))
+        if errors:
+            raise UserError('\n'.join(errors))
+
         rolled_count = 0
         rolled_qty = 0.0
-        for prev in prev_lines:
-            existing = self._find_today_lot(
-                target_date, prev.product_id, prev.supplier_id, prev.depot_id,
-                prev.company_id, prev.buy_price)
-            roll_qty = prev.qty_remaining
-            if existing:
-                existing.write({'qty_opening': existing.qty_opening + roll_qty})
-                # Keep a PO link for sales from rolled opening when possible.
-                if not existing.purchase_order_id:
-                    source_po = prev._get_linked_purchase_order()
-                    if source_po:
-                        existing.write({
-                            'purchase_order_id': source_po.id,
-                            'purchase_order_line_id': (
-                                prev.purchase_order_line_id.id
-                                if prev.purchase_order_line_id else False),
-                        })
-            else:
-                source_po = prev._get_linked_purchase_order()
-                new_line = self.create({
-                    'date': target_date,
-                    'product_id': prev.product_id.id,
-                    'supplier_id': prev.supplier_id.id,
-                    'depot_id': prev.depot_id.id,
-                    'company_id': prev.company_id.id,
-                    'qty_opening': roll_qty,
-                    'buy_price': prev.buy_price,
-                    'sell_price': prev.sell_price,
-                    'rolled_from_line_id': prev.id,
-                    'purchase_order_id': source_po.id if source_po else False,
-                    'purchase_order_line_id': (
-                        prev.purchase_order_line_id.id
-                        if prev.purchase_order_line_id else False),
-                })
-                new_line._log_buy_price_change(
-                    0.0, prev.buy_price, reason='roll_forward',
-                    note=_('Rolled %(qty)s L from %(date)s',
-                           qty=roll_qty, date=prev.date))
-            prev.write({'rolled_forward_on': target_date})
+        for prev, roll_qty in plans:
+            rounding = prev._qty_rounding()
+            is_full = float_compare(
+                roll_qty, prev.qty_remaining,
+                precision_rounding=rounding) == 0
+            if not is_full:
+                prev._peel_remaining(roll_qty)
+            prev._land_rolled_opening(target_date, roll_qty)
+            if is_full:
+                prev.write({'rolled_forward_on': target_date})
             rolled_count += 1
             rolled_qty += roll_qty
 

@@ -7,10 +7,23 @@
             <form string="Carry Forward">
                 <group>
                     <field name="target_date"/>
+                    <field name="qty_to_carry" readonly="1"/>
+                    <field name="restrict_line_ids" invisible="1"/>
                 </group>
+                <field name="line_ids">
+                    <list editable="bottom" create="0" delete="0">
+                        <field name="position_line_id" column_invisible="1"/>
+                        <field name="date" readonly="1"/>
+                        <field name="product_id" readonly="1"/>
+                        <field name="supplier_id" readonly="1"/>
+                        <field name="depot_id" readonly="1"/>
+                        <field name="qty_remaining" readonly="1"/>
+                        <field name="quantity" sum="Quantity to carry"/>
+                    </list>
+                </field>
                 <div class="text-muted">
-                    Rolls every unrolled remaining lot dated before this day
-                    onto this date. Lines already on or after the date stay put.
+                    Rolls the entered quantity from each listed lot onto this date.
+                    Lines already on or after the date stay put.
                 </div>
                 <footer>
                     <button name="action_confirm" type="object"
