@@ -1,4 +1,4 @@
-from odoo import api, fields, models
+from odoo import api, fields, models, _
 
 
 class PetroleumDailyPositionCarryForward(models.TransientModel):
@@ -8,9 +8,33 @@ class PetroleumDailyPositionCarryForward(models.TransientModel):
     target_date = fields.Date(
         string='Carry Forward To', required=True,
         default=fields.Date.context_today)
+    source_line_ids = fields.Many2many(
+        'petroleum.daily.position.line',
+        'petroleum_cf_src_lot_rel', 'wizard_id', 'line_id',
+        string='Selected Lots',
+        help='Rows ticked on Daily Position. Their dates are the only '
+             'source dates offered.')
     line_ids = fields.One2many(
         'petroleum.daily.position.carry.forward.line', 'wizard_id',
         string='Lots')
+    notice = fields.Char(readonly=True)
+
+    def _selected_lines(self, lines=None):
+        """Position rows whose dates limit the dialog. Empty means no limit."""
+        if lines is not None:
+            return lines
+        if self.source_line_ids:
+            return self.source_line_ids
+        ids = self.env.context.get('carry_forward_line_ids')
+        if not ids:
+            return self.env['petroleum.daily.position.line']
+        return self.env['petroleum.daily.position.line'].browse(ids).exists()
+
+    def _source_dates(self, lines=None):
+        selected = self._selected_lines(lines)
+        if not selected:
+            return None
+        return list(set(selected.mapped('date')))
 
     @api.model
     def _lot_vals(self, lot):
@@ -25,43 +49,79 @@ class PetroleumDailyPositionCarryForward(models.TransientModel):
             'quantity': lot.qty_remaining,
         }
 
-    @api.model
-    def _line_commands(self, target_date):
-        lines = self.env['petroleum.daily.position.line']._carry_forward_candidates(
-            target_date)
-        return [(0, 0, self._lot_vals(line)) for line in lines]
+    def _candidates(self, target_date, lines=None):
+        return self.env['petroleum.daily.position.line']._carry_forward_candidates(
+            target_date, source_dates=self._source_dates(lines))
 
-    def _new_lines(self, target_date):
+    def _line_commands(self, target_date, lines=None):
+        return [(0, 0, self._lot_vals(lot)) for lot in self._candidates(target_date, lines)]
+
+    def _new_lines(self, target_date, lines=None):
         """In-memory rows for the dialog. Assigning these from onchange keeps
         every column, including the editable quantity, on the form.
         """
         Line = self.env['petroleum.daily.position.carry.forward.line']
-        lines = Line.browse()
-        for lot in self.env['petroleum.daily.position.line']._carry_forward_candidates(
-                target_date):
-            lines |= Line.new(self._lot_vals(lot))
-        return lines
+        rows = Line.browse()
+        for lot in self._candidates(target_date, lines):
+            rows |= Line.new(self._lot_vals(lot))
+        return rows
+
+    def _notice_for(self, target_date, lines=None):
+        """Explain an empty list without substituting another day's stock."""
+        selected = self._selected_lines(lines)
+        if not selected or not target_date or self._candidates(target_date, selected):
+            return False
+        dates = sorted(set(selected.mapped('date')))
+        src = ', '.join(fields.Date.to_string(day) for day in dates)
+        lots = self.env['petroleum.daily.position.line'].search([
+            ('date', 'in', dates),
+        ])
+        rolled = lots.filtered(
+            lambda lot: lot.date < target_date and lot.rolled_forward_on)
+        if rolled:
+            dests = ', '.join(sorted({
+                fields.Date.to_string(day) for day in rolled.mapped('rolled_forward_on')
+            }))
+            return _('%(src)s was already carried forward to %(dest)s.',
+                     src=src, dest=dests)
+        if lots.filtered(lambda lot: lot.date >= target_date) and not lots.filtered(
+                lambda lot: lot.date < target_date):
+            return _('Carry Forward To must be after %s.', src)
+        return _('%s has no remaining litres to carry.', src)
 
     @api.model
     def default_get(self, fields_list):
         res = super().default_get(fields_list)
+        ids = self.env.context.get('carry_forward_line_ids') or []
+        lines = self.env['petroleum.daily.position.line'].browse(ids).exists()
+        if lines and 'source_line_ids' in fields_list:
+            res['source_line_ids'] = [(6, 0, lines.ids)]
+        target = res.get('target_date') or fields.Date.context_today(self)
         if 'line_ids' in fields_list and not res.get('line_ids'):
-            target = res.get('target_date') or fields.Date.context_today(self)
-            res['line_ids'] = self._line_commands(target)
+            res['line_ids'] = self._line_commands(target, lines)
+        if 'notice' in fields_list and not res.get('notice'):
+            res['notice'] = self._notice_for(target, lines) or False
         return res
 
     @api.model_create_multi
     def create(self, vals_list):
+        Position = self.env['petroleum.daily.position.line']
+        context_ids = self.env.context.get('carry_forward_line_ids') or []
         for vals in vals_list:
+            if context_ids and 'source_line_ids' not in vals:
+                vals['source_line_ids'] = [(6, 0, list(context_ids))]
+            lines = Position.browse(context_ids).exists() if context_ids else Position
             if 'line_ids' not in vals:
                 target = vals.get('target_date') or fields.Date.context_today(self)
-                vals['line_ids'] = self._line_commands(target)
+                vals['line_ids'] = self._line_commands(target, lines)
+                vals.setdefault('notice', self._notice_for(target, lines) or False)
         return super().create(vals_list)
 
     @api.onchange('target_date')
     def _onchange_target_date(self):
-        """Reload lots when the date changes. Each row keeps an editable quantity."""
+        """Keep the selected source dates and drop lots the destination has reached."""
         self.line_ids = self._new_lines(self.target_date)
+        self.notice = self._notice_for(self.target_date)
 
     def action_confirm(self):
         self.ensure_one()

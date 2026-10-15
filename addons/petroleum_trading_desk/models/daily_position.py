@@ -499,26 +499,29 @@ class PetroleumDailyPositionLine(models.Model):
         """Open the dialog that rolls unsold volume onto a chosen date.
 
         Every earlier unrolled lot with remaining stock is listed, with an
-        editable quantity. The list selection is not a filter: the Carry
-        Forward button only appears once a row is ticked, and that row often
-        has nothing left to roll.
+        editable quantity. Ticked rows limit that list to their dates: ticking
+        Oct 12 offers every Oct 12 lot, and does not pull in another day.
         """
+        context = dict(self.env.context, dialog_size='extra-large')
+        if self:
+            context['carry_forward_line_ids'] = self.ids
         return {
             'type': 'ir.actions.act_window',
             'name': _('Carry Forward'),
             'res_model': 'petroleum.daily.position.carry.forward',
             'view_mode': 'form',
             'target': 'new',
-            'context': dict(self.env.context, dialog_size='extra-large'),
+            'context': context,
         }
 
     @api.model
-    def _carry_forward_candidates(self, target_date, restrict_ids=None):
+    def _carry_forward_candidates(self, target_date, restrict_ids=None, source_dates=None):
         """Unrolled lots dated before *target_date* that still have stock.
 
-        ``restrict_ids`` limits the result to those lines (the rows the user
-        selected). Lines on or after the date, already rolled, or with no
-        remaining litres are never candidates.
+        ``source_dates`` keeps only those position dates (the dates the user
+        ticked). ``restrict_ids`` limits the result to specific lines. Lines
+        on or after the destination, already rolled, or with no remaining
+        litres are never candidates.
         """
         if not target_date:
             return self.browse()
@@ -527,7 +530,9 @@ class PetroleumDailyPositionLine(models.Model):
             ('qty_remaining', '>', 0),
             ('rolled_forward_on', '=', False),
         ]
-        if restrict_ids:
+        if source_dates is not None:
+            domain.append(('date', 'in', list(source_dates)))
+        elif restrict_ids:
             domain.append(('id', 'in', list(restrict_ids)))
         return self.search(domain, order='date, id')
 

@@ -7,7 +7,9 @@
             <form string="Carry Forward">
                 <group>
                     <field name="target_date"/>
+                    <field name="source_line_ids" invisible="1"/>
                 </group>
+                <field name="notice" readonly="1" invisible="not notice" nolabel="1"/>
                 <field name="line_ids" nolabel="1">
                     <list editable="bottom" create="0">
                         <field name="position_line_id" column_invisible="1"/>
@@ -20,8 +22,9 @@
                     </list>
                 </field>
                 <div class="text-muted">
-                    Click Quantity to carry and type the litres to roll.
-                    Zero skips that lot. Lines already on or after the date stay put.
+                    Shows lots from the date you selected. Click Quantity to carry
+                    and type the litres to roll. Zero skips that lot. Carry Forward
+                    To must be after that date; other dates are not filled in.
                 </div>
                 <footer>
                     <button name="action_confirm" type="object"

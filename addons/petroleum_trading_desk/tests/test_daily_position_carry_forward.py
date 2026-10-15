@@ -85,10 +85,14 @@ class TestDailyPositionCarryForward(AccountTestInvoicingCommon):
             ('supplier_id', '=', self.partner_b.id),
         ]), 1)
 
-    def _wizard(self, target=None):
-        return self.env['petroleum.daily.position.carry.forward'].create({
-            'target_date': target or self.target,
-        })
+    def _wizard(self, target=None, source_lines=None):
+        context = {}
+        if source_lines is not None:
+            context['carry_forward_line_ids'] = source_lines.ids
+        return self.env['petroleum.daily.position.carry.forward'].with_context(
+            **context).create({
+                'target_date': target or self.target,
+            })
 
     def test_partial_quantity_leaves_the_leftover(self):
         source = self._lot(self.source_date, 40.0, 7.0)
@@ -207,7 +211,7 @@ class TestDailyPositionCarryForward(AccountTestInvoicingCommon):
     def test_dialog_lists_every_carryable_lot_with_a_quantity(self):
         chosen = self._lot(self.source_date, 40.0, 7.0)
         other = self._lot(self.source_date, 12.0, 9.0)
-        action = chosen.action_carry_forward()
+        action = self.env['petroleum.daily.position.line'].action_carry_forward()
         self.assertNotIn('carry_forward_line_ids', action['context'])
 
         wizard = self._wizard()
@@ -237,3 +241,63 @@ class TestDailyPositionCarryForward(AccountTestInvoicingCommon):
 
         self.assertEqual(wizard.line_ids.position_line_id, early)
         self.assertEqual(wizard.line_ids.quantity, 40.0)
+
+    def test_selected_date_does_not_include_a_later_day(self):
+        oct12 = self._lot(self.source_date, 40.0, 7.0)
+        later_day = fields.Date.add(self.target, days=-1)
+        oct14 = self._lot(later_day, 20.0, 9.0)
+
+        action = oct12.action_carry_forward()
+        self.assertEqual(action['context']['carry_forward_line_ids'], oct12.ids)
+        wizard = self._wizard(source_lines=oct12)
+
+        self.assertEqual(wizard.line_ids.position_line_id, oct12)
+        self.assertEqual(wizard.line_ids.quantity, 40.0)
+        self.assertNotIn(oct14, wizard.line_ids.position_line_id)
+
+    def test_one_ticked_row_lists_every_lot_on_that_date(self):
+        first = self._lot(self.source_date, 40.0, 7.0)
+        second = self._lot(self.source_date, 12.0, 9.0)
+        later = self._lot(fields.Date.add(self.target, days=-1), 8.0, 11.0)
+        wizard = self._wizard(source_lines=first)
+
+        self.assertEqual(
+            set(wizard.line_ids.position_line_id.ids), {first.id, second.id})
+        self.assertNotIn(later, wizard.line_ids.position_line_id)
+
+    def test_two_selected_dates_exclude_the_rest(self):
+        oct9 = self._lot(fields.Date.add(self.source_date, days=-1), 5.0, 4.0)
+        oct12 = self._lot(self.source_date, 40.0, 7.0)
+        oct14 = self._lot(fields.Date.add(self.target, days=-1), 8.0, 11.0)
+        wizard = self._wizard(source_lines=oct9 | oct12)
+
+        self.assertEqual(
+            set(wizard.line_ids.position_line_id.ids), {oct9.id, oct12.id})
+        self.assertNotIn(oct14, wizard.line_ids.position_line_id)
+
+    def test_already_rolled_date_is_not_replaced_by_the_later_day(self):
+        oct12 = self._lot(self.source_date, 40.0, 7.0)
+        later_day = fields.Date.add(self.target, days=-1)
+        oct14 = self._lot(later_day, 20.0, 9.0)
+        self.env['petroleum.daily.position.line']._carry_forward_to(later_day)
+
+        wizard = self._wizard(source_lines=oct12)
+        self.assertFalse(wizard.line_ids)
+        self.assertIn(fields.Date.to_string(self.source_date), wizard.notice)
+        self.assertIn(fields.Date.to_string(later_day), wizard.notice)
+        self.assertNotIn(oct14, wizard.line_ids.position_line_id)
+
+    def test_destination_on_the_source_date_does_not_pull_another_day(self):
+        oct12 = self._lot(self.source_date, 40.0, 7.0)
+        earlier = self._lot(fields.Date.add(self.source_date, days=-2), 6.0, 3.0)
+        wizard = self._wizard(source_lines=oct12, target=self.source_date)
+
+        self.assertFalse(wizard.line_ids)
+        self.assertNotIn(earlier, wizard.line_ids.position_line_id)
+        self.assertIn(fields.Date.to_string(self.source_date), wizard.notice)
+
+        wizard.target_date = fields.Date.add(self.source_date, days=1)
+        wizard._onchange_target_date()
+
+        self.assertEqual(wizard.line_ids.position_line_id, oct12)
+        self.assertFalse(wizard.notice)
