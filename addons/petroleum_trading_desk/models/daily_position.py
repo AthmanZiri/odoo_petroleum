@@ -462,17 +462,18 @@ class PetroleumDailyPositionLine(models.Model):
             self._line_domain(today, product, supplier, depot, company), order='id')
         return candidates.filtered(lambda l: l._same_buy_price(buy_price))[:1]
 
-    def _live_position_line(self):
-        """The lot that still holds this line's litres on the board.
+    def _roll_chain(self):
+        """Return ``(live_lot, dates)`` from this line to the lot holding the litres.
 
-        Carry-forward copies remaining litres onto a later line and marks
-        this one rolled. Quantity credit notes must change that later line:
-        the overview reads the latest day's position, not the historical lot
-        the purchase order still points at.
+        ``dates`` is this line's date, then each later roll, in order. A full
+        carry copies litres and marks the source rolled, so the displayed
+        remaining on this row is historical. The live lot is the end of the
+        chain.
         """
         self.ensure_one()
         line = self
         seen = set()
+        dates = [line.date]
         while line.rolled_forward_on and line.id not in seen:
             seen.add(line.id)
             child = self.search([
@@ -489,18 +490,32 @@ class PetroleumDailyPositionLine(models.Model):
                     ('depot_id', '=', line.depot_id.id),
                 ])
                 child = candidates.filtered(
-                    lambda lot: line._same_buy_price(lot.buy_price))[:1]
+                    lambda lot, source=line: source._same_buy_price(lot.buy_price))[:1]
             if not child or child.id in seen:
                 break
             line = child
-        return line
+            dates.append(line.date)
+        return line, dates
+
+    def _live_position_line(self):
+        """The lot that still holds this line's litres on the board.
+
+        Carry-forward copies remaining litres onto a later line and marks
+        this one rolled. Quantity credit notes must change that later line:
+        the overview reads the latest day's position, not the historical lot
+        the purchase order still points at.
+        """
+        self.ensure_one()
+        live, _dates = self._roll_chain()
+        return live
 
     def action_carry_forward(self):
         """Open the dialog that rolls unsold volume onto a chosen date.
 
         Every earlier unrolled lot with remaining stock is listed, with an
-        editable quantity. Ticked rows limit that list to their dates: ticking
-        Oct 12 offers every Oct 12 lot, and does not pull in another day.
+        editable quantity. Ticked rows limit the list to their dates. A lot
+        already rolled onward is offered on the later day that still holds
+        the litres, not as a second copy of the historical remaining.
         """
         context = dict(self.env.context, dialog_size='extra-large')
         if self:

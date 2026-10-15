@@ -17,7 +17,7 @@ class PetroleumDailyPositionCarryForward(models.TransientModel):
     line_ids = fields.One2many(
         'petroleum.daily.position.carry.forward.line', 'wizard_id',
         string='Lots')
-    notice = fields.Char(readonly=True)
+    notice = fields.Text(readonly=True)
 
     def _selected_lines(self, lines=None):
         """Position rows whose dates limit the dialog. Empty means no limit."""
@@ -37,9 +37,9 @@ class PetroleumDailyPositionCarryForward(models.TransientModel):
         return list(set(selected.mapped('date')))
 
     @api.model
-    def _lot_vals(self, lot):
+    def _lot_vals(self, lot, path=False):
         """Values copied onto a wizard row so the dialog can show and edit them."""
-        return {
+        vals = {
             'position_line_id': lot.id,
             'date': lot.date,
             'product_id': lot.product_id.id,
@@ -48,46 +48,93 @@ class PetroleumDailyPositionCarryForward(models.TransientModel):
             'qty_remaining': lot.qty_remaining,
             'quantity': lot.qty_remaining,
         }
+        if path:
+            vals['path'] = path
+        return vals
 
-    def _candidates(self, target_date, lines=None):
-        return self.env['petroleum.daily.position.line']._carry_forward_candidates(
-            target_date, source_dates=self._source_dates(lines))
+    def _chain_skip_notice(self, live, path):
+        label = _('%(product)s / %(supplier)s @ %(price)s',
+                  product=live.product_id.display_name,
+                  supplier=live.supplier_id.display_name,
+                  price=live.buy_price)
+        text = _(
+            '%(lot)s is already on %(date)s, which is not before Carry Forward To.',
+            lot=label, date=fields.Date.to_string(live.date))
+        if path:
+            text = '%s %s' % (text, path)
+        return text
+
+    def _stuck_chain_notice(self, live, path):
+        label = _('%(product)s / %(supplier)s @ %(price)s',
+                  product=live.product_id.display_name,
+                  supplier=live.supplier_id.display_name,
+                  price=live.buy_price)
+        text = _(
+            '%(lot)s is marked carried forward, but the litres are not on '
+            'a later lot that can move.',
+            lot=label)
+        if path:
+            text = '%s %s' % (text, path)
+        return text
+
+    def _offer_rows(self, target_date, lines=None):
+        """Live lots to show, plus a notice for chains that cannot move.
+
+        With no selected date, every earlier unrolled lot is offered. With a
+        selected date, each lot on that date is followed to the line that
+        still holds the litres. The historical remaining on a rolled row is
+        not offered again.
+        """
+        Position = self.env['petroleum.daily.position.line']
+        if not target_date:
+            return [], False
+        dates = self._source_dates(lines)
+        if dates is None:
+            return [
+                (lot, False) for lot in Position._carry_forward_candidates(target_date)
+            ], False
+        sources = Position.search([('date', 'in', dates)], order='date, id')
+        rows = []
+        seen = set()
+        skipped = []
+        for source in sources:
+            live, chain_dates = source._roll_chain()
+            if live.id in seen:
+                continue
+            seen.add(live.id)
+            path = False
+            if len(chain_dates) > 1:
+                path = ' → '.join(
+                    fields.Date.to_string(day) for day in chain_dates)
+            if live.date >= target_date:
+                skipped.append(self._chain_skip_notice(live, path))
+                continue
+            if live.rolled_forward_on:
+                skipped.append(self._stuck_chain_notice(live, path))
+                continue
+            if live.qty_remaining <= 0:
+                continue
+            rows.append((live, path))
+        notice = '\n'.join(skipped) if skipped else False
+        if not notice and not rows:
+            src = ', '.join(fields.Date.to_string(day) for day in sorted(set(dates)))
+            notice = _('%s has no remaining litres to carry.', src)
+        return rows, notice
 
     def _line_commands(self, target_date, lines=None):
-        return [(0, 0, self._lot_vals(lot)) for lot in self._candidates(target_date, lines)]
+        rows, notice = self._offer_rows(target_date, lines)
+        return [(0, 0, self._lot_vals(lot, path)) for lot, path in rows], notice
 
     def _new_lines(self, target_date, lines=None):
         """In-memory rows for the dialog. Assigning these from onchange keeps
         every column, including the editable quantity, on the form.
         """
         Line = self.env['petroleum.daily.position.carry.forward.line']
-        rows = Line.browse()
-        for lot in self._candidates(target_date, lines):
-            rows |= Line.new(self._lot_vals(lot))
-        return rows
-
-    def _notice_for(self, target_date, lines=None):
-        """Explain an empty list without substituting another day's stock."""
-        selected = self._selected_lines(lines)
-        if not selected or not target_date or self._candidates(target_date, selected):
-            return False
-        dates = sorted(set(selected.mapped('date')))
-        src = ', '.join(fields.Date.to_string(day) for day in dates)
-        lots = self.env['petroleum.daily.position.line'].search([
-            ('date', 'in', dates),
-        ])
-        rolled = lots.filtered(
-            lambda lot: lot.date < target_date and lot.rolled_forward_on)
-        if rolled:
-            dests = ', '.join(sorted({
-                fields.Date.to_string(day) for day in rolled.mapped('rolled_forward_on')
-            }))
-            return _('%(src)s was already carried forward to %(dest)s.',
-                     src=src, dest=dests)
-        if lots.filtered(lambda lot: lot.date >= target_date) and not lots.filtered(
-                lambda lot: lot.date < target_date):
-            return _('Carry Forward To must be after %s.', src)
-        return _('%s has no remaining litres to carry.', src)
+        rows, notice = self._offer_rows(target_date, lines)
+        recordset = Line.browse()
+        for lot, path in rows:
+            recordset |= Line.new(self._lot_vals(lot, path))
+        return recordset, notice
 
     @api.model
     def default_get(self, fields_list):
@@ -97,10 +144,14 @@ class PetroleumDailyPositionCarryForward(models.TransientModel):
         if lines and 'source_line_ids' in fields_list:
             res['source_line_ids'] = [(6, 0, lines.ids)]
         target = res.get('target_date') or fields.Date.context_today(self)
-        if 'line_ids' in fields_list and not res.get('line_ids'):
-            res['line_ids'] = self._line_commands(target, lines)
-        if 'notice' in fields_list and not res.get('notice'):
-            res['notice'] = self._notice_for(target, lines) or False
+        want_lines = 'line_ids' in fields_list and not res.get('line_ids')
+        want_notice = 'notice' in fields_list and not res.get('notice')
+        if want_lines or want_notice:
+            commands, notice = self._line_commands(target, lines)
+            if want_lines:
+                res['line_ids'] = commands
+            if want_notice:
+                res['notice'] = notice or False
         return res
 
     @api.model_create_multi
@@ -113,15 +164,15 @@ class PetroleumDailyPositionCarryForward(models.TransientModel):
             lines = Position.browse(context_ids).exists() if context_ids else Position
             if 'line_ids' not in vals:
                 target = vals.get('target_date') or fields.Date.context_today(self)
-                vals['line_ids'] = self._line_commands(target, lines)
-                vals.setdefault('notice', self._notice_for(target, lines) or False)
+                commands, notice = self._line_commands(target, lines)
+                vals['line_ids'] = commands
+                vals.setdefault('notice', notice or False)
         return super().create(vals_list)
 
     @api.onchange('target_date')
     def _onchange_target_date(self):
-        """Keep the selected source dates and drop lots the destination has reached."""
-        self.line_ids = self._new_lines(self.target_date)
-        self.notice = self._notice_for(self.target_date)
+        """Keep the selected source dates and follow each lot to its live balance."""
+        self.line_ids, self.notice = self._new_lines(self.target_date)
 
     def action_confirm(self):
         self.ensure_one()
@@ -152,3 +203,4 @@ class PetroleumDailyPositionCarryForwardLine(models.TransientModel):
         string='Remaining', readonly=True, digits='Product Unit of Measure')
     quantity = fields.Float(
         string='Quantity to carry', digits='Product Unit of Measure')
+    path = fields.Char(string='Rolled path', readonly=True)

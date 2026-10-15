@@ -16,15 +16,17 @@
                         <field name="quantity"/>
                         <field name="qty_remaining"/>
                         <field name="date"/>
+                        <field name="path" optional="show"/>
                         <field name="product_id" options="{'no_open': True}"/>
                         <field name="supplier_id" options="{'no_open': True}"/>
                         <field name="depot_id" options="{'no_open': True}"/>
                     </list>
                 </field>
                 <div class="text-muted">
-                    Shows lots from the date you selected. Click Quantity to carry
-                    and type the litres to roll. Zero skips that lot. Carry Forward
-                    To must be after that date; other dates are not filled in.
+                    Shows the litres still left from the date you selected.
+                    If that stock was rolled onward, the date is where it sits now
+                    and the path lists each hop. Click Quantity to carry and type
+                    the litres to roll. Zero skips that lot.
                 </div>
                 <footer>
                     <button name="action_confirm" type="object"

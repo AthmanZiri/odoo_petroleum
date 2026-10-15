@@ -275,17 +275,97 @@ class TestDailyPositionCarryForward(AccountTestInvoicingCommon):
             set(wizard.line_ids.position_line_id.ids), {oct9.id, oct12.id})
         self.assertNotIn(oct14, wizard.line_ids.position_line_id)
 
-    def test_already_rolled_date_is_not_replaced_by_the_later_day(self):
+    def test_already_rolled_date_offers_the_live_lot_not_an_unrelated_day(self):
         oct12 = self._lot(self.source_date, 40.0, 7.0)
         later_day = fields.Date.add(self.target, days=-1)
-        oct14 = self._lot(later_day, 20.0, 9.0)
+        unrelated = self._lot(later_day, 20.0, 9.0)
         self.env['petroleum.daily.position.line']._carry_forward_to(later_day)
+        live = self.env['petroleum.daily.position.line'].search([
+            ('date', '=', later_day),
+            ('rolled_from_line_id', '=', oct12.id),
+        ])
 
         wizard = self._wizard(source_lines=oct12)
+        self.assertEqual(wizard.line_ids.position_line_id, live)
+        self.assertEqual(wizard.line_ids.quantity, 40.0)
+        self.assertEqual(wizard.line_ids.date, later_day)
+        self.assertIn(fields.Date.to_string(self.source_date), wizard.line_ids.path)
+        self.assertIn(fields.Date.to_string(later_day), wizard.line_ids.path)
+        self.assertNotIn(unrelated, wizard.line_ids.position_line_id)
+        self.assertFalse(wizard.notice)
+
+    def test_selected_date_follows_the_roll_chain_to_the_live_lot(self):
+        day12 = fields.Date.add(self.source_date, days=-2)
+        day13 = self.source_date
+        day14 = fields.Date.add(self.source_date, days=1)
+        oct12 = self._lot(day12, 40.0, 7.0)
+        Position = self.env['petroleum.daily.position.line']
+        Position._carry_forward_to(day13)
+        child13 = Position.search([('rolled_from_line_id', '=', oct12.id)])
+        child13.qty_bought = 10.0
+        Position._carry_forward_to(day14)
+        child14 = Position.search([('rolled_from_line_id', '=', child13.id)])
+
+        wizard = self._wizard(source_lines=oct12)
+        self.assertEqual(wizard.line_ids.position_line_id, child14)
+        self.assertEqual(wizard.line_ids.date, day14)
+        self.assertEqual(wizard.line_ids.quantity, 50.0)
+        self.assertIn(fields.Date.to_string(day12), wizard.line_ids.path)
+        self.assertIn(fields.Date.to_string(day13), wizard.line_ids.path)
+        self.assertIn(fields.Date.to_string(day14), wizard.line_ids.path)
+        self.assertNotIn('was already carried forward to', wizard.notice or '')
+
+        wizard.action_confirm()
+        self.assertEqual(child14.rolled_forward_on, self.target)
+        self.assertEqual(oct12.rolled_forward_on, day13)
+        self.assertEqual(oct12.qty_remaining, 40.0)
+        landed = Position.search([
+            ('date', '=', self.target),
+            ('rolled_from_line_id', '=', child14.id),
+        ])
+        self.assertEqual(landed.qty_opening, 50.0)
+
+    def test_partial_carry_peels_the_live_lot_not_the_historical_row(self):
+        day12 = fields.Date.add(self.source_date, days=-2)
+        day13 = self.source_date
+        day14 = fields.Date.add(self.source_date, days=1)
+        oct12 = self._lot(day12, 40.0, 7.0)
+        Position = self.env['petroleum.daily.position.line']
+        Position._carry_forward_to(day13)
+        child13 = Position.search([('rolled_from_line_id', '=', oct12.id)])
+        Position._carry_forward_to(day14)
+        child14 = Position.search([('rolled_from_line_id', '=', child13.id)])
+
+        wizard = self._wizard(source_lines=oct12)
+        wizard.line_ids.quantity = 10.0
+        wizard.action_confirm()
+
+        self.assertFalse(child14.rolled_forward_on)
+        self.assertEqual(child14.qty_remaining, 30.0)
+        self.assertEqual(oct12.qty_remaining, 40.0)
+        self.assertEqual(oct12.rolled_forward_on, day13)
+        landed = Position.search([
+            ('date', '=', self.target),
+            ('rolled_from_line_id', '=', child14.id),
+        ])
+        self.assertEqual(landed.qty_opening, 10.0)
+
+    def test_selected_date_with_nothing_left_stays_empty(self):
+        dead = self._lot(self.source_date, 0.0, 4.0)
+        wizard = self._wizard(source_lines=dead)
         self.assertFalse(wizard.line_ids)
         self.assertIn(fields.Date.to_string(self.source_date), wizard.notice)
-        self.assertIn(fields.Date.to_string(later_day), wizard.notice)
-        self.assertNotIn(oct14, wizard.line_ids.position_line_id)
+        self.assertNotIn(dead, wizard.line_ids.position_line_id)
+
+    def test_chain_already_on_the_destination_is_named_and_omitted(self):
+        oct12 = self._lot(self.source_date, 40.0, 7.0)
+        self.env['petroleum.daily.position.line']._carry_forward_to(self.target)
+        wizard = self._wizard(source_lines=oct12)
+        self.assertFalse(wizard.line_ids)
+        self.assertIn(oct12.product_id.display_name, wizard.notice)
+        self.assertIn(fields.Date.to_string(self.source_date), wizard.notice)
+        self.assertIn(fields.Date.to_string(self.target), wizard.notice)
+        self.assertNotIn('was already carried forward to', wizard.notice)
 
     def test_destination_on_the_source_date_does_not_pull_another_day(self):
         oct12 = self._lot(self.source_date, 40.0, 7.0)
