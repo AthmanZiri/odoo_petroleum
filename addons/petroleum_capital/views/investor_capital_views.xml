@@ -67,9 +67,10 @@
                         <field name="note" placeholder="Notes…"/>
                     </group>
                     <div class="alert alert-info" role="alert">
-                        Opening posts to Equity via the Capital &amp; Loans journal
-                        (not Miscellaneous Operations). Paying ROI debits the ROI
-                        Expense account and credits Bank — invested capital is never reduced.
+                        Opening credits Long Term Investments (200520) via the Capital
+                        &amp; Loans journal. Use Current Investments (200630) when the
+                        amount is short-term. Paying the return debits Investment
+                        Income (300500) and credits Bank — investor capital is never reduced.
                     </div>
                     <field name="currency_id" invisible="1"/>
                 </sheet>

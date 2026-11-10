@@ -26,10 +26,12 @@ class PetroleumLoanIssued(models.Model):
         string='Loan Amount', required=True, tracking=True)
     asset_account_id = fields.Many2one(
         'account.account', string='Loans Issued Account', required=True,
-        domain="[('account_type', '=', 'asset_current'), "
+        domain="[('account_type', 'in', ("
+               "'asset_current', 'liability_current', 'liability_non_current', 'equity')), "
                "('company_ids', 'in', company_id)]",
         tracking=True,
-        help='Current Assets account for loans receivable / loans issued.')
+        help='Long Term Loans (200510). Use Shareholder Loans (200530), '
+             'Current Loan (200620), or Drawings (200540) when the loan is specific.')
     bank_journal_id = fields.Many2one(
         'account.journal', string='Contra Bank (optional)',
         domain="[('type', 'in', ('bank', 'cash')), ('company_id', '=', company_id)]",
@@ -137,9 +139,12 @@ class PetroleumLoanIssued(models.Model):
                 raise UserError(_('Opening already posted for %s.') % rec.display_name)
             if rec.amount <= 0:
                 raise UserError(_('Loan amount must be positive.'))
-            if rec.asset_account_id.account_type != 'asset_current':
+            if rec.asset_account_id.account_type not in (
+                'asset_current', 'liability_current', 'liability_non_current', 'equity',
+            ):
                 raise UserError(_(
-                    'Loans Issued account "%s" must be a Current Assets type.'
+                    'Loan account "%s" must be a loans-category account '
+                    '(long-term loans, shareholder loans, current loan, or drawings).'
                 ) % rec.asset_account_id.display_name)
 
             journal = rec.capital_journal_id or rec._ensure_capital_journal(rec.company_id)

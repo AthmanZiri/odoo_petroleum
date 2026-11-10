@@ -17,6 +17,12 @@ class PetroleumCapitalMixin(models.AbstractModel):
         ])
         return base if not existing else '%s%s' % (base, existing)
 
+    def _account_by_code(self, company, code):
+        return self.env['account.account'].search([
+            ('company_ids', 'in', company.id),
+            ('code', '=', code),
+        ], limit=1)
+
     def _ensure_account(self, company, name, code_base, account_type):
         Account = self.env['account.account']
         acc = Account.search([
@@ -42,6 +48,10 @@ class PetroleumCapitalMixin(models.AbstractModel):
         )
 
     def _ensure_investor_equity_account(self, company):
+        """Investor capital sits on 200520 Long Term Investments."""
+        chart = self._account_by_code(company, '200520')
+        if chart:
+            return chart
         return self._ensure_account(
             company,
             'Investor Capital',
@@ -50,6 +60,10 @@ class PetroleumCapitalMixin(models.AbstractModel):
         )
 
     def _ensure_roi_expense_account(self, company):
+        """Return on investment sits on 300500 Investment Income."""
+        chart = self._account_by_code(company, '300500')
+        if chart:
+            return chart
         return self._ensure_account(
             company,
             'Return on Investment',
@@ -58,6 +72,10 @@ class PetroleumCapitalMixin(models.AbstractModel):
         )
 
     def _ensure_loans_issued_account(self, company):
+        """Loans issued sit on 200510 Long Term Loans unless a split is chosen."""
+        chart = self._account_by_code(company, '200510')
+        if chart:
+            return chart
         return self._ensure_account(
             company,
             'Loans Issued',

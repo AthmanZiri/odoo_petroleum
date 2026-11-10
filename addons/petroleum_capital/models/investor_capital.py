@@ -23,20 +23,22 @@ class PetroleumInvestorCapital(models.Model):
         default=fields.Date.context_today, tracking=True)
     amount = fields.Monetary(
         string='Investment Amount', required=True, tracking=True,
-        help='Opening equity capital. ROI payments never reduce this balance.')
+        help='Opening investor capital. ROI payments never reduce this balance.')
     monthly_roi_amount = fields.Monetary(
         string='Monthly ROI', tracking=True,
-        help='Default monthly return paid as an Expense (not a capital withdrawal).')
+        help='Default monthly return. Posted to Investment Income, not as a capital withdrawal.')
     equity_account_id = fields.Many2one(
-        'account.account', string='Equity Account', required=True,
-        domain="[('account_type', '=', 'equity'), ('company_ids', 'in', company_id)]",
-        tracking=True)
-    roi_expense_account_id = fields.Many2one(
-        'account.account', string='ROI Expense Account', required=True,
-        domain="[('account_type', 'in', ('expense', 'expense_direct_cost')), "
+        'account.account', string='Investor Capital Account', required=True,
+        domain="[('account_type', 'in', ('equity', 'liability_current', 'liability_non_current')), "
                "('company_ids', 'in', company_id)]",
         tracking=True,
-        help='Expense account debited when paying ROI. Equity is never touched.')
+        help='Long Term Investments (200520). Use Current Investments (200630) when the amount is short-term.')
+    roi_expense_account_id = fields.Many2one(
+        'account.account', string='Investment Income Account', required=True,
+        domain="[('account_type', 'in', ('income', 'income_other', 'expense', 'expense_direct_cost')), "
+               "('company_ids', 'in', company_id)]",
+        tracking=True,
+        help='Investment Income (300500), debited when the return is paid. Investor capital is never reduced.')
     bank_journal_id = fields.Many2one(
         'account.journal', string='Contra Bank (optional)',
         domain="[('type', 'in', ('bank', 'cash')), ('company_id', '=', company_id)]",
@@ -97,9 +99,12 @@ class PetroleumInvestorCapital(models.Model):
                 raise UserError(_('Opening already posted for %s.') % rec.display_name)
             if rec.amount <= 0:
                 raise UserError(_('Investment amount must be positive.'))
-            if rec.equity_account_id.account_type != 'equity':
+            if rec.equity_account_id.account_type not in (
+                'equity', 'liability_current', 'liability_non_current',
+            ):
                 raise UserError(_(
-                    'Equity account "%s" must be an Equity chart-of-accounts type.'
+                    'Investor capital account "%s" must be Long Term Investments, '
+                    'Current Investments, or another equity or liability account.'
                 ) % rec.equity_account_id.display_name)
 
             journal = rec.capital_journal_id or rec._ensure_capital_journal(rec.company_id)

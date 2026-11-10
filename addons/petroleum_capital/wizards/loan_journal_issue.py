@@ -27,7 +27,8 @@ class PetroleumLoanJournalIssue(models.TransientModel):
     amount = fields.Monetary(string='Loan Amount', required=True)
     asset_account_id = fields.Many2one(
         'account.account', string='Loans Issued Account', required=True,
-        domain="[('account_type', '=', 'asset_current'), "
+        domain="[('account_type', 'in', ("
+               "'asset_current', 'liability_current', 'liability_non_current', 'equity')), "
                "('company_ids', 'in', company_id)]")
     note = fields.Text()
 

@@ -24,11 +24,11 @@ class PetroleumRoiPayment(models.TransientModel):
         default=fields.Date.context_today)
     amount = fields.Monetary(
         string='ROI Amount', required=True,
-        help='Debited to ROI Expense and credited to Bank. '
+        help='Debited to Investment Income and credited to Bank. '
              'Does not reduce the invested capital balance.')
     expense_account_id = fields.Many2one(
-        'account.account', string='ROI Expense Account', required=True,
-        domain="[('account_type', 'in', ('expense', 'expense_direct_cost')), "
+        'account.account', string='Investment Income Account', required=True,
+        domain="[('account_type', 'in', ('income', 'income_other', 'expense', 'expense_direct_cost')), "
                "('company_ids', 'in', company_id)]")
     bank_journal_id = fields.Many2one(
         'account.journal', string='Pay From', required=True,
@@ -161,10 +161,12 @@ class PetroleumRoiPayment(models.TransientModel):
             or self.investor_capital_id.roi_expense_account_id
             or self._ensure_roi_expense_account(self.company_id)
         )
-        if expense_account.account_type not in ('expense', 'expense_direct_cost'):
+        if expense_account.account_type not in (
+            'income', 'income_other', 'expense', 'expense_direct_cost',
+        ):
             raise UserError(_(
-                'ROI must post to an Expense account so invested capital is not reduced. '
-                '"%s" is type %s.'
+                'Return on investment must post to Investment Income so investor '
+                'capital is not reduced. "%s" is type %s.'
             ) % (
                 expense_account.display_name,
                 expense_account.account_type,
