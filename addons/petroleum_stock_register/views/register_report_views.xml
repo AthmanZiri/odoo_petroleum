@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_stock_register_variance_list" model="ir.ui.view">
+        <field name="name">petroleum.stock.register.variance.list</field>
+        <field name="model">petroleum.stock.register.variance</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0">
+                <field name="create_date"/>
+                <field name="product_id"/>
+                <field name="depot_id"/>
+                <field name="on_hand_qty"/>
+                <field name="target_qty"/>
+                <field name="gap"/>
+                <field name="note"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_stock_register_variance" model="ir.actions.act_window">
+        <field name="name">Stock variances</field>
+        <field name="res_model">petroleum.stock.register.variance</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <record id="action_depot_on_hand" model="ir.actions.act_window">
+        <field name="name">Depot on hand</field>
+        <field name="res_model">stock.quant</field>
+        <field name="view_mode">list</field>
+        <field name="domain">['|', ('location_id.petro_depot_id', '!=', False), ('location_id.petro_no_depot', '=', True)]</field>
+        <field name="context">{'create': False, 'edit': False, 'delete': False}</field>
+    </record>
+
+    <record id="view_stock_register_card_form" model="ir.ui.view">
+        <field name="name">petroleum.stock.register.card.form</field>
+        <field name="model">petroleum.stock.register.card</field>
+        <field name="arch" type="xml">
+            <form string="Depot stock card">
+                <group>
+                    <group>
+                        <field name="company_id" groups="base.group_multi_company"/>
+                        <field name="product_id"/>
+                        <field name="depot_id" invisible="no_depot"/>
+                        <field name="no_depot"/>
+                    </group>
+                    <group>
+                        <field name="date_from"/>
+                        <field name="date_to"/>
+                    </group>
+                </group>
+                <field name="line_ids" readonly="1">
+                    <list>
+                        <field name="business_date"/>
+                        <field name="origin"/>
+                        <field name="qty_in"/>
+                        <field name="qty_out"/>
+                        <field name="balance"/>
+                    </list>
+                </field>
+                <footer>
+                    <button name="action_build" type="object" string="Build card" class="btn-primary"/>
+                    <button string="Close" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_stock_register_card" model="ir.actions.act_window">
+        <field name="name">Depot stock card</field>
+        <field name="res_model">petroleum.stock.register.card</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <record id="action_stock_register_open" model="ir.actions.act_window">
+        <field name="name">Open stock register</field>
+        <field name="res_model">petroleum.stock.register.open</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <record id="action_stock_register_reverse" model="ir.actions.act_window">
+        <field name="name">Reverse stock register</field>
+        <field name="res_model">petroleum.stock.register.reverse</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem id="menu_stock_register"
+              name="Stock register"
+              parent="petroleum_trading_desk.menu_trading_desk_root"
+              sequence="64"
+              groups="account.group_account_user,stock.group_stock_user"/>
+    <menuitem id="menu_depot_on_hand"
+              name="Depot on hand"
+              parent="menu_stock_register"
+              action="action_depot_on_hand"
+              sequence="10"
+              groups="account.group_account_user,stock.group_stock_user"/>
+    <menuitem id="menu_stock_register_card"
+              name="Depot stock card"
+              parent="menu_stock_register"
+              action="action_stock_register_card"
+              sequence="20"
+              groups="account.group_account_user,stock.group_stock_user"/>
+    <menuitem id="menu_stock_register_variance"
+              name="Variances"
+              parent="menu_stock_register"
+              action="action_stock_register_variance"
+              sequence="30"
+              groups="account.group_account_user,stock.group_stock_user"/>
+    <menuitem id="menu_stock_register_open"
+              name="Open register"
+              parent="menu_stock_register"
+              action="action_stock_register_open"
+              sequence="40"
+              groups="account.group_account_user,stock.group_stock_manager"/>
+    <menuitem id="menu_stock_register_reverse"
+              name="Reverse register"
+              parent="menu_stock_register"
+              action="action_stock_register_reverse"
+              sequence="50"
+              groups="account.group_account_user,stock.group_stock_manager"/>
+
+    <record id="view_company_form_stock_register_actions" model="ir.ui.view">
+        <field name="name">res.company.form.petroleum.stock.register.actions</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="view_company_form_stock_register"/>
+        <field name="arch" type="xml">
+            <button name="action_arm_stock_register" position="after">
+                <button name="%(action_stock_register_open)d" type="action"
+                        string="Open stock register"
+                        invisible="petro_stock_register_mode == 'live'"/>
+                <button name="%(action_stock_register_reverse)d" type="action"
+                        string="Reverse stock register"
+                        invisible="petro_stock_register_mode != 'live'"/>
+            </button>
+        </field>
+    </record>
+</odoo>

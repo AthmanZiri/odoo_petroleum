@@ -7,3 +7,7 @@ access_stock_register_open_account,petroleum.stock.register.open.account,model_p
 access_stock_register_open_stock,petroleum.stock.register.open.stock,model_petroleum_stock_register_open,stock.group_stock_manager,1,1,1,1
 access_stock_register_reverse_account,petroleum.stock.register.reverse.account,model_petroleum_stock_register_reverse,account.group_account_user,1,1,1,1
 access_stock_register_reverse_stock,petroleum.stock.register.reverse.stock,model_petroleum_stock_register_reverse,stock.group_stock_manager,1,1,1,1
+access_stock_register_card_account,petroleum.stock.register.card.account,model_petroleum_stock_register_card,account.group_account_user,1,1,1,1
+access_stock_register_card_stock,petroleum.stock.register.card.stock,model_petroleum_stock_register_card,stock.group_stock_user,1,1,1,1
+access_stock_register_card_line_account,petroleum.stock.register.card.line.account,model_petroleum_stock_register_card_line,account.group_account_user,1,1,1,1
+access_stock_register_card_line_stock,petroleum.stock.register.card.line.stock,model_petroleum_stock_register_card_line,stock.group_stock_user,1,1,1,1

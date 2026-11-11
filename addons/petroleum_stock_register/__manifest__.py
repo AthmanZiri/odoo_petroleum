@@ -1,6 +1,6 @@
 {
     'name': 'Petroleum Stock Register',
-    'version': '19.0.1.0.4',
+    'version': '19.0.1.0.5',
     'category': 'Inventory/Inventory',
     'summary': 'Depot litre register beside the trading desk, without sale or purchase pickings',
     'description': """
@@ -26,6 +26,7 @@ stays the source of truth for litres, invoices, and margin.
         'security/ir.model.access.csv',
         'views/res_company_views.xml',
         'views/register_wizard_views.xml',
+        'views/register_report_views.xml',
         'data/register_cron.xml',
     ],
     'installable': True,
