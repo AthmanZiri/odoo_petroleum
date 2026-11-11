@@ -1,0 +1,9 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_stock_register_hint_account,petroleum.stock.register.hint.account,model_petroleum_stock_register_hint,account.group_account_user,1,0,0,0
+access_stock_register_hint_stock,petroleum.stock.register.hint.stock,model_petroleum_stock_register_hint,stock.group_stock_user,1,0,0,0
+access_stock_register_variance_account,petroleum.stock.register.variance.account,model_petroleum_stock_register_variance,account.group_account_user,1,0,0,0
+access_stock_register_variance_stock,petroleum.stock.register.variance.stock,model_petroleum_stock_register_variance,stock.group_stock_user,1,0,0,0
+access_stock_register_open_account,petroleum.stock.register.open.account,model_petroleum_stock_register_open,account.group_account_user,1,1,1,1
+access_stock_register_open_stock,petroleum.stock.register.open.stock,model_petroleum_stock_register_open,stock.group_stock_manager,1,1,1,1
+access_stock_register_reverse_account,petroleum.stock.register.reverse.account,model_petroleum_stock_register_reverse,account.group_account_user,1,1,1,1
+access_stock_register_reverse_stock,petroleum.stock.register.reverse.stock,model_petroleum_stock_register_reverse,stock.group_stock_manager,1,1,1,1

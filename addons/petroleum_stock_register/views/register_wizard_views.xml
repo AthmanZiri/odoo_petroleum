@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_stock_register_open_form" model="ir.ui.view">
+        <field name="name">petroleum.stock.register.open.form</field>
+        <field name="model">petroleum.stock.register.open</field>
+        <field name="arch" type="xml">
+            <form string="Open stock register">
+                <group>
+                    <field name="company_id" groups="base.group_multi_company"/>
+                </group>
+                <p>
+                    Post today's unrolled Daily Position as the opening on-hand
+                    for each depot. Deals confirmed after this follow on their own.
+                </p>
+                <footer>
+                    <button name="action_open" type="object" string="Open register" class="btn-primary"/>
+                    <button string="Cancel" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_stock_register_reverse_form" model="ir.ui.view">
+        <field name="name">petroleum.stock.register.reverse.form</field>
+        <field name="model">petroleum.stock.register.reverse</field>
+        <field name="arch" type="xml">
+            <form string="Reverse stock register">
+                <group>
+                    <field name="company_id" groups="base.group_multi_company"/>
+                </group>
+                <p>
+                    Post the opposite of every register move and return the
+                    company to armed. The trading desk is left as it is.
+                </p>
+                <footer>
+                    <button name="action_reverse" type="object" string="Reverse register" class="btn-primary"/>
+                    <button string="Cancel" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

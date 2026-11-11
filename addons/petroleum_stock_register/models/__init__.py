@@ -11,3 +11,5 @@ from . import stock_move
 from . import stock_quant
 from . import stock_picking
 from . import depot
+from . import daily_position
+from . import register

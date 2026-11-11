@@ -24,6 +24,9 @@ class ResCompany(models.Model):
     petro_register_warehouse_id = fields.Many2one(
         'stock.warehouse', string='Stock Register Warehouse', copy=False,
     )
+    petro_stock_register_open_date = fields.Date(
+        string='Stock Register Opened', copy=False, readonly=True,
+    )
 
     def _petro_stock_register_valuation_blocked(self):
         """Perpetual valuation would post fuel into the books on top of the vendor bill."""
