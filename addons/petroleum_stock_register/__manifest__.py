@@ -1,6 +1,6 @@
 {
     'name': 'Petroleum Stock Register',
-    'version': '19.0.1.0.2',
+    'version': '19.0.1.0.3',
     'category': 'Inventory/Inventory',
     'summary': 'Depot litre register beside the trading desk, without sale or purchase pickings',
     'description': """

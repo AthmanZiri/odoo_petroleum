@@ -5,3 +5,9 @@ from . import sale_order
 from . import deal
 from . import loadings_import
 from . import stock_valuation
+from . import stock_warehouse
+from . import stock_location
+from . import stock_move
+from . import stock_quant
+from . import stock_picking
+from . import depot

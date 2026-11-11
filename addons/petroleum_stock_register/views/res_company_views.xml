@@ -8,6 +8,7 @@
             <xpath expr="//sheet" position="inside">
                 <group string="Petroleum stock register" name="petro_stock_register">
                     <field name="petro_stock_register_mode" readonly="1"/>
+                    <field name="petro_register_warehouse_id" readonly="1"/>
                     <button name="action_arm_stock_register" type="object"
                             string="Arm stock register"
                             invisible="petro_stock_register_mode != 'firewall'"/>
