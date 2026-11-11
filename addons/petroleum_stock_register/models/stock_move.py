@@ -32,7 +32,6 @@ class StockMove(models.Model):
             'location_dest_id': destination.id,
             'company_id': company.id,
             'state': 'confirmed',
-            'picked': True,
             'is_inventory': True,
             'origin': origin,
             'petro_register': True,
@@ -46,6 +45,7 @@ class StockMove(models.Model):
                 'company_id': company.id,
             })],
         })
+        move.move_line_ids.picked = True
         move._action_done()
         move.write({
             'date': fields.Datetime.to_datetime(business_date),
