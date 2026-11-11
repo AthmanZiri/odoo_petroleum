@@ -1,6 +1,6 @@
 {
     'name': 'Petroleum Stock Register',
-    'version': '19.0.1.0.1',
+    'version': '19.0.1.0.2',
     'category': 'Inventory/Inventory',
     'summary': 'Depot litre register beside the trading desk, without sale or purchase pickings',
     'description': """
@@ -18,7 +18,9 @@ stays the source of truth for litres, invoices, and margin.
         'sale_stock',
         'purchase_stock',
         'sale_order_automation',
+        'stock_account',
     ],
+    'post_init_hook': 'post_init_hook',
     'data': [
         'views/res_company_views.xml',
     ],
